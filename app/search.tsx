@@ -12,6 +12,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, Badge, Card } from '../src/components/ui';
 import { FadeSlide, ScalePress } from '../src/components/AppHeader';
 import { Colors, Spacing, BorderRadius } from '../src/constants/theme';
@@ -53,6 +54,7 @@ const MOCK_JOBS = [
 export default function SearchScreen() {
   const [query, setQuery] = useState('');
   const headerAnim = useRef(new Animated.Value(0)).current;
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     Animated.timing(headerAnim, {
@@ -84,7 +86,7 @@ export default function SearchScreen() {
       end={{ x: 0, y: 1 }}
       style={styles.gradient}
     >
-      <View style={styles.container}>
+      <View style={[styles.container, { paddingTop: insets.top }]}>
         {/* Animated Search Header */}
         <Animated.View
           style={[
@@ -269,7 +271,6 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    paddingTop: 40,
   },
   searchRow: {
     flexDirection: 'row',
