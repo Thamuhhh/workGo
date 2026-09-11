@@ -2,6 +2,14 @@ import React, { useEffect } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useFonts } from 'expo-font';
+import {
+  Poppins_400Regular,
+  Poppins_500Medium,
+  Poppins_600SemiBold,
+  Poppins_700Bold,
+  Poppins_800ExtraBold,
+} from '@expo-google-fonts/poppins';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '../src/store/authStore';
@@ -46,6 +54,14 @@ export default function RootLayout() {
   const loadStoredAuth = useAuthStore((state) => state.loadStoredAuth);
   const loadStoredMode = useUserModeStore((state) => state.loadStoredMode);
   const loadStoredApplications = useApplicationsStore((state) => state.loadStoredApplications);
+
+  useFonts({
+    Poppins_400Regular,
+    Poppins_500Medium,
+    Poppins_600SemiBold,
+    Poppins_700Bold,
+    Poppins_800ExtraBold,
+  });
 
   useEffect(() => {
     loadStoredAuth();
