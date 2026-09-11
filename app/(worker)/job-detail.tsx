@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon as Ionicons } from '../../src/components/Icon';
 import { Text, Badge, Button, Card } from '../../src/components/ui';
 import { FadeSlide } from '../../src/components/AppHeader';
 import { SAMPLE_JOBS } from '../../src/data/sampleJobs';

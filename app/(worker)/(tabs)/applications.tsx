@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon as Ionicons } from '../../../src/components/Icon';
 import { Text, Card, Badge, Button } from '../../../src/components/ui';
 import { SAMPLE_JOBS } from '../../../src/data/sampleJobs';
 import { useApplicationsStore, ApplicationStatus } from '../../../src/store/applicationsStore';

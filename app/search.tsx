@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon as Ionicons } from '../src/components/Icon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, Badge, Card } from '../src/components/ui';
 import { FadeSlide, ScalePress } from '../src/components/AppHeader';

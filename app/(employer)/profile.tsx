@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon as Ionicons } from '../../src/components/Icon';
 import { Text, Card, Badge, Button } from '../../src/components/ui';
 import { Colors, Spacing } from '../../src/constants/theme';
 import { useAuthStore } from '../../src/store/authStore';

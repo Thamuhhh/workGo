@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, ReactNode } from 'react';
 import { View, StyleSheet, TouchableOpacity, Animated, Easing } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon as Ionicons } from './Icon';
 import { Text } from './ui';
 import { Colors, Spacing } from '../constants/theme';
 

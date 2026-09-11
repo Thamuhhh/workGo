@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon as Ionicons } from '../../src/components/Icon';
 import { Text, Card, Button } from '../../src/components/ui';
 import { FadeSlide } from '../../src/components/AppHeader';
 import { SAMPLE_JOBS } from '../../src/data/sampleJobs';

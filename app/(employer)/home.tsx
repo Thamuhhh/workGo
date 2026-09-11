@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon as Ionicons } from '../../src/components/Icon';
 import { Text, Badge } from '../../src/components/ui';
 import AppHeader, { FadeSlide, ScalePress } from '../../src/components/AppHeader';
 import SearchBar from '../../src/components/SearchBar';
