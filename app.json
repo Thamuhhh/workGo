@@ -21,7 +21,8 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0F172A"
       },
-      "package": "com.anonymous.workgo"
+      "package": "com.anonymous.workgo",
+      "versionCode": 2
     },
     "web": {
       "bundler": "metro",

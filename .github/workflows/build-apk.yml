@@ -34,9 +34,25 @@ jobs:
       - name: Generate native project
         run: npx expo prebuild --platform android --clean --no-install
 
-      - name: Build APK (bundles JS automatically)
+      - name: Enable JS bundle in debug builds
+        working-directory: android
+        run: |
+          sed -i 's|// debuggableVariants = \["liteDebug", "prodDebug"\]|debuggableVariants = []|' app/build.gradle
+          grep -n "debuggableVariants" app/build.gradle
+
+      - name: Build Debug APK (with error screen)
+        working-directory: android
+        run: ./gradlew assembleDebug
+
+      - name: Build Release APK
         working-directory: android
         run: ./gradlew assembleRelease
+
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: workgo-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
