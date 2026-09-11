@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { View, StyleSheet, Text } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
@@ -25,12 +26,36 @@ const queryClient = new QueryClient({
   },
 });
 
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { error: Error | null }
+> {
+  state = { error: null as Error | null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <View style={styles.errorScreen}>
+          <Text style={styles.errorTitle}>Something went wrong</Text>
+          <Text style={styles.errorMessage}>{String(this.state.error?.message || this.state.error)}</Text>
+          <Text style={styles.errorStack}>{String(this.state.error?.stack)}</Text>
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function RootLayout() {
   const loadStoredAuth = useAuthStore((state) => state.loadStoredAuth);
   const loadStoredMode = useUserModeStore((state) => state.loadStoredMode);
   const loadStoredApplications = useApplicationsStore((state) => state.loadStoredApplications);
 
-  const [fontsLoaded] = useFonts({
+  useFonts({
     Poppins_400Regular,
     Poppins_500Medium,
     Poppins_600SemiBold,
@@ -44,36 +69,60 @@ export default function RootLayout() {
     loadStoredApplications();
   }, [loadStoredAuth, loadStoredMode, loadStoredApplications]);
 
-  if (!fontsLoaded) {
-    return null;
-  }
-
   return (
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
         <StatusBar style="dark" backgroundColor={Colors.background} />
-        <Stack
-          screenOptions={{
-            headerStyle: {
-              backgroundColor: Colors.surface,
-            },
-            headerTintColor: Colors.secondary,
-            headerTitleStyle: {
-              fontFamily: 'Poppins_700Bold',
-              fontWeight: '700',
-            },
-            contentStyle: {
-              backgroundColor: Colors.background,
-            },
-          }}
-        >
-          <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen name="search" options={{ headerShown: false, animation: 'fade' }} />
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-          <Stack.Screen name="(worker)" options={{ headerShown: false }} />
-          <Stack.Screen name="(employer)" options={{ headerShown: false }} />
-        </Stack>
+        <ErrorBoundary>
+          <Stack
+            screenOptions={{
+              headerStyle: {
+                backgroundColor: Colors.surface,
+              },
+              headerTintColor: Colors.secondary,
+              headerTitleStyle: {
+                fontFamily: 'Poppins_700Bold',
+                fontWeight: '700',
+              },
+              contentStyle: {
+                backgroundColor: Colors.background,
+              },
+            }}
+          >
+            <Stack.Screen name="index" options={{ headerShown: false }} />
+            <Stack.Screen name="search" options={{ headerShown: false, animation: 'fade' }} />
+            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+            <Stack.Screen name="(worker)" options={{ headerShown: false }} />
+            <Stack.Screen name="(employer)" options={{ headerShown: false }} />
+          </Stack>
+        </ErrorBoundary>
       </SafeAreaProvider>
     </QueryClientProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  errorScreen: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  errorTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginBottom: 8,
+  },
+  errorMessage: {
+    fontSize: 13,
+    color: '#64748B',
+    marginBottom: 8,
+    lineHeight: 20,
+  },
+  errorStack: {
+    fontSize: 11,
+    color: '#94A3B8',
+    lineHeight: 16,
+  },
+});
