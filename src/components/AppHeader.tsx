@@ -70,14 +70,14 @@ export default function AppHeader({ onProfilePress, userInitial = 'U' }: AppHead
 
   const translateY = entrance.interpolate({
     inputRange: [0, 1],
-    outputRange: [-16, 0],
+    outputRange: [-12, 0],
   });
 
   return (
     <Animated.View
       style={[
         styles.container,
-        { opacity: entrance, transform: [{ translateY }] },
+        { transform: [{ translateY }] },
       ]}
     >
       <View style={styles.row}>
@@ -118,16 +118,14 @@ export function FadeSlide({
   const progress = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      Animated.timing(progress, {
-        toValue: 1,
-        duration,
-        delay,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }).start();
-    }, 80);
-    return () => clearTimeout(timer);
+    Animated.timing(progress, {
+      toValue: 1,
+      duration,
+      delay,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+    return () => progress.stopAnimation();
   }, [progress, delay, duration]);
 
   const translateY = progress.interpolate({

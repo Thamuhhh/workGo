@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import {
   Poppins_400Regular,
@@ -25,6 +26,8 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -55,19 +58,30 @@ export default function RootLayout() {
   const loadStoredMode = useUserModeStore((state) => state.loadStoredMode);
   const loadStoredApplications = useApplicationsStore((state) => state.loadStoredApplications);
 
-  useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     Poppins_400Regular,
     Poppins_500Medium,
     Poppins_600SemiBold,
     Poppins_700Bold,
     Poppins_800ExtraBold,
   });
+  const [appReady, setAppReady] = useState(false);
 
   useEffect(() => {
-    loadStoredAuth();
-    loadStoredMode();
-    loadStoredApplications();
+    Promise.all([loadStoredAuth(), loadStoredMode(), loadStoredApplications()])
+      .catch(() => {})
+      .finally(() => setAppReady(true));
   }, [loadStoredAuth, loadStoredMode, loadStoredApplications]);
+
+  useEffect(() => {
+    if (appReady && (fontsLoaded || fontError)) {
+      SplashScreen.hideAsync();
+    }
+  }, [appReady, fontsLoaded, fontError]);
+
+  if (!appReady || (!fontsLoaded && !fontError)) {
+    return null;
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
