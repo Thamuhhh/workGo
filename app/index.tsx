@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
-import { router } from 'expo-router';
+import { router, useRootNavigationState } from 'expo-router';
 import { useAuthStore } from '../src/store/authStore';
 import { useUserModeStore } from '../src/store/userModeStore';
 import { Text, Button } from '../src/components/ui';
@@ -9,8 +9,10 @@ import { Colors, Spacing } from '../src/constants/theme';
 export default function EntryScreen() {
   const { isAuthenticated, isLoading } = useAuthStore();
   const { mode } = useUserModeStore();
+  const rootNavigationState = useRootNavigationState();
 
   useEffect(() => {
+    if (!rootNavigationState?.key) return;
     if (!isLoading) {
       if (isAuthenticated) {
         if (mode === 'employer') {
@@ -20,7 +22,7 @@ export default function EntryScreen() {
         }
       }
     }
-  }, [isAuthenticated, isLoading, mode]);
+  }, [rootNavigationState?.key, isAuthenticated, isLoading, mode]);
 
   if (isLoading) {
     return (
