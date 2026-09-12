@@ -49,7 +49,7 @@ export default function SearchBar({ placeholder, onPress }: SearchBarProps) {
   return (
     <Animated.View
       style={[
-        { position: 'relative' },
+        { position: 'relative', width: '100%' },
         { opacity, transform: [{ scale: scaleEnter }, { translateY }] },
       ]}
     >
