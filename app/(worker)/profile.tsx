@@ -3,13 +3,17 @@ import { View, StyleSheet, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { Icon as Ionicons } from '../../src/components/Icon';
 import { Text, Card, Badge, Button } from '../../src/components/ui';
-import { Colors, Spacing, BorderRadius } from '../../src/constants/theme';
+import { Colors, Spacing, BorderRadius, Shadows } from '../../src/constants/theme';
 import { useAuthStore } from '../../src/store/authStore';
 import { useUserModeStore } from '../../src/store/userModeStore';
 
 export default function WorkerProfileScreen() {
   const { user, logout } = useAuthStore();
   const { toggleMode } = useUserModeStore();
+
+  const displayName = user?.name || 'Arun Kumar';
+  const displayPhone = user?.phone || '9876543210';
+  const initial = displayName.trim().charAt(0).toUpperCase();
 
   const handleLogout = async () => {
     await logout();
@@ -22,56 +26,119 @@ export default function WorkerProfileScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      {/* Profile Header */}
-      <Card padding="lg" style={styles.profileCard}>
-        <View style={styles.avatarRow}>
+    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+      {/* Cover Header */}
+      <View style={styles.cover}>
+        <View style={styles.coverTop}>
           <View style={styles.avatar}>
-            <Ionicons name="person-outline" size={28} color="#475569" />
+            <Text variant="h1" weight="heavy" color={Colors.primary}>
+              {initial}
+            </Text>
           </View>
           <View style={styles.avatarDetails}>
-            <Text variant="h2" weight="bold">
-              {user?.name || 'Arun Kumar'}
+            <Text variant="caption" color="rgba(255,255,255,0.6)">
+              Good to see you!
             </Text>
-            <View style={styles.badgeRow}>
-              <Badge label="Verified" variant="success" size="sm" />
-              <Badge label="4.8 Rating" variant="warning" size="sm" />
+            <Text variant="h2" weight="bold" color="#FFFFFF" numberOfLines={1}>
+              {displayName}
+            </Text>
+            <View style={styles.verifiedRow}>
+              <Ionicons name="shield-checkmark" size={14} color="#4ADE80" />
+              <Text variant="caption" color="rgba(255,255,255,0.75)">
+                Verified Profile
+              </Text>
             </View>
-            <Text variant="caption" color={Colors.textSecondary} style={styles.jobsCount}>
-              24 jobs completed
+          </View>
+        </View>
+
+        {/* Stats */}
+        <View style={styles.statsRow}>
+          <View style={styles.statBlock}>
+            <Text variant="h3" weight="bold" color="#FFFFFF">
+              24
+            </Text>
+            <Text variant="caption" color="rgba(255,255,255,0.6)">
+              Jobs Done
+            </Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statBlock}>
+            <Text variant="h3" weight="bold" color="#FFFFFF">
+              4.8★
+            </Text>
+            <Text variant="caption" color="rgba(255,255,255,0.6)">
+              Rating
+            </Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statBlock}>
+            <Text variant="h3" weight="bold" color="#FFFFFF">
+              ₹9.6k
+            </Text>
+            <Text variant="caption" color="rgba(255,255,255,0.6)">
+              Earned
             </Text>
           </View>
         </View>
+      </View>
+
+      {/* Personal Details */}
+      <Text variant="h3" weight="bold" style={styles.sectionTitle}>
+        Personal Details
+      </Text>
+      <Card padding="md" style={styles.sectionCard}>
+        <Row
+          icon="person-outline"
+          label="Full Name"
+          value={displayName}
+          bold
+        />
+        <Row
+          icon="call-outline"
+          label="Mobile Number"
+          value={`+91 ${displayPhone}`}
+          bold
+        />
+        <Row
+          icon="location-outline"
+          label="Location"
+          value="Kanchipuram"
+          bold
+        />
+        <Row
+          icon="briefcase-outline"
+          label="Expected Wage"
+          value="₹800 / day"
+          bold
+          last
+        />
       </Card>
 
-      {/* Skills */}
-      <Card padding="lg">
-        <Text variant="h3" weight="bold" style={styles.sectionTitle}>
-          Skills
-        </Text>
-        <View style={styles.chipRow}>
-          <Badge label="Catering" variant="neutral" />
-          <Badge label="Serving" variant="neutral" />
-          <Badge label="Event Support" variant="neutral" />
-          <Badge label="Cleaning" variant="neutral" />
-        </View>
+      {/* Verification */}
+      <Text variant="h3" weight="bold" style={styles.sectionTitle}>
+        KYC & Documents
+      </Text>
+      <Card padding="md" style={styles.sectionCard}>
+        <DocRow
+          icon="shield-checkmark"
+          iconBg="#E6F9EC"
+          iconColor="#16A34A"
+          label="Aadhaar Card"
+          badgeLabel="Verified"
+          badgeVariant="success"
+        />
+        <DocRow
+          icon="document-text-outline"
+          iconBg="#FFF4E5"
+          iconColor="#F59E0B"
+          label="PAN Card"
+          badgeLabel="Pending"
+          badgeVariant="warning"
+          last
+        />
       </Card>
 
-      {/* Expected Pay & Location */}
-      <Card padding="lg">
-        <View style={styles.infoRow}>
-          <View>
-            <Text variant="caption" color={Colors.textSecondary}>EXPECTED WAGE</Text>
-            <Text variant="h3" weight="bold" color={Colors.primary}>₹800 / day</Text>
-          </View>
-          <View>
-            <Text variant="caption" color={Colors.textSecondary}>LOCATION</Text>
-            <Text variant="h3" weight="bold">Kanchipuram</Text>
-          </View>
-        </View>
-      </Card>
-
-      {/* Quick Actions */}
+      {/* Actions */}
       <View style={styles.actions}>
         <Button
           title="Switch to Employer Mode"
@@ -93,49 +160,151 @@ export default function WorkerProfileScreen() {
   );
 }
 
+function Row({
+  icon,
+  label,
+  value,
+  bold,
+  last,
+}: {
+  icon: string;
+  label: string;
+  value: string;
+  bold?: boolean;
+  last?: boolean;
+}) {
+  return (
+    <View style={[styles.detailRow, last && styles.lastRow]}>
+      <View style={styles.iconBubble}>
+        <Ionicons name={icon} size={18} color={Colors.primary} />
+      </View>
+      <View style={styles.detailMiddle}>
+        <Text variant="caption" color={Colors.textMuted}>
+          {label}
+        </Text>
+        <Text variant="body" weight={bold ? 'bold' : 'regular'} color="#0F172A">
+          {value}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+function DocRow({
+  icon,
+  iconBg,
+  iconColor,
+  label,
+  badgeLabel,
+  badgeVariant,
+  last,
+}: {
+  icon: string;
+  iconBg: string;
+  iconColor: string;
+  label: string;
+  badgeLabel: string;
+  badgeVariant: 'success' | 'warning';
+  last?: boolean;
+}) {
+  return (
+    <View style={[styles.detailRow, last && styles.lastRow]}>
+      <View style={[styles.iconBubble, { backgroundColor: iconBg }]}>
+        <Ionicons name={icon} size={18} color={iconColor} />
+      </View>
+      <View style={styles.detailMiddle}>
+        <Text variant="body" weight="bold" color="#0F172A">
+          {label}
+        </Text>
+      </View>
+      <Badge label={badgeLabel} variant={badgeVariant} size="sm" />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     padding: Spacing.lg,
+    paddingBottom: Spacing.xxxl,
     backgroundColor: Colors.background,
   },
-  profileCard: {
-    marginBottom: Spacing.md,
+  cover: {
+    backgroundColor: '#0F172A',
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    marginBottom: Spacing.xl,
+    ...Shadows.lg,
   },
-  avatarRow: {
+  coverTop: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: Spacing.md,
+    borderWidth: 3,
+    borderColor: Colors.primary,
+  },
+  avatarDetails: {
+    flex: 1,
+  },
+  verifiedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: Spacing.xl,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: BorderRadius.md,
+    paddingVertical: Spacing.md,
+  },
+  statBlock: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+  },
+  sectionTitle: {
+    marginBottom: Spacing.sm,
+    marginTop: Spacing.sm,
+  },
+  sectionCard: {
+    marginBottom: Spacing.lg,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  lastRow: {
+    borderBottomWidth: 0,
+    paddingBottom: 0,
+  },
+  iconBubble: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: Colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: Spacing.md,
   },
-  avatarDetails: {
+  detailMiddle: {
     flex: 1,
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    gap: Spacing.xs,
-    marginTop: Spacing.xs,
-  },
-  jobsCount: {
-    marginTop: 2,
-  },
-  sectionTitle: {
-    marginBottom: Spacing.sm,
-  },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.xs,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
   },
   actions: {
     marginTop: Spacing.md,

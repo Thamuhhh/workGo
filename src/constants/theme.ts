@@ -1,18 +1,18 @@
 export const Colors = {
   // Brand colors
-  primary: '#1C274C',       // Deep Indigo / Navy
-  primaryLight: '#ECF1F9',  // Soft light indigo background
-  primaryDark: '#2B3A60',   // Deep indigo for active states
+  primary: '#0277F4',       // Brand Blue
+  primaryLight: '#E6F3FF',  // Soft light blue background
+  primaryDark: '#0255C0',   // Deep blue for active states
 
   // Secondary & Accents
-  secondary: '#1C274C',     // Deep Indigo / Navy
-  secondaryLight: '#2B3A60',
-  
+  secondary: '#0277F4',     // Brand Blue
+  secondaryLight: '#4DA3FF',
+
   // Semantic status colors
   success: '#10B981',       // Emerald (Earnings / Verified / Confirmed)
   successLight: '#D1FAE5',
-  warning: '#1C274C',       // Pending / In Progress
-  warningLight: '#ECF1F9',
+  warning: '#0277F4',       // Pending / In Progress
+  warningLight: '#E6F3FF',
   danger: '#EF4444',        // Rejected / Cancelled / Error
   dangerLight: '#FEE2E2',
   info: '#3B82F6',          // Information / Updates
@@ -27,8 +27,8 @@ export const Colors = {
 
   // Text
   text: '#0F172A',          // Primary text (near black)
-  textSecondary: '#64748B', // Secondary text / captions
-  textMuted: '#94A3B8',     // Placeholders / disabled
+  textSecondary: '#52525B', // Secondary text / captions (neutral)
+  textMuted: '#71717A',     // Placeholders / disabled (neutral)
   textWhite: '#FFFFFF',     // White text on dark/primary buttons
 };
 

@@ -154,7 +154,7 @@ export default function EmployerHomeScreen() {
           {/* Select Your Services Grid */}
           <FadeSlide delay={120}>
             <View style={styles.sectionContainer}>
-              <Text variant="h3" weight="bold" color="#334155" style={styles.sectionTitle}>
+              <Text variant="h3" weight="bold" color="#0F172A" style={styles.sectionTitle}>
                 Select Your Services
               </Text>
 
@@ -201,7 +201,7 @@ export default function EmployerHomeScreen() {
                           variant="bodySm"
                           weight="medium"
                           align="center"
-                          color="#334155"
+                          color="#0F172A"
                           numberOfLines={2}
                           style={styles.serviceLabel}
                         >
@@ -236,11 +236,11 @@ export default function EmployerHomeScreen() {
           <FadeSlide delay={280}>
             <View style={styles.activeSummarySection}>
               <View style={styles.activeSummaryHeader}>
-                <Text variant="body" weight="bold" color="#334155">
+                <Text variant="body" weight="bold" color="#0F172A">
                   Active Job Status
                 </Text>
                 <TouchableOpacity onPress={() => router.push('/(employer)/jobs')}>
-                  <Text variant="caption" weight="bold" color="#1C274C">
+                  <Text variant="caption" weight="bold" color="#0F172A">
                     View All →
                   </Text>
                 </TouchableOpacity>
@@ -513,7 +513,7 @@ const styles = StyleSheet.create({
     aspectRatio: 1080 / 450,
     borderRadius: 18,
     overflow: 'hidden',
-    shadowColor: '#16203E',
+    shadowColor: '#0277F4',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.18,
     shadowRadius: 10,
@@ -582,8 +582,8 @@ const styles = StyleSheet.create({
     marginBottom: 1,
   },
   navIconPillActive: {
-    backgroundColor: '#1C274C',
-    shadowColor: '#16203E',
+    backgroundColor: '#0277F4',
+    shadowColor: '#0255C0',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.28,
     shadowRadius: 4,

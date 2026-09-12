@@ -68,7 +68,7 @@ export default function SearchBar({ placeholder, onPress }: SearchBarProps) {
         >
           <View style={[styles.bar, Shadows.md]}>
             <LinearGradient
-              colors={['#3E4E7A', '#1C274C']}
+              colors={['#0277F4', '#0255C0']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.iconChip}
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
     left: -2,
     right: -2,
     borderRadius: BorderRadius.round,
-    backgroundColor: 'rgba(28, 39, 76, 0.25)',
+    backgroundColor: 'rgba(2, 119, 244, 0.25)',
   },
   bar: {
     width: '100%',

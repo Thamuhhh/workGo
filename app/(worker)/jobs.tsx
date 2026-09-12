@@ -45,7 +45,7 @@ export default function WorkerJobsScreen() {
               </Text>
             </View>
             <View style={styles.salaryBadge}>
-              <Text variant="body" weight="heavy" color={Colors.primary}>
+              <Text variant="body" weight="heavy" color="#0F172A">
                 {job.salary}
               </Text>
             </View>
@@ -57,7 +57,7 @@ export default function WorkerJobsScreen() {
             </Text>
             <View style={styles.ratingPill}>
               <Ionicons name="star" size={12} color="#F59E0B" />
-              <Text variant="bodySm" weight="bold" color={Colors.primaryDark}>
+              <Text variant="bodySm" weight="bold" color="#0F172A">
                 {job.employerRating.replace(' Rating', '')}
               </Text>
             </View>

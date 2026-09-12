@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import { View, StyleSheet, Text, Image } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import {
   Poppins_400Regular,
@@ -26,8 +25,6 @@ const queryClient = new QueryClient({
     },
   },
 });
-
-SplashScreen.preventAutoHideAsync().catch(() => {});
 
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -73,14 +70,16 @@ export default function RootLayout() {
       .finally(() => setAppReady(true));
   }, [loadStoredAuth, loadStoredMode, loadStoredApplications]);
 
-  useEffect(() => {
-    if (appReady && (fontsLoaded || fontError)) {
-      SplashScreen.hideAsync();
-    }
-  }, [appReady, fontsLoaded, fontError]);
-
   if (!appReady || (!fontsLoaded && !fontError)) {
-    return null;
+    return (
+      <View style={styles.splashScreen}>
+        <Image
+          source={require('../assets/splash.png')}
+          style={styles.splashImage}
+          resizeMode="contain"
+        />
+      </View>
+    );
   }
 
   return (
@@ -93,7 +92,7 @@ export default function RootLayout() {
               headerStyle: {
                 backgroundColor: Colors.surface,
               },
-              headerTintColor: Colors.secondary,
+              headerTintColor: '#0F172A',
               headerTitleStyle: {
                 fontFamily: 'Poppins_700Bold',
                 fontWeight: '700',
@@ -116,6 +115,13 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
+  splashScreen: {
+    flex: 1,
+    backgroundColor: '#0F172A',
+  },
+  splashImage: {
+    flex: 1,
+  },
   errorScreen: {
     flex: 1,
     backgroundColor: '#FFFFFF',

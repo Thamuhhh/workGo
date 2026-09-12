@@ -21,15 +21,15 @@ export const Badge: React.FC<BadgeProps> = ({
   const getBadgeColors = () => {
     switch (variant) {
       case 'primary':
-        return { bg: Colors.primaryLight, text: Colors.primaryDark };
+        return { bg: '#E6F3FF', text: '#0F172A' };
       case 'success':
         return { bg: Colors.successLight, text: Colors.success };
       case 'warning':
-        return { bg: Colors.warningLight, text: Colors.warning };
+        return { bg: '#F1F5F9', text: '#0F172A' };
       case 'danger':
         return { bg: Colors.dangerLight, text: Colors.danger };
       case 'info':
-        return { bg: Colors.infoLight, text: Colors.info };
+        return { bg: '#F1F5F9', text: '#0F172A' };
       case 'neutral':
       default:
         return { bg: Colors.surfaceAlt, text: Colors.textSecondary };

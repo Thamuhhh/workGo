@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Text, Input, Button } from '../../src/components/ui';
+import { OtpCartoon } from '../../src/components/AuthCartoon';
 import { Colors, Spacing } from '../../src/constants/theme';
 
 export default function OtpScreen() {
@@ -26,11 +27,15 @@ export default function OtpScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.illustration}>
+        <OtpCartoon />
+      </View>
+
       <View style={styles.header}>
-        <Text variant="h2" weight="bold" style={styles.title}>
+        <Text variant="h2" weight="bold" align="center" style={styles.title}>
           Verify OTP
         </Text>
-        <Text variant="body" color={Colors.textSecondary}>
+        <Text variant="body" color={Colors.textSecondary} align="center">
           Enter the code sent to +91 {phone || 'XXXXX XXXXX'}
         </Text>
       </View>
@@ -61,7 +66,7 @@ export default function OtpScreen() {
 
       <View style={styles.resendSection}>
         <Text variant="bodySm" color={Colors.textSecondary} align="center">
-          Didn't receive code? <Text variant="bodySm" color={Colors.primaryDark} weight="bold">Resend OTP</Text>
+          Didn't receive code? <Text variant="bodySm" color="#0F172A" weight="bold">Resend OTP</Text>
         </Text>
       </View>
     </ScrollView>
@@ -73,21 +78,27 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     backgroundColor: Colors.background,
     padding: Spacing.xl,
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    flexDirection: 'column',
+  },
+  illustration: {
+    alignItems: 'center',
+    marginBottom: Spacing.lg,
   },
   header: {
-    marginTop: Spacing.lg,
+    alignItems: 'center',
+    marginBottom: Spacing.lg,
   },
   title: {
     marginBottom: Spacing.xs,
   },
   form: {
-    marginTop: Spacing.xxl,
+    marginTop: Spacing.sm,
   },
   button: {
     marginTop: Spacing.md,
   },
   resendSection: {
-    marginBottom: Spacing.xl,
+    marginTop: Spacing.xl,
   },
 });

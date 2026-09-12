@@ -65,7 +65,7 @@ export default function RoleSelectionScreen() {
           ]}
         >
           <View style={styles.badgeWrapper}>
-            <Ionicons name="construct-outline" size={24} color="#2B3A60" />
+            <Ionicons name="construct-outline" size={24} color="#0F172A" />
           </View>
           <View style={styles.optionDetails}>
             <Text variant="h3" weight="bold" style={styles.optionTitle}>
@@ -95,7 +95,7 @@ export default function RoleSelectionScreen() {
           ]}
         >
           <View style={styles.badgeWrapper}>
-            <Ionicons name="business-outline" size={24} color="#2563EB" />
+            <Ionicons name="business-outline" size={24} color="#0F172A" />
           </View>
           <View style={styles.optionDetails}>
             <Text variant="h3" weight="bold" style={styles.optionTitle}>

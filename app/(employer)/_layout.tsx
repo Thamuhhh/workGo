@@ -1,15 +1,14 @@
 import React from 'react';
 import { Stack } from 'expo-router';
-import { Colors } from '../../src/constants/theme';
 
 export default function EmployerLayout() {
   return (
     <Stack
       screenOptions={{
         headerStyle: {
-          backgroundColor: Colors.surface,
+          backgroundColor: '#FFFFFF',
         },
-        headerTintColor: Colors.secondary,
+        headerTintColor: '#0F172A',
         headerTitleStyle: {
           fontFamily: 'Poppins_700Bold',
           fontWeight: '700',

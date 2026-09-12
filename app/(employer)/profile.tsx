@@ -26,7 +26,7 @@ export default function EmployerProfileScreen() {
       <Card padding="lg" style={styles.card}>
         <View style={styles.headerRow}>
           <View style={styles.avatar}>
-            <Ionicons name="business-outline" size={30} color="#16203E" />
+            <Ionicons name="business-outline" size={30} color="#0F172A" />
           </View>
           <View style={styles.headerDetails}>
             <Text variant="h2" weight="bold">

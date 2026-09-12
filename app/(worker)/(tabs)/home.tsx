@@ -1,26 +1,23 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
-  Animated,
-  Easing,
+  Modal,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image as ExpoImage } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Icon as Ionicons } from '../../../src/components/Icon';
 import { Text, Button, Card } from '../../../src/components/ui';
-import AppHeader, { FadeSlide, ScalePress } from '../../../src/components/AppHeader';
+import { FadeSlide, ScalePress } from '../../../src/components/AppHeader';
 import SearchBar from '../../../src/components/SearchBar';
 import { Colors, Spacing, BorderRadius } from '../../../src/constants/theme';
 import { SAMPLE_JOBS } from '../../../src/data/sampleJobs';
 import { useAuthStore } from '../../../src/store/authStore';
 import { useUserModeStore } from '../../../src/store/userModeStore';
-
-const AnimatedImage = Animated.createAnimatedComponent(ExpoImage);
 
 interface ServiceCategory {
   id: string;
@@ -62,22 +59,57 @@ const CATEGORIES: ServiceCategory[] = [
   },
 ];
 
+const SAVED_PLACES = [
+  { label: 'Home', address: 'Gandhi Road, Kanchipuram', icon: 'home-outline' },
+  { label: 'Work', address: 'Anna Nagar, Chennai', icon: 'briefcase-outline' },
+];
+
+const QUICK_AREAS = [
+  'Kanchipuram',
+  'Chengalpattu',
+  'Madurantakam',
+  'Sriperumbudur',
+  'Uthiramerur',
+  'Oragadam',
+  'Maraimalai Nagar',
+  'Tambaram',
+];
+
+const AREA_JOB_COUNT: Record<string, number> = {
+  Home: 34,
+  Work: 27,
+  Kanchipuram: 12,
+  Chengalpattu: 9,
+  Madurantakam: 6,
+  Sriperumbudur: 14,
+  Uthiramerur: 4,
+  Oragadam: 11,
+  'Maraimalai Nagar': 8,
+  Tambaram: 21,
+  'Current location': 18,
+};
+
+interface AreaOption {
+  label: string;
+  address: string;
+}
+
 export default function WorkerHomeScreen() {
   const user = useAuthStore((state) => state.user);
   const { toggleMode } = useUserModeStore();
-  const heroZoom = useRef(new Animated.Value(0)).current;
+  const [area, setArea] = useState<AreaOption>({ label: 'Home', address: 'Gandhi Road, Kanchipuram' });
+  const [picked, setPicked] = useState<AreaOption>(area);
+  const [modalVisible, setModalVisible] = useState(false);
 
-  useEffect(() => {
-    Animated.timing(heroZoom, {
-      toValue: 1,
-      duration: 700,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
-    }).start();
-  }, [heroZoom]);
+  const openLocationPicker = () => {
+    setPicked(area);
+    setModalVisible(true);
+  };
 
-  const heroScale = heroZoom.interpolate({ inputRange: [0, 1], outputRange: [1.14, 1] });
-  const heroOpacity = heroZoom.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
+  const confirmLocation = () => {
+    setArea(picked);
+    setModalVisible(false);
+  };
 
   const handleCategoryPress = (cat: ServiceCategory) => {
     router.push({
@@ -105,54 +137,69 @@ export default function WorkerHomeScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          {/* Hero Illustrated Banner with overlaid top nav */}
-          <View style={styles.heroContainer}>
-            <View style={styles.heroImageWrap}>
-              <AnimatedImage
-                source={require('../../../assets/hero_banner.jpg')}
-                style={[styles.heroImage, { opacity: heroOpacity, transform: [{ scale: heroScale }] }]}
-                contentFit="cover"
-                transition={150}
-              />
+          {/* Swiggy-style solid header */}
+<LinearGradient
+            colors={['#FFFFFF', '#FFFFFF', '#F5F9FF']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.headerGradient}
+          >
+            {/* Row 1: Brand + actions */}
+            <View style={styles.headerTopRow}>
+              <View style={styles.brandCol}>
+                <Text variant="h2" weight="heavy" color="#0F172A" style={styles.brandTitle}>
+                  Work<Text variant="h2" weight="heavy" color="#172554">Go</Text>
+                </Text>
+                <Text variant="caption" weight="medium" color="#94A3B8" style={styles.brandTagline}>
+                  Work nearby. Earn today.
+                </Text>
+              </View>
+
+              <View style={styles.headerActions}>
+                <ScalePress onPress={() => router.push('/(worker)/wallet')} style={styles.iconBtnDark} scaleTo={0.9}>
+                  <Ionicons name="wallet-outline" size={20} color="#0F172A" />
+                </ScalePress>
+                <ScalePress onPress={() => router.push('/(worker)/profile')} style={styles.iconBtnDark} scaleTo={0.9}>
+                  <Text variant="body" weight="heavy" color="#0F172A">
+                    {(user?.name || 'U').charAt(0).toUpperCase()}
+                  </Text>
+                </ScalePress>
+              </View>
             </View>
 
-            {/* Top scrim so the overlaid logo stays readable */}
-            <LinearGradient
-              colors={['rgba(255,247,237,0.95)', 'rgba(255,247,237,0.0)']}
-              style={styles.heroTopScrim}
-            />
+            {/* Row 2: Location selector */}
+            <TouchableOpacity activeOpacity={0.85} style={styles.locationCard} onPress={openLocationPicker}>
+              <View style={styles.locationIconChip}>
+                <Ionicons name="location-outline" size={16} color="#0277F4" />
+              </View>
 
-            {/* Overlaid Top Nav */}
-            <View style={styles.headerOverlay}>
-              <AppHeader
-                onProfilePress={() => router.push('/(worker)/profile')}
-                userInitial={(user?.name || 'U').charAt(0).toUpperCase()}
-              />
-            </View>
+              <View style={styles.locationCol}>
+                <Text variant="caption" weight="bold" color="#94A3B8" style={styles.locationTag}>
+                  {area.label.toUpperCase()} • {AREA_JOB_COUNT[area.label] ?? 12} JOBS NEARBY
+                </Text>
+                <Text variant="body" weight="bold" color="#0F172A" numberOfLines={1}>
+                  {area.address}
+                </Text>
+              </View>
 
-            {/* Soft gradient fade — blends hero into the background */}
-            <LinearGradient
-              colors={['rgba(255,255,255,0)', 'rgba(255,255,255,0.6)', '#FFFFFF']}
-              locations={[0, 0.6, 1]}
-              style={styles.heroGradientOverlay}
-            />
+              <View style={styles.locationChevron}>
+                <Ionicons name="chevron-down" size={15} color="#0F172A" />
+              </View>
+            </TouchableOpacity>
 
-            {/* Floating Search Bar */}
-            <View style={styles.floatingSearchWrapper}>
+            {/* Row 3: Search */}
+            <View style={styles.headerSearchWrap}>
               <SearchBar
                 placeholder="Find temporary jobs, Catering, Promoter..."
                 onPress={() => router.push('/search')}
               />
             </View>
-          </View>
-
-          {/* Spacer */}
-          <View style={styles.searchSpacer} />
+          </LinearGradient>
 
           {/* Select Your Services Category Grid */}
           <FadeSlide delay={120}>
             <View style={styles.sectionContainer}>
-              <Text variant="h3" weight="bold" color="#334155" style={styles.sectionTitle}>
+              <Text variant="h3" weight="bold" color="#0F172A" style={styles.sectionTitle}>
                 Select Your Category
               </Text>
 
@@ -188,7 +235,7 @@ export default function WorkerHomeScreen() {
                         variant="bodySm"
                         weight="medium"
                         align="center"
-                        color="#334155"
+                        color="#0F172A"
                         numberOfLines={2}
                         style={styles.serviceLabel}
                       >
@@ -222,11 +269,11 @@ export default function WorkerHomeScreen() {
           {/* Nearby Jobs Section */}
           <FadeSlide delay={280}>
             <View style={styles.jobsHeader}>
-              <Text variant="h3" weight="bold" color="#334155">
+              <Text variant="h3" weight="bold" color="#0F172A">
                 Nearby Jobs
               </Text>
               <TouchableOpacity onPress={() => router.push('/(worker)/jobs')}>
-                <Text variant="bodySm" weight="bold" color="#2B3A60">
+                <Text variant="bodySm" weight="bold" color="#0F172A">
                   View All (12) →
                 </Text>
               </TouchableOpacity>
@@ -255,7 +302,7 @@ export default function WorkerHomeScreen() {
                       </Text>
                     </View>
                     <View style={styles.salaryBadge}>
-                      <Text variant="body" weight="heavy" color={Colors.primary}>
+                      <Text variant="body" weight="heavy" color="#0F172A">
                         {job.salary}
                       </Text>
                     </View>
@@ -267,7 +314,7 @@ export default function WorkerHomeScreen() {
                     </Text>
                     <View style={styles.ratingPill}>
                       <Ionicons name="star" size={12} color="#F59E0B" />
-                      <Text variant="bodySm" weight="bold" color={Colors.primaryDark}>
+                      <Text variant="bodySm" weight="bold" color="#0F172A">
                         {job.employerRating.replace(' Rating', '')}
                       </Text>
                     </View>
@@ -289,6 +336,104 @@ export default function WorkerHomeScreen() {
         </ScrollView>
       </View>
       </LinearGradient>
+
+      {/* Location Picker Modal */}
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalSheet}>
+            {/* Grabber */}
+            <View style={styles.modalGrabber} />
+
+            <View style={styles.modalHeader}>
+              <Text variant="h3" weight="bold" color="#0F172A">
+                Choose your location
+              </Text>
+              <Text variant="bodySm" color="#64748B" style={styles.modalSubheader}>
+                Jobs available in your area
+              </Text>
+            </View>
+
+            {/* Current Location */}
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => setPicked({ label: 'Current location', address: 'Gandhi Road, Kanchipuram' })}
+              style={[styles.modalPlaceRow, picked.label === 'Current location' && styles.modalPlaceRowActive]}
+            >
+              <View style={[styles.modalPlaceIcon, { backgroundColor: '#E0F2FE' }]}>
+                <Ionicons name="navigate" size={16} color="#0277F4" />
+              </View>
+              <View style={styles.modalPlaceCol}>
+                <Text variant="body" weight="bold" color="#0F172A">Use current location</Text>
+                <Text variant="caption" color="#64748B">Gandhi Road, Kanchipuram</Text>
+              </View>
+              {picked.label === 'Current location' && (
+                <Ionicons name="checkmark-circle" size={20} color="#0277F4" />
+              )}
+            </TouchableOpacity>
+
+            {/* Saved Places */}
+            <View style={styles.modalSection}>
+              <Text variant="caption" weight="semibold" color="#94A3B8" style={styles.modalSectionLabel}>
+                SAVED PLACES
+              </Text>
+              {SAVED_PLACES.map((p) => (
+                <TouchableOpacity
+                  key={p.label}
+                  activeOpacity={0.8}
+                  onPress={() => setPicked(p)}
+                  style={[styles.modalPlaceRow, picked.label === p.label && styles.modalPlaceRowActive]}
+                >
+                  <View style={[styles.modalPlaceIcon, { backgroundColor: '#F0FDF4' }]}>
+                    <Ionicons name={p.icon as any} size={16} color="#059669" />
+                  </View>
+                  <View style={styles.modalPlaceCol}>
+                    <Text variant="body" weight="bold" color="#0F172A">{p.label}</Text>
+                    <Text variant="caption" color="#64748B">{p.address}</Text>
+                  </View>
+                  {picked.label === p.label && (
+                    <Ionicons name="checkmark-circle" size={20} color="#0277F4" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Quick Area Chips */}
+            <View style={styles.modalSection}>
+              <Text variant="caption" weight="semibold" color="#94A3B8" style={styles.modalSectionLabel}>
+                NEARBY AREAS
+              </Text>
+              <View style={styles.modalChipWrap}>
+                {QUICK_AREAS.map((a) => (
+                  <TouchableOpacity
+                    key={a}
+                    activeOpacity={0.85}
+                    onPress={() => setPicked({ label: a, address: a })}
+                    style={[styles.modalChip, picked.label === a && styles.modalChipActive]}
+                  >
+                    <Text variant="caption" weight="bold" color={picked.label === a ? '#FFFFFF' : '#334155'}>
+                      {a}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            {/* Apply button */}
+            <View style={styles.modalFooter}>
+              <Button
+                title={`Show jobs in ${picked.label}`}
+                fullWidth
+                onPress={confirmLocation}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -308,54 +453,100 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 110,
   },
-  heroContainer: {
-    width: '100%',
-    height: 250,
-    position: 'relative',
-    overflow: 'visible',
+  headerGradient: {
+    paddingHorizontal: Spacing.xl,
+    paddingTop: 16,
+    paddingBottom: 20,
+    borderBottomLeftRadius: 26,
+    borderBottomRightRadius: 26,
   },
-  heroImageWrap: {
-    width: '100%',
-    height: '100%',
-    overflow: 'hidden',
-  },
-  heroTopScrim: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 130,
-    zIndex: 10,
-  },
-  headerOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 20,
-  },
-  heroImage: {
-    width: '100%',
-    height: '100%',
-  },
-  heroGradientOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 130,
-  },
-  floatingSearchWrapper: {
-    position: 'absolute',
-    bottom: -26,
-    left: 0,
-    right: 0,
+  headerTopRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
-    zIndex: 10,
+    justifyContent: 'space-between',
   },
-  searchSpacer: {
-    height: 38,
+  brandCol: {
+    flex: 1,
+  },
+  brandTitle: {
+    fontSize: 24,
+    letterSpacing: -0.5,
+  },
+  brandTagline: {
+    marginTop: 2,
+    fontSize: 11,
+    letterSpacing: 0.4,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  iconBtnDark: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#F1F5F9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E8EEF6',
+  },
+  notifDot: {
+    position: 'absolute',
+    top: 9,
+    right: 10,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#EF4444',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+  },
+  locationCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 999,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    marginTop: Spacing.md,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: '#E8EEF6',
+    shadowColor: '#1E3A8A',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  locationIconChip: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#E3F2FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  locationCol: {
+    flex: 1,
+    marginRight: Spacing.xs,
+  },
+  locationTag: {
+    letterSpacing: 0.6,
+    marginBottom: 1,
+  },
+  locationChevron: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#F1F5F9',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerSearchWrap: {
+    marginTop: 16,
+    marginBottom: 2,
   },
   sectionContainer: {
     paddingHorizontal: Spacing.xl,
@@ -434,7 +625,7 @@ const styles = StyleSheet.create({
     aspectRatio: 1080 / 450,
     borderRadius: 18,
     overflow: 'hidden',
-    shadowColor: '#16203E',
+    shadowColor: '#0277F4',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.18,
     shadowRadius: 10,
@@ -491,5 +682,85 @@ const styles = StyleSheet.create({
   },
   applyBtn: {
     marginTop: Spacing.sm,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalSheet: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: Spacing.xl,
+    paddingTop: 12,
+    paddingBottom: Spacing.xxxl,
+    maxHeight: '88%',
+  },
+  modalGrabber: {
+    alignSelf: 'center',
+    width: 44,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: '#E2E8F0',
+    marginBottom: Spacing.lg,
+  },
+  modalHeader: {
+    marginBottom: Spacing.lg,
+  },
+  modalSubheader: {
+    marginTop: 2,
+  },
+  modalPlaceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    gap: Spacing.md,
+    marginBottom: Spacing.sm,
+  },
+  modalPlaceRowActive: {
+    backgroundColor: '#F0F7FF',
+    borderColor: '#BFDBFE',
+  },
+  modalPlaceIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalPlaceCol: {
+    flex: 1,
+  },
+  modalSection: {
+    marginTop: Spacing.lg,
+  },
+  modalSectionLabel: {
+    letterSpacing: 0.8,
+    marginBottom: Spacing.sm,
+  },
+  modalChipWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+  },
+  modalChip: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  modalChipActive: {
+    backgroundColor: '#0277F4',
+    borderColor: '#0277F4',
+  },
+  modalFooter: {
+    marginTop: Spacing.xl,
   },
 });

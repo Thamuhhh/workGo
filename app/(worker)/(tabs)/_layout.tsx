@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, StyleSheet, Animated } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Icon as Ionicons } from '../../../src/components/Icon';
 import { Text } from '../../../src/components/ui';
@@ -11,6 +11,31 @@ const ICONS = {
   applications: { active: 'chatbubble', inactive: 'chatbubble-outline', label: 'Messages' },
 } as const;
 
+const AnimatedPill = React.memo(
+  ({ active, activeIcon, inactiveIcon }: { active: boolean; activeIcon: string; inactiveIcon: string }) => {
+    const scale = useRef(new Animated.Value(active ? 1 : 0.8)).current;
+
+    useEffect(() => {
+      Animated.spring(scale, {
+        toValue: active ? 1 : 0.8,
+        friction: 5,
+        tension: 140,
+        useNativeDriver: true,
+      }).start();
+    }, [active, scale]);
+
+    return (
+      <Animated.View style={[styles.iconPill, active && styles.iconPillActive, { transform: [{ scale }] }]}>
+        <Ionicons
+          name={active ? activeIcon : inactiveIcon}
+          size={20}
+          color={active ? '#FFFFFF' : '#94A3B8'}
+        />
+      </Animated.View>
+    );
+  }
+);
+
 export default function WorkerTabsLayout() {
   return (
     <Tabs
@@ -19,7 +44,7 @@ export default function WorkerTabsLayout() {
         return {
           headerShown: true,
           headerStyle: { backgroundColor: Colors.surface },
-          headerTintColor: Colors.secondary,
+          headerTintColor: '#0F172A',
           headerTitleStyle: {
             fontFamily: 'Poppins_700Bold',
             fontWeight: '700',
@@ -36,16 +61,11 @@ export default function WorkerTabsLayout() {
               >
                 {icons.label}
               </Text>
+              <View style={[styles.activeDot, focused && styles.activeDotOn]} />
             </View>
           ),
           tabBarIcon: ({ focused }) => (
-            <View style={[styles.iconPill, focused && styles.iconPillActive]}>
-              <Ionicons
-                name={focused ? icons.active : icons.inactive}
-                size={20}
-                color={focused ? '#FFFFFF' : '#94A3B8'}
-              />
-            </View>
+            <AnimatedPill active={focused} activeIcon={icons.active} inactiveIcon={icons.inactive} />
           ),
         };
       }}
@@ -62,7 +82,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: '#F1F5F9',
-    height: 66,
+    height: 68,
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.06,
@@ -75,15 +95,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   iconPill: {
-    width: 44,
-    height: 28,
-    borderRadius: 14,
+    width: 48,
+    height: 30,
+    borderRadius: 15,
     justifyContent: 'center',
     alignItems: 'center',
   },
   iconPillActive: {
-    backgroundColor: '#1C274C',
-    shadowColor: '#16203E',
+    backgroundColor: '#0277F4',
+    shadowColor: '#0255C0',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.28,
     shadowRadius: 4,
@@ -91,5 +111,17 @@ const styles = StyleSheet.create({
   },
   labelWrap: {
     marginTop: 2,
+    alignItems: 'center',
+  },
+  activeDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#0277F4',
+    opacity: 0,
+    marginTop: 2,
+  },
+  activeDotOn: {
+    opacity: 1,
   },
 });

@@ -88,7 +88,7 @@ export default function AppHeader({ onProfilePress, userInitial = 'U' }: AppHead
         <ScalePress onPress={onProfilePress} style={styles.avatarBtn} scaleTo={0.92}>
           <View style={styles.avatarWrapper}>
             <View style={styles.avatarInner}>
-              <Text variant="body" weight="heavy" color={Colors.primary}>
+              <Text variant="body" weight="heavy" color="#0F172A">
                 {userInitial}
               </Text>
             </View>

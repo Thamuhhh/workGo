@@ -34,13 +34,23 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
+const PARTICLE_COUNT = 12;
+
 export default function JobDetailScreen() {
   const params = useLocalSearchParams<{ jobId?: string }>();
   const applications = useApplicationsStore((s) => s.applications);
   const apply = useApplicationsStore((s) => s.apply);
   const [showApplied, setShowApplied] = useState(false);
+  const [loading, setLoading] = useState(true);
   const overlayOpacity = useRef(new Animated.Value(0)).current;
-  const cardScale = useRef(new Animated.Value(0.8)).current;
+  const bubbleScale = useRef(new Animated.Value(0.35)).current;
+  const ringScale = useRef(new Animated.Value(0)).current;
+  const ripple2 = useRef(new Animated.Value(0)).current;
+  const checkPop = useRef(new Animated.Value(0)).current;
+  const checkSpin = useRef(new Animated.Value(0)).current;
+  const contentSlide = useRef(new Animated.Value(0)).current;
+  const pulse = useRef(new Animated.Value(0.45)).current;
+  const particles = useRef(Array.from({ length: PARTICLE_COUNT }, () => new Animated.Value(0))).current;
 
   const job = SAMPLE_JOBS.find((j) => j.id === params.jobId);
   const similarJobs = job
@@ -54,25 +64,99 @@ export default function JobDetailScreen() {
   const [startTime = '', endTime = ''] = (job?.timing ?? '').split(' - ');
 
   useEffect(() => {
-    if (showApplied) {
-      overlayOpacity.setValue(0);
-      cardScale.setValue(0.8);
-      Animated.parallel([
-        Animated.timing(overlayOpacity, {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 0.9, duration: 700, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0.45, duration: 700, useNativeDriver: true }),
+      ])
+    ).start();
+  }, [pulse]);
+
+  useEffect(() => {
+    setLoading(true);
+    const t = setTimeout(() => setLoading(false), 850);
+    return () => clearTimeout(t);
+  }, [params.jobId]);
+
+  useEffect(() => {
+    if (!showApplied) return;
+    overlayOpacity.setValue(0);
+    bubbleScale.setValue(0.35);
+    ringScale.setValue(0);
+    ripple2.setValue(0);
+    checkPop.setValue(0);
+    checkSpin.setValue(0);
+    contentSlide.setValue(0);
+    particles.forEach((p) => p.setValue(0));
+
+    Animated.parallel([
+      Animated.timing(overlayOpacity, {
+        toValue: 1,
+        duration: 240,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(ringScale, {
+        toValue: 1,
+        duration: 640,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.sequence([
+        Animated.delay(120),
+        Animated.timing(ripple2, {
           toValue: 1,
-          duration: 280,
+          duration: 520,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
-        Animated.spring(cardScale, {
-          toValue: 1,
-          friction: 6,
-          tension: 70,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }
-  }, [showApplied, overlayOpacity, cardScale]);
+      ]),
+      Animated.spring(bubbleScale, {
+        toValue: 1,
+        friction: 5,
+        tension: 140,
+        useNativeDriver: true,
+      }),
+      Animated.stagger(
+        40,
+        particles.map((p) =>
+          Animated.timing(p, {
+            toValue: 1,
+            duration: 620,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          })
+        )
+      ),
+    ]).start();
+
+    const t1 = setTimeout(() => {
+      Animated.spring(checkPop, {
+        toValue: 1,
+        friction: 4,
+        tension: 220,
+        useNativeDriver: true,
+      }).start();
+      Animated.spring(checkSpin, {
+        toValue: 1,
+        friction: 5,
+        tension: 240,
+        useNativeDriver: true,
+      }).start();
+    }, 320);
+    const t2 = setTimeout(() => {
+      Animated.timing(contentSlide, {
+        toValue: 1,
+        duration: 280,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }).start();
+    }, 470);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [showApplied, overlayOpacity, bubbleScale, ringScale, ripple2, checkPop, checkSpin, contentSlide, particles]);
 
   const hideAppliedPopup = () => {
     Animated.timing(overlayOpacity, {
@@ -86,6 +170,36 @@ export default function JobDetailScreen() {
     hideAppliedPopup();
     router.push('/(worker)/(tabs)/applications');
   };
+
+  if (loading) {
+    return (
+      <>
+        <Stack.Screen options={{ title: 'Job Details', headerShown: false }} />
+        <View style={styles.screen}>
+          <SafeAreaView edges={['top']} style={styles.topBar}>
+            <Animated.View style={[styles.skelCircle, { opacity: pulse }]} />
+            <Animated.View style={[styles.skel, styles.skelTitleBar, { opacity: pulse }]} />
+          </SafeAreaView>
+          <View style={styles.skelBody}>
+            <Animated.View style={{ opacity: pulse }}>
+              <View style={[styles.skel, styles.skelChip]} />
+              <View style={[styles.skel, styles.skelBig]} />
+              <View style={[styles.skel, styles.skelMed]} />
+            </Animated.View>
+            <Animated.View style={[styles.skel, styles.skelSalary, { opacity: pulse }]} />
+            <Animated.View style={[styles.skel, styles.skelCard, { opacity: pulse }]} />
+            <Animated.View style={[styles.skelRow, { opacity: pulse }]}>
+              <View style={[styles.skel, styles.skelTile]} />
+              <View style={[styles.skel, styles.skelTile]} />
+              <View style={[styles.skel, styles.skelTile]} />
+            </Animated.View>
+            <Animated.View style={[styles.skel, styles.skelCard, { opacity: pulse }]} />
+            <Animated.View style={[styles.skel, styles.skelCard, { opacity: pulse }]} />
+          </View>
+        </View>
+      </>
+    );
+  }
 
   if (!job) {
     return (
@@ -146,9 +260,9 @@ export default function JobDetailScreen() {
                 <Ionicons
                   name={(CATEGORY_ICONS[job.category] ?? 'briefcase-outline') as any}
                   size={14}
-                  color={Colors.primary}
+                  color="#0F172A"
                 />
-                <Text variant="caption" weight="semibold" color={Colors.primary} style={styles.categoryChipText}>
+                <Text variant="caption" weight="semibold" color="#0F172A" style={styles.categoryChipText}>
                   {job.category}
                 </Text>
               </View>
@@ -183,7 +297,7 @@ export default function JobDetailScreen() {
               <View style={styles.salaryRow}>
                 <View style={styles.salaryBlock}>
                   <Text variant="caption" color={Colors.textMuted}>Daily Pay</Text>
-                  <Text variant="h2" weight="heavy" color={Colors.primary}>
+                  <Text variant="h2" weight="heavy" color="#0F172A">
                     {job.salary}
                   </Text>
                 </View>
@@ -227,15 +341,15 @@ export default function JobDetailScreen() {
             <FadeSlide delay={200}>
               <View style={styles.tilesRow}>
                 <View style={[styles.tile, { backgroundColor: '#EEF2FF' }]}>
-                  <Ionicons name="calendar-outline" size={18} color="#4F46E5" />
+                  <Ionicons name="calendar-outline" size={18} color="#0F172A" />
                   <Text variant="caption" color={Colors.textMuted}>Date</Text>
                   <Text variant="bodySm" weight="bold" color="#0F172A" numberOfLines={1}>{job.date}</Text>
                 </View>
                 <View style={[styles.tile, { backgroundColor: '#F5F3FF' }]}>
-                  <Ionicons name="time-outline" size={18} color="#7C3AED" />
+                  <Ionicons name="time-outline" size={18} color="#0F172A" />
                   <Text variant="caption" color={Colors.textMuted}>Timing</Text>
                   <Text variant="bodySm" weight="bold" color="#0F172A" numberOfLines={1}>{startTime}</Text>
-                  <Text variant="caption" color="#6B7280" numberOfLines={1}>{endTime ? `till ${endTime}` : '—'}</Text>
+                  <Text variant="caption" color="#52525B" numberOfLines={1}>{endTime ? `till ${endTime}` : '—'}</Text>
                 </View>
                 <View style={[styles.tile, { backgroundColor: '#ECFDF5' }]}>
                   <Ionicons name="navigate-outline" size={18} color="#059669" />
@@ -249,7 +363,7 @@ export default function JobDetailScreen() {
             <FadeSlide delay={260}>
               <Card padding="lg" style={styles.section}>
                 <View style={styles.sectionHeader}>
-                  <Ionicons name="people-outline" size={18} color={Colors.primary} />
+                  <Ionicons name="people-outline" size={18} color="#0F172A" />
                   <Text variant="body" weight="bold" color="#0F172A">
                     Hiring Progress
                   </Text>
@@ -319,7 +433,7 @@ export default function JobDetailScreen() {
                 ].map((req, i) => (
                   <View key={i} style={styles.reqRow}>
                     <Ionicons name="checkmark-circle" size={18} color="#059669" />
-                    <Text variant="bodySm" color="#334155" style={styles.reqText}>
+                    <Text variant="bodySm" color="#0F172A" style={styles.reqText}>
                       {req}
                     </Text>
                   </View>
@@ -331,7 +445,7 @@ export default function JobDetailScreen() {
             <FadeSlide delay={440}>
               <Card padding="lg" style={styles.tipsCard}>
                 <View style={styles.tipsHeader}>
-                  <Ionicons name="bulb-outline" size={18} color={Colors.primary} />
+                  <Ionicons name="bulb-outline" size={18} color="#0F172A" />
                   <Text variant="body" weight="bold" color="#0F172A">
                     Quick Tips
                   </Text>
@@ -342,7 +456,7 @@ export default function JobDetailScreen() {
                   'Dress code info will be shared after approval',
                 ].map((tip, i) => (
                   <View key={i} style={styles.tipRow}>
-                    <Text variant="caption" weight="bold" color={Colors.primary}>{i + 1}.</Text>
+                    <Text variant="caption" weight="bold" color="#0F172A">{i + 1}.</Text>
                     <Text variant="bodySm" color={Colors.textSecondary} style={styles.tipText}>
                       {tip}
                     </Text>
@@ -392,7 +506,7 @@ export default function JobDetailScreen() {
         <View style={styles.bottomBar}>
           <View style={styles.bottomLeft}>
             <Text variant="caption" color={Colors.textMuted}>You'll earn</Text>
-            <Text variant="h3" weight="bold" color={Colors.primary}>
+            <Text variant="h3" weight="bold" color="#0F172A">
               {job.salary}
             </Text>
           </View>
@@ -419,29 +533,100 @@ export default function JobDetailScreen() {
           onRequestClose={hideAppliedPopup}
         >
           <Animated.View style={[styles.popupOverlay, { opacity: overlayOpacity }]}>
-            <Animated.View style={[styles.popupCard, { transform: [{ scale: cardScale }] }]}>
-              <View style={styles.popupCheck}>
+            <Animated.View style={[styles.popupCard, { transform: [{ scale: bubbleScale }] }]}>
+              <Animated.View
+                style={[
+                  styles.popupCheck,
+                  {
+                    transform: [
+                      { scale: checkPop },
+                      { rotate: checkSpin.interpolate({ inputRange: [0, 1], outputRange: ['-140deg', '0deg'] }) },
+                    ],
+                  },
+                ]}
+              >
                 <Ionicons name="checkmark" size={36} color="#FFFFFF" />
-              </View>
-              <Text variant="h3" weight="bold" color="#0F172A" style={styles.popupTitle}>
-                Application Sent!
-              </Text>
-              <Text variant="bodySm" color={Colors.textSecondary} align="center" style={styles.popupText}>
-                Your application for “{job.title}” has been submitted to {job.employerName}. They may call you soon!
-              </Text>
-              <Button
-                title="View My Applications"
-                size="md"
-                fullWidth
-                onPress={openApplications}
-                style={styles.popupBtn}
-              />
-              <TouchableOpacity onPress={hideAppliedPopup} hitSlop={8} activeOpacity={0.6}>
-                <Text variant="bodySm" weight="bold" color={Colors.textSecondary}>
-                  Close
+              </Animated.View>
+              <Animated.View
+                style={{
+                  opacity: contentSlide,
+                  transform: [
+                    { translateY: contentSlide.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) },
+                  ],
+                }}
+              >
+                <Text variant="h3" weight="bold" color="#0F172A" align="center" style={styles.popupTitle}>
+                  Application Sent!
                 </Text>
-              </TouchableOpacity>
+                <Text variant="bodySm" color={Colors.textSecondary} align="center" style={styles.popupText}>
+                  Your application for “{job.title}” has been submitted to {job.employerName}. They may call you soon!
+                </Text>
+                <Button
+                  title="View My Applications"
+                  size="md"
+                  fullWidth
+                  onPress={openApplications}
+                  style={styles.popupBtn}
+                />
+                <TouchableOpacity onPress={hideAppliedPopup} hitSlop={8} activeOpacity={0.6} style={styles.popupCloseWrap}>
+                  <Text variant="bodySm" weight="bold" color={Colors.textSecondary} align="center">
+                    Close
+                  </Text>
+                </TouchableOpacity>
+              </Animated.View>
             </Animated.View>
+
+            {/* Rays + ripples ON TOP of card */}
+            <View style={styles.razorCenter} pointerEvents="none">
+              <Animated.View
+                style={[
+                  styles.razorRing,
+                  {
+                    opacity: ringScale.interpolate({ inputRange: [0, 0.3, 1], outputRange: [0, 0.65, 0] }),
+                    transform: [
+                      { scale: ringScale.interpolate({ inputRange: [0, 1], outputRange: [0.7, 2.2] }) },
+                    ],
+                  },
+                ]}
+              />
+              <Animated.View
+                style={[
+                  styles.razorRing,
+                  styles.razorRingGreen,
+                  {
+                    opacity: ripple2.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0, 0.55, 0] }),
+                    transform: [
+                      { scale: ripple2.interpolate({ inputRange: [0, 1], outputRange: [1, 2.8] }) },
+                    ],
+                  },
+                ]}
+              />
+              {particles.map((p, i) => {
+                const angle = (i / PARTICLE_COUNT) * Math.PI * 2;
+                const radius = 62 + (i % 3) * 36;
+                return (
+                  <Animated.View
+                    key={i}
+                    style={[
+                      styles.razorRay,
+                      {
+                        backgroundColor: i % 3 === 0 ? '#34D399' : i % 3 === 1 ? '#7EB8FF' : '#FFFFFF',
+                        opacity: p.interpolate({ inputRange: [0, 0.55, 1], outputRange: [0, 1, 0] }),
+                        transform: [
+                          { rotate: `${(angle * 180) / Math.PI}deg` },
+                          {
+                            translateY: p.interpolate({ inputRange: [0, 1], outputRange: [0, radius] }),
+                          },
+                          {
+                            scale: p.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] }),
+                          },
+                        ],
+                      },
+                    ]}
+                  />
+                );
+              })}
+            </View>
           </Animated.View>
         </Modal>
       </View>
@@ -748,6 +933,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: Spacing.xl,
   },
+  razorCenter: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  razorRing: {
+    position: 'absolute',
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    borderWidth: 2.5,
+    borderColor: '#FFFFFF',
+  },
+  razorRingGreen: {
+    borderColor: '#34D399',
+    borderWidth: 2,
+  },
+  razorRay: {
+    position: 'absolute',
+    width: 3.5,
+    height: 18,
+    borderRadius: 2,
+    marginTop: -9,
+    marginLeft: -1.75,
+  },
   popupCard: {
     width: '100%',
     maxWidth: 340,
@@ -777,5 +987,68 @@ const styles = StyleSheet.create({
   },
   popupBtn: {
     marginTop: Spacing.xs,
+  },
+  popupCloseWrap: {
+    width: '100%',
+    alignItems: 'center',
+    height: 28,
+    justifyContent: 'center',
+  },
+/* Skeleton */
+  skelCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#E2E8F0',
+  },
+  skelTitleBar: {
+    width: 120,
+    height: 18,
+    marginLeft: Spacing.sm,
+    borderRadius: 6,
+  },
+  skelBody: {
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.lg,
+    gap: Spacing.md,
+  },
+  skel: {
+    backgroundColor: '#E2E8F0',
+  },
+  skelChip: {
+    width: 90,
+    height: 24,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  skelBig: {
+    width: '72%',
+    height: 26,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  skelMed: {
+    width: '52%',
+    height: 14,
+    borderRadius: 6,
+  },
+  skelSalary: {
+    width: '100%',
+    height: 74,
+    borderRadius: BorderRadius.lg,
+  },
+  skelCard: {
+    width: '100%',
+    height: 92,
+    borderRadius: BorderRadius.lg,
+  },
+  skelRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  skelTile: {
+    flex: 1,
+    height: 104,
+    borderRadius: BorderRadius.lg,
   },
 });

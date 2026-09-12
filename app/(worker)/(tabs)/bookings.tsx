@@ -72,7 +72,7 @@ export default function WorkerBookingsScreen() {
                   <Ionicons name="location-outline" size={14} color={Colors.textMuted} />
                   <Text variant="bodySm" color={Colors.textSecondary}>{job.location}</Text>
                 </View>
-                <Text variant="body" weight="heavy" color={Colors.primary}>
+                <Text variant="body" weight="heavy" color="#0F172A">
                   {job.salary}
                 </Text>
               </View>

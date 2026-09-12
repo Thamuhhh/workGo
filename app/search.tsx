@@ -79,12 +79,12 @@ export default function SearchScreen() {
           ]}
         >
           <ScalePress onPress={() => router.back()} style={styles.backBtn} scaleTo={0.9}>
-            <Ionicons name="chevron-back" size={22} color={Colors.secondary} />
+            <Ionicons name="chevron-back" size={22} color="#0F172A" />
           </ScalePress>
 
           <View style={styles.inputWrap}>
             <LinearGradient
-              colors={['#3E4E7A', '#1C274C']}
+              colors={['#0277F4', '#0255C0']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.iconChip}
@@ -121,7 +121,7 @@ export default function SearchScreen() {
               {/* Popular searches */}
               <FadeSlide delay={180}>
                 <View style={styles.section}>
-                  <Text variant="h3" weight="bold" color={Colors.secondary} style={styles.sectionTitle}>
+                  <Text variant="h3" weight="bold" color="#0F172A" style={styles.sectionTitle}>
                     Popular Searches
                   </Text>
                   <View style={styles.chipRow}>
@@ -144,7 +144,7 @@ export default function SearchScreen() {
               {/* Recent searches */}
               <FadeSlide delay={260}>
                 <View style={styles.section}>
-                  <Text variant="h3" weight="bold" color={Colors.secondary} style={styles.sectionTitle}>
+                  <Text variant="h3" weight="bold" color="#0F172A" style={styles.sectionTitle}>
                     Recent Searches
                   </Text>
                   <View style={styles.chipRow}>
@@ -168,7 +168,7 @@ export default function SearchScreen() {
               {/* Category tiles */}
               <FadeSlide delay={340}>
                 <View style={styles.section}>
-                  <Text variant="h3" weight="bold" color={Colors.secondary} style={styles.sectionTitle}>
+                  <Text variant="h3" weight="bold" color="#0F172A" style={styles.sectionTitle}>
                     Browse Categories
                   </Text>
                   <View style={styles.catGrid}>
@@ -180,7 +180,7 @@ export default function SearchScreen() {
                           style={styles.catTile}
                           onPress={() => setQuery(c)}
                         >
-                          <Ionicons name="grid-outline" size={18} color={Colors.primaryDark} />
+                          <Ionicons name="grid-outline" size={18} color="#0F172A" />
                           <Text variant="bodySm" weight="medium" color={Colors.textSecondary} style={styles.catTileText}>
                             {c}
                           </Text>
@@ -237,7 +237,7 @@ export default function SearchScreen() {
                         </Text>
                       </View>
                       <View style={styles.salaryBadge}>
-                        <Text variant="body" weight="heavy" color={Colors.primary}>
+                        <Text variant="body" weight="heavy" color="#0F172A">
                           {job.salary}
                         </Text>
                       </View>
@@ -248,7 +248,7 @@ export default function SearchScreen() {
                       </Text>
                       <View style={styles.ratingPill}>
                         <Ionicons name="star" size={12} color="#F59E0B" />
-                        <Text variant="bodySm" weight="bold" color={Colors.primaryDark}>
+                        <Text variant="bodySm" weight="bold" color="#0F172A">
                           {job.employerRating.replace(' Rating', '')}
                         </Text>
                       </View>
@@ -283,6 +283,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: Spacing.lg,
+    marginTop: Spacing.md,
     marginBottom: Spacing.md,
   },
   backBtn: {
@@ -308,8 +309,8 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.round,
     paddingHorizontal: Spacing.sm,
     borderWidth: 1.5,
-    borderColor: '#1C274C',
-    shadowColor: '#1C274C',
+    borderColor: Colors.primary,
+    shadowColor: Colors.primaryDark,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.14,
     shadowRadius: 8,
