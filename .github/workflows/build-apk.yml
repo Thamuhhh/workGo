@@ -34,6 +34,13 @@ jobs:
       - name: Generate native project
         run: npx expo prebuild --platform android --clean --no-install
 
+      - name: Tune Gradle memory
+        working-directory: android
+        run: |
+          sed -i 's/^org\.gradle\.jvmargs=.*/org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=2g -XX:+HeapDumpOnOutOfMemoryError/' gradle.properties
+          echo "org.gradle.workers.max=2" >> gradle.properties
+          grep -n "jvmargs\|workers.max" gradle.properties
+
       - name: Build Release APK
         working-directory: android
         run: ./gradlew assembleRelease
