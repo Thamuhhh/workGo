@@ -5,10 +5,10 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
-  Image,
   Animated,
   Easing,
 } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Icon as Ionicons } from '../../../src/components/Icon';
@@ -19,6 +19,8 @@ import { Colors, Spacing, BorderRadius } from '../../../src/constants/theme';
 import { SAMPLE_JOBS } from '../../../src/data/sampleJobs';
 import { useAuthStore } from '../../../src/store/authStore';
 import { useUserModeStore } from '../../../src/store/userModeStore';
+
+const AnimatedImage = Animated.createAnimatedComponent(ExpoImage);
 
 interface ServiceCategory {
   id: string;
@@ -106,10 +108,11 @@ export default function WorkerHomeScreen() {
           {/* Hero Illustrated Banner with overlaid top nav */}
           <View style={styles.heroContainer}>
             <View style={styles.heroImageWrap}>
-              <Animated.Image
+              <AnimatedImage
                 source={require('../../../assets/hero_banner.jpg')}
                 style={[styles.heroImage, { opacity: heroOpacity, transform: [{ scale: heroScale }] }]}
-                resizeMode="cover"
+                contentFit="cover"
+                transition={150}
               />
             </View>
 
@@ -174,10 +177,10 @@ export default function WorkerHomeScreen() {
                             <Text style={styles.othersDots}>•••</Text>
                           </LinearGradient>
                         ) : (
-                          <Image
+                          <ExpoImage
                             source={cat.image}
                             style={styles.serviceImage}
-                            resizeMode="contain"
+                            contentFit="contain"
                           />
                         )}
                       </View>
@@ -199,30 +202,19 @@ export default function WorkerHomeScreen() {
             </View>
           </FadeSlide>
 
-          {/* Promo Card */}
+          {/* Ad Banner */}
           <FadeSlide delay={200}>
             <View style={styles.promoSection}>
-              <TouchableOpacity activeOpacity={0.9} style={styles.promoCard}>
-                <LinearGradient
-                  colors={['#1C274C', '#2B3A60', '#16203E']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.promoCardInner}
-                >
-                  <View style={styles.promoTextCol}>
-                    <Text variant="body" weight="bold" color="#FFFFFF" style={styles.promoTitle}>
-                      Get an Unlimited Pass
-                    </Text>
-                    <View style={styles.promoCodeBadge}>
-                      <Text variant="bodySm" weight="bold" color={Colors.secondary}>
-                        Use code NEW200
-                      </Text>
-                    </View>
-                  </View>
-                  <View style={styles.promoIconBadge}>
-                    <Ionicons name="ticket-outline" size={22} color="#FFFFFF" />
-                  </View>
-                </LinearGradient>
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={() => router.push('/(worker)/jobs')}
+              >
+                <ExpoImage
+                  source={require('../../../assets/ad_banner.jpg')}
+                  style={styles.adBannerImage}
+                  contentFit="cover"
+                  transition={150}
+                />
               </TouchableOpacity>
             </View>
           </FadeSlide>
@@ -437,7 +429,9 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xs,
     marginBottom: Spacing.lg,
   },
-  promoCard: {
+  adBannerImage: {
+    width: '100%',
+    aspectRatio: 1080 / 450,
     borderRadius: 18,
     overflow: 'hidden',
     shadowColor: '#16203E',
@@ -445,39 +439,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.18,
     shadowRadius: 10,
     elevation: 4,
-  },
-  promoCardInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 16,
-    paddingHorizontal: 18,
-  },
-  promoTextCol: {
-    flex: 1,
-    marginRight: Spacing.sm,
-  },
-  promoTitle: {
-    fontSize: 16,
-    marginBottom: Spacing.sm,
-    letterSpacing: -0.2,
-  },
-  promoCodeBadge: {
-    backgroundColor: '#FFFFFF',
-    alignSelf: 'flex-start',
-    paddingVertical: 5,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-  },
-  promoIconBadge: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
+    backgroundColor: '#E2E8F0',
   },
   jobsHeader: {
     flexDirection: 'row',

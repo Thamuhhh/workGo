@@ -1,22 +1,32 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { Icon as Ionicons } from '../../src/components/Icon';
-import { Text, Card, Button } from '../../src/components/ui';
+import { Text, Card, Button, SkeletonJobCard } from '../../src/components/ui';
 import { SAMPLE_JOBS } from '../../src/data/sampleJobs';
 import { Colors, Spacing, BorderRadius } from '../../src/constants/theme';
 
 export default function WorkerJobsScreen() {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setLoading(false), 700);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text variant="h2" weight="bold" style={styles.title}>
         Explore Jobs
       </Text>
       <Text variant="body" color={Colors.textSecondary} style={styles.subtitle}>
-        {SAMPLE_JOBS.length} jobs near you — tap any job for full details
+        {loading ? 'Finding jobs near you...' : `${SAMPLE_JOBS.length} jobs near you — tap any job for full details`}
       </Text>
 
-      {SAMPLE_JOBS.map((job) => (
+      {loading ? (
+        <SkeletonJobCard count={3} />
+      ) : (
+        SAMPLE_JOBS.map((job) => (
         <Card
           key={job.id}
           padding="lg"
@@ -63,7 +73,7 @@ export default function WorkerJobsScreen() {
             style={styles.btn}
           />
         </Card>
-      ))}
+        )))}
     </ScrollView>
   );
 }

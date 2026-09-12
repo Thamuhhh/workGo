@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { Icon as Ionicons } from '../../src/components/Icon';
-import { Text, Card, Button } from '../../src/components/ui';
+import { Text, Card, Button, SkeletonJobCard } from '../../src/components/ui';
 import { FadeSlide } from '../../src/components/AppHeader';
 import { SAMPLE_JOBS } from '../../src/data/sampleJobs';
 import { Colors, Spacing, BorderRadius } from '../../src/constants/theme';
@@ -10,6 +10,14 @@ import { Colors, Spacing, BorderRadius } from '../../src/constants/theme';
 export default function CategoryJobsScreen() {
   const params = useLocalSearchParams<{ category?: string }>();
   const category = typeof params.category === 'string' ? params.category : '';
+
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    const t = setTimeout(() => setLoading(false), 700);
+    return () => clearTimeout(t);
+  }, [category]);
 
   const jobs = category
     ? SAMPLE_JOBS.filter((j) => j.category.toLowerCase() === category.toLowerCase())
@@ -38,7 +46,9 @@ export default function CategoryJobsScreen() {
           </FadeSlide>
 
           <FadeSlide delay={140}>
-            {jobs.length === 0 ? (
+            {loading ? (
+              <SkeletonJobCard count={2} />
+            ) : jobs.length === 0 ? (
               <View style={styles.empty}>
                 <Ionicons name="file-tray-outline" size={42} color={Colors.borderDark} />
                 <Text variant="body" weight="semibold" color={Colors.textSecondary} style={styles.emptyTitle}>

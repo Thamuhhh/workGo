@@ -1,18 +1,26 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { router, useRootNavigationState } from 'expo-router';
 import { useAuthStore } from '../src/store/authStore';
 import { useUserModeStore } from '../src/store/userModeStore';
 import { Text, Button } from '../src/components/ui';
+import SplashVideo from '../src/components/SplashVideo';
 import { Colors, Spacing } from '../src/constants/theme';
 
 export default function EntryScreen() {
   const { isAuthenticated, isLoading } = useAuthStore();
   const { mode } = useUserModeStore();
   const rootNavigationState = useRootNavigationState();
+  const [introDone, setIntroDone] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIntroDone(true), 8500);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     if (!rootNavigationState?.key) return;
+    if (!introDone) return;
     if (!isLoading) {
       if (isAuthenticated) {
         if (mode === 'employer') {
@@ -22,7 +30,15 @@ export default function EntryScreen() {
         }
       }
     }
-  }, [rootNavigationState?.key, isAuthenticated, isLoading, mode]);
+  }, [rootNavigationState?.key, isAuthenticated, isLoading, mode, introDone]);
+
+  if (!introDone) {
+    return (
+      <View style={styles.splashContainer}>
+        <SplashVideo onFinish={() => setIntroDone(true)} />
+      </View>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -71,6 +87,10 @@ export default function EntryScreen() {
 }
 
 const styles = StyleSheet.create({
+  splashContainer: {
+    flex: 1,
+    backgroundColor: '#0F172A',
+  },
   loadingContainer: {
     flex: 1,
     backgroundColor: Colors.background,

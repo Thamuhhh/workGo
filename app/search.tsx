@@ -13,43 +13,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Icon as Ionicons } from '../src/components/Icon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Text, Badge, Card } from '../src/components/ui';
+import { Text, Badge, Card, SkeletonJobCard } from '../src/components/ui';
 import { FadeSlide, ScalePress } from '../src/components/AppHeader';
 import { Colors, Spacing, BorderRadius } from '../src/constants/theme';
+import { SAMPLE_JOBS } from '../src/data/sampleJobs';
 
 const POPULAR = ['Wedding', 'Catering', 'Promoter', 'Cleaner', 'MC/Anchor', 'Coordinator'];
 
 const RECENT = ['Catering Staff', 'Event Setup'];
-
-const MOCK_JOBS = [
-  {
-    id: '1',
-    title: 'Wedding Catering Staff',
-    category: 'Catering',
-    location: 'Kanchipuram',
-    salary: '₹900 / day',
-    food: true,
-    transport: true,
-  },
-  {
-    id: '2',
-    title: 'Event Booth Promoter',
-    category: 'Promoter',
-    location: 'Trade Centre',
-    salary: '₹1,000 / day',
-    food: true,
-    transport: true,
-  },
-  {
-    id: '3',
-    title: 'Banquet Cleaning Staff',
-    category: 'Cleaner',
-    location: 'Gandhi Road',
-    salary: '₹850 / day',
-    food: true,
-    transport: false,
-  },
-];
 
 export default function SearchScreen() {
   const [query, setQuery] = useState('');
@@ -69,14 +40,27 @@ export default function SearchScreen() {
   const headerY = headerAnim.interpolate({ inputRange: [0, 1], outputRange: [-16, 0] });
 
   const trimmed = query.trim().toLowerCase();
-  const results = trimmed
-    ? MOCK_JOBS.filter(
+  const [displayJobs, setDisplayJobs] = useState<(typeof SAMPLE_JOBS)[number][] | null>(null);
+
+  useEffect(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) {
+      setDisplayJobs(null);
+      return;
+    }
+    setDisplayJobs(null);
+    const t = setTimeout(() => {
+      const next = SAMPLE_JOBS.filter(
         (j) =>
-          j.title.toLowerCase().includes(trimmed) ||
-          j.category.toLowerCase().includes(trimmed) ||
-          j.location.toLowerCase().includes(trimmed)
-      )
-    : [];
+          j.title.toLowerCase().includes(q) ||
+          j.category.toLowerCase().includes(q) ||
+          j.location.toLowerCase().includes(q) ||
+          j.employerName.toLowerCase().includes(q)
+      );
+      setDisplayJobs(next);
+    }, 650);
+    return () => clearTimeout(t);
+  }, [query]);
 
   return (
     <LinearGradient
@@ -112,6 +96,7 @@ export default function SearchScreen() {
               placeholderTextColor={Colors.textMuted}
               value={query}
               onChangeText={setQuery}
+              autoFocus
               style={[styles.input, Platform.OS === 'web' && ({ outlineStyle: 'none' } as any)]}
               returnKeyType="search"
               selectionColor={Colors.primary}
@@ -209,12 +194,20 @@ export default function SearchScreen() {
           ) : (
             <FadeSlide delay={80}>
               <View style={styles.resultsHeader}>
-                <Text variant="bodySm" color={Colors.textSecondary}>
-                  {results.length} result{results.length === 1 ? '' : 's'} for "{query}"
-                </Text>
+                {displayJobs === null ? (
+                  <Text variant="bodySm" color={Colors.textSecondary}>
+                    Searching for "{query}"...
+                  </Text>
+                ) : (
+                  <Text variant="bodySm" color={Colors.textSecondary}>
+                    {displayJobs.length} result{displayJobs.length === 1 ? '' : 's'} for "{query}"
+                  </Text>
+                )}
               </View>
 
-              {results.length === 0 ? (
+              {displayJobs === null ? (
+                <SkeletonJobCard count={2} />
+              ) : displayJobs.length === 0 ? (
                 <View style={styles.empty}>
                   <Ionicons name="search-outline" size={42} color={Colors.borderDark} />
                   <Text variant="body" weight="semibold" color={Colors.textSecondary} style={styles.emptyTitle}>
@@ -225,11 +218,14 @@ export default function SearchScreen() {
                   </Text>
                 </View>
               ) : (
-                results.map((job) => (
+                displayJobs.map((job) => (
                   <Card
                     key={job.id}
                     padding="lg"
                     style={styles.jobCard}
+                    onPress={() =>
+                      router.push({ pathname: '/(worker)/job-detail', params: { jobId: job.id } })
+                    }
                   >
                     <View style={styles.jobCardTop}>
                       <View style={styles.jobTitleCol}>
@@ -237,20 +233,31 @@ export default function SearchScreen() {
                           {job.title}
                         </Text>
                         <Text variant="bodySm" color={Colors.textSecondary} style={styles.jobLocation}>
-                          {job.category} • {job.location}
+                          {job.category} • {job.location} ({job.distance})
                         </Text>
                       </View>
                       <View style={styles.salaryBadge}>
-<Text variant="body" weight="heavy" color={Colors.primary}>
-                           {job.salary}
-                         </Text>
+                        <Text variant="body" weight="heavy" color={Colors.primary}>
+                          {job.salary}
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={styles.jobMetaRow}>
+                      <Text variant="bodySm" color={Colors.textSecondary}>
+                        {job.date} • {job.timing}
+                      </Text>
+                      <View style={styles.ratingPill}>
+                        <Ionicons name="star" size={12} color="#F59E0B" />
+                        <Text variant="bodySm" weight="bold" color={Colors.primaryDark}>
+                          {job.employerRating.replace(' Rating', '')}
+                        </Text>
                       </View>
                     </View>
                     <View style={styles.badgeRow}>
-                      {job.food ? (
+                      {job.foodProvided ? (
                         <Badge label="Food Provided" variant="success" size="sm" style={styles.amenityBadge} />
                       ) : null}
-                      {job.transport ? (
+                      {job.transportProvided ? (
                         <Badge label="Transport Provided" variant="info" size="sm" style={styles.amenityBadge} />
                       ) : null}
                     </View>
@@ -406,6 +413,22 @@ const styles = StyleSheet.create({
   },
   jobLocation: {
     marginTop: 2,
+  },
+  jobMetaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: Spacing.xs,
+    marginBottom: Spacing.xs,
+  },
+  ratingPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#F1F5F9',
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: 999,
   },
   salaryBadge: {
     backgroundColor: '#EEF2FF',
