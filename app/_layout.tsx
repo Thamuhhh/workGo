@@ -69,6 +69,7 @@ export default function RootLayout() {
   });
   const [appReady, setAppReady] = useState(false);
   const [splashElapsed, setSplashElapsed] = useState(false);
+  const [splashForced, setSplashForced] = useState(false);
 
   useEffect(() => {
     Promise.all([loadStoredAuth(), loadStoredMode(), loadStoredApplications()])
@@ -81,7 +82,12 @@ export default function RootLayout() {
     return () => clearTimeout(timer);
   }, []);
 
-  const ready = appReady && (fontsLoaded || fontError);
+  useEffect(() => {
+    const timer = setTimeout(() => setSplashForced(true), 6000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const ready = splashForced || (appReady && (fontsLoaded || fontError));
 
   useEffect(() => {
     if (ready && splashElapsed) {
@@ -95,7 +101,7 @@ export default function RootLayout() {
         <Image
           source={require('../assets/splash.png')}
           style={styles.splashImage}
-          resizeMode="cover"
+          resizeMode="contain"
         />
       </View>
     );

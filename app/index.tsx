@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Image } from 'react-native';
 import { router, useRootNavigationState } from 'expo-router';
 import { useAuthStore } from '../src/store/authStore';
@@ -10,11 +10,17 @@ export default function EntryScreen() {
   const { isAuthenticated, isLoading } = useAuthStore();
   const { mode } = useUserModeStore();
   const rootNavigationState = useRootNavigationState();
+  const [splashTimeout, setSplashTimeout] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setSplashTimeout(true), 5000);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     if (!rootNavigationState?.key) return;
     if (isLoading) return;
-    if (isAuthenticated) {
+if (isAuthenticated && !splashTimeout) {
       if (mode === 'employer') {
         router.replace('/(employer)/home');
       } else {
@@ -23,25 +29,25 @@ export default function EntryScreen() {
     }
   }, [rootNavigationState?.key, isAuthenticated, isLoading, mode]);
 
-  if (isLoading) {
+  if (isLoading && !splashTimeout) {
     return (
       <View style={styles.loadingContainer}>
         <Image
           source={require('../assets/splash.png')}
           style={styles.splashImage}
-          resizeMode="cover"
+          resizeMode="contain"
         />
       </View>
     );
   }
 
-  if (isAuthenticated) {
+  if (isAuthenticated && !splashTimeout) {
     return (
       <View style={styles.loadingContainer}>
         <Image
           source={require('../assets/splash.png')}
           style={styles.splashImage}
-          resizeMode="cover"
+          resizeMode="contain"
         />
       </View>
     );
