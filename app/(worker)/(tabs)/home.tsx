@@ -22,6 +22,7 @@ import { FadeSlide, ScalePress } from '../../../src/components/AppHeader';
 import { Colors, Spacing, BorderRadius, Shadows } from '../../../src/constants/theme';
 import { SAMPLE_JOBS } from '../../../src/data/sampleJobs';
 import { useApplicationsStore } from '../../../src/store/applicationsStore';
+import { useAuthStore } from '../../../src/store/authStore';
 import { useMessagesStore } from '../../../src/store/messagesStore';
 import { useUserModeStore } from '../../../src/store/userModeStore';
 
@@ -31,6 +32,33 @@ interface ServiceCategory {
   image?: any;
   isOthers?: boolean;
 }
+
+const DAILY_TIPS: string[] = [
+  'Always verify the employer identity before accepting any job.',
+  'Keep your profile photo updated — verified workers get hired first.',
+  'Arrive 10 minutes early; punctuality keeps your rating high.',
+  'Update your skills list — workers with more skills earn more jobs.',
+  'Complete every job you accept; reliability builds repeat clients.',
+  'Ask the employer about food and transport before you start.',
+  'Keep last month\'s earnings in your wallet for quick cash-outs.',
+  'Mark your availability "yes" to show up in employer search first.',
+  'Read the job requirements fully before applying — fewer rejections.',
+  'Leave a polite follow-up after a job to get rebooked.',
+  'Emergency slot? Apply instantly — early applications win.',
+  'Keep WhatsApp notifications on to catch new nearby jobs fast.',
+];
+
+const DAY_OF_YEAR = Math.floor(
+  (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000
+);
+const DAILY_TIP = DAILY_TIPS[DAY_OF_YEAR % DAILY_TIPS.length];
+const GREETING_MSG = (() => {
+  const h = new Date().getHours();
+  if (h >= 5 && h < 12) return 'Vanakkam';
+  if (h >= 12 && h < 17) return 'Good afternoon';
+  if (h >= 17 && h < 21) return 'Good evening';
+  return 'Good night';
+})();
 
 const CATEGORIES: ServiceCategory[] = [
   {
@@ -102,6 +130,8 @@ interface AreaOption {
 
 export default function WorkerHomeScreen() {
   const { toggleMode } = useUserModeStore();
+  const userName = useAuthStore((s) => s.user?.name);
+  const firstName = userName?.split(' ')[0] || 'there';
   const applications = useApplicationsStore((s) => s.applications);
   const readThreadIds = useMessagesStore((s) => s.readThreadIds);
   const unreadCount = applications.filter((a) => !readThreadIds.includes(a.jobId)).length;
@@ -408,8 +438,8 @@ export default function WorkerHomeScreen() {
                     Work<Text variant="h2" weight="heavy" color="#0277F4">Go</Text>
                   </Text>
                   <Animated.View style={{ height: taglineHeight, opacity: taglineOpacity }}>
-                    <Text variant="caption" weight="medium" color="#94A3B8" style={styles.brandTagline}>
-                      Work nearby. Earn today.
+                    <Text variant="caption" weight="medium" color="#64748B" style={styles.brandTagline}>
+                      {GREETING_MSG}, <Text variant="caption" weight="bold" color="#0277F4">{firstName}</Text>!
                     </Text>
                   </Animated.View>
                 </View>
@@ -534,6 +564,23 @@ export default function WorkerHomeScreen() {
             </View>
           </FadeSlide>
 
+          {/* WorkGo Tip of the Day */}
+          <FadeSlide delay={200}>
+            <View style={styles.tipCard}>
+              <View style={styles.tipIcon}>
+                <Ionicons name="bulb-outline" size={20} color="#0277F4" />
+              </View>
+              <View style={styles.tipContent}>
+                <Text variant="caption" weight="bold" color="#0277F4" style={styles.tipLabel}>
+                  WORKGO TIP OF THE DAY
+                </Text>
+                <Text variant="bodySm" weight="medium" color="#334155" style={styles.tipText}>
+                  {DAILY_TIP}
+                </Text>
+              </View>
+            </View>
+          </FadeSlide>
+
           {/* Nearby Jobs Section */}
           <FadeSlide delay={280}>
             <View style={styles.jobsHeader}>
@@ -554,7 +601,7 @@ export default function WorkerHomeScreen() {
               {SAMPLE_JOBS.slice(0, 3).map((job) => (
                 <Card
                   key={job.id}
-                  padding="lg"
+                  padding="md"
                   style={styles.jobCard}
                   onPress={() =>
                     router.push({ pathname: '/(worker)/job-detail', params: { jobId: job.id } })
@@ -562,41 +609,73 @@ export default function WorkerHomeScreen() {
                 >
                   <View style={styles.jobCardTop}>
                     <View style={styles.jobTitleCol}>
-                      <Text variant="h3" weight="bold" color="#0F172A">
+                      <Text variant="body" weight="semibold" color="#0F172A" numberOfLines={1}>
                         {job.title}
                       </Text>
-                      <Text variant="bodySm" color="#64748B" style={styles.categoryTag}>
+                      <Text variant="caption" color="#64748B" style={styles.categoryTag}>
                         {job.category} • {job.location} ({job.distance})
                       </Text>
                     </View>
                     <View style={styles.salaryBadge}>
-                      <Text variant="body" weight="heavy" color="#0F172A">
+                      <Text variant="bodySm" weight="heavy" color="#0F172A">
                         {job.salary}
                       </Text>
                     </View>
                   </View>
 
                   <View style={styles.jobMetaRow}>
-                    <Text variant="bodySm" color="#64748B">
+                    <Text variant="caption" color="#64748B">
                       {job.date} • {job.timing}
                     </Text>
                     <View style={styles.ratingPill}>
-                      <Ionicons name="star" size={12} color="#F59E0B" />
-                      <Text variant="bodySm" weight="bold" color="#0F172A">
+                      <Ionicons name="star" size={11} color="#F59E0B" />
+                      <Text variant="caption" weight="bold" color="#0F172A">
                         {job.employerRating.replace(' Rating', '')}
                       </Text>
                     </View>
                   </View>
 
                   <View style={styles.applyRow}>
-                    <Text variant="body" weight="bold" color="#0277F4">
+                    <Text variant="bodySm" weight="bold" color="#0277F4">
                       Apply now
                     </Text>
-                    <Ionicons name="arrow-right" size={14} color="#0277F4" weight="bold" />
+                    <Ionicons name="arrow-right" size={12} color="#0277F4" weight="bold" />
                   </View>
                 </Card>
               ))}
             </View>
+          </FadeSlide>
+
+          {/* Refer & Earn */}
+          <FadeSlide delay={440}>
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={() => router.push('/(worker)/refer')}
+              style={styles.referCardWrap}
+            >
+              <LinearGradient
+                colors={['#0277F4', '#0EA5E9']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.referCard}
+              >
+                <View style={styles.referTextCol}>
+                  <Text variant="caption" weight="bold" color="#BAE6FD" style={styles.referLabel}>
+                    REFER & EARN
+                  </Text>
+                  <Text variant="h3" weight="bold" color="#FFFFFF">
+                    Earn ₹100 per friend
+                  </Text>
+                  <Text variant="bodySm" color="#E0F2FE">
+                    Share your code — you both get rewards.
+                  </Text>
+                </View>
+                <View style={styles.referIconCircle}>
+                  <Ionicons name="gift" size={22} color="#FFFFFF" />
+                </View>
+                <Ionicons name="arrow-right" size={18} color="#FFFFFF" weight="bold" />
+              </LinearGradient>
+            </TouchableOpacity>
           </FadeSlide>
         </ScrollView>
       </View>
@@ -1060,6 +1139,37 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
   },
+  tipCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    borderRadius: BorderRadius.lg,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    marginHorizontal: Spacing.xl,
+    marginBottom: Spacing.xl,
+  },
+  tipIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#DBEAFE',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tipContent: {
+    flex: 1,
+  },
+  tipLabel: {
+    letterSpacing: 1.2,
+    marginBottom: 2,
+  },
+  tipText: {
+    lineHeight: 18,
+  },
   jobsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1088,31 +1198,56 @@ const styles = StyleSheet.create({
   },
   salaryBadge: {
     backgroundColor: '#EEF2FF',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
+    paddingVertical: 3,
+    paddingHorizontal: 6,
     borderRadius: BorderRadius.sm,
   },
   jobMetaRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: Spacing.xs,
-    marginBottom: Spacing.xs,
+    marginTop: 4,
   },
   ratingPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
     backgroundColor: '#F1F5F9',
-    paddingVertical: 3,
-    paddingHorizontal: 8,
+    paddingVertical: 2,
+    paddingHorizontal: 6,
     borderRadius: 999,
   },
   applyRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    marginTop: Spacing.sm,
+    marginTop: Spacing.xs,
+  },
+  referCardWrap: {
+    paddingHorizontal: Spacing.xl,
+    marginBottom: Spacing.xxxl,
+  },
+  referCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+  },
+  referTextCol: {
+    flex: 1,
+  },
+  referLabel: {
+    letterSpacing: 1.2,
+    marginBottom: 4,
+  },
+  referIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   modalBackdrop: {
     flex: 1,
@@ -1231,7 +1366,7 @@ const styles = StyleSheet.create({
   },
   mapViewport: {
     flex: 1,
-    backgroundColor: '#DFE8F2',
+    backgroundColor: '#F1F5F9',
     overflow: 'hidden',
   },
   mapWorld: {

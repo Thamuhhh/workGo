@@ -631,14 +631,8 @@ export default function JobDetailScreen() {
                 <Text variant="bodySm" color={Colors.textSecondary} align="center" style={styles.popupText}>
                   Applied to {job.employerName}. They'll call you if shortlisted — keep your phone ready.
                 </Text>
-                <View style={styles.popupChip}>
-                  <Ionicons name="checkmark-circle" size={16} color="#059669" />
-                  <Text variant="caption" weight="bold" color="#059669">
-                    {job.workersAccepted}/{job.workersRequired} slots reserved
-                  </Text>
-                </View>
                 <Button
-                  title="View My Applications"
+                  title="View Application"
                   size="md"
                   fullWidth
                   onPress={openApplications}
@@ -1057,49 +1051,37 @@ const styles = StyleSheet.create({
   },
   popupCard: {
     width: '100%',
-    maxWidth: 340,
+    maxWidth: 320,
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    paddingVertical: 28,
-    paddingHorizontal: 24,
+    borderRadius: 22,
+    paddingVertical: 22,
+    paddingHorizontal: 20,
     alignItems: 'center',
-    gap: 14,
+    gap: 12,
     ...Shadows.lg,
   },
   popupCheck: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: Colors.success,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  popupChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: Colors.successLight,
-    paddingVertical: 7,
-    paddingHorizontal: 14,
-    borderRadius: BorderRadius.round,
-    marginBottom: 2,
   },
   popupTitle: {
     marginTop: 2,
   },
   popupText: {
     lineHeight: 19,
-    maxWidth: 286,
-    marginBottom: 4,
+    maxWidth: 280,
   },
   popupBtn: {
-    marginTop: 4,
+    marginTop: 2,
   },
   popupCloseWrap: {
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 2,
   },
 /* Skeleton */
   skelCircle: {
