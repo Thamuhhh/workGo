@@ -29,7 +29,7 @@ export default function WorkerLayout() {
         })}
       />
       <Stack.Screen name="bookings" options={{ title: 'My Bookings' }} />
-      <Stack.Screen name="applications" options={{ title: 'My Applications' }} />
+      <Stack.Screen name="applications" options={{ title: 'Chats' }} />
       <Stack.Screen name="refer" options={{ title: 'Refer & Earn' }} />
     </Stack>
   );
