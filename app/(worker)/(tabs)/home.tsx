@@ -294,13 +294,17 @@ export default function WorkerHomeScreen() {
 
   const panResponder = useRef(
     PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_evt, g) =>
+        listScrollY.current <= 0 && g.dy > 5 && Math.abs(g.dy) > Math.abs(g.dx),
       onMoveShouldSetPanResponderCapture: (_evt, g) =>
-        listScrollY.current <= 0 && g.dy > 6 && g.dy > Math.abs(g.dx),
+        listScrollY.current <= 0 && g.dy > 5 && Math.abs(g.dy) > Math.abs(g.dx),
+      onPanResponderGrant: () => {},
       onPanResponderMove: (_evt, g) => {
-        sheetY.setValue(Math.max(0, g.dy));
+        if (g.dy > 0) sheetY.setValue(g.dy);
       },
       onPanResponderRelease: (_evt, g) => {
-        if (g.dy > 110 || g.vy > 0.6) {
+        if (g.dy > 80 || g.vy > 0.45) {
           closeModal();
         } else {
           Animated.spring(sheetY, {
@@ -317,7 +321,7 @@ export default function WorkerHomeScreen() {
           useNativeDriver: true,
         }).start();
       },
-      onPanResponderTerminationRequest: () => false,
+      onPanResponderTerminationRequest: () => true,
     })
   ).current;
 
@@ -473,7 +477,10 @@ export default function WorkerHomeScreen() {
               >
                 <TouchableOpacity
                   activeOpacity={0.7}
-                  style={styles.comboLocationZone}
+                  style={[
+                    styles.comboLocationZone,
+                    Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null,
+                  ]}
                   onPress={openLocationPicker}
                 >
                   <View style={styles.locationIconChip}>
@@ -691,23 +698,34 @@ export default function WorkerHomeScreen() {
         <View style={styles.modalBackdrop}>
           <Animated.View style={[StyleSheet.absoluteFill, styles.modalDim, { opacity: backdropOpacity }]} />
           <TouchableOpacity
-            style={StyleSheet.absoluteFill}
+            style={[
+              StyleSheet.absoluteFill,
+              Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null,
+            ]}
             activeOpacity={1}
             onPress={closeModal}
           />
           <Animated.View
-            style={[styles.modalSheet, { transform: [{ translateY: sheetY }] }]}
+            style={[
+              styles.modalSheet,
+              { transform: [{ translateY: sheetY }] },
+              Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null,
+            ]}
             {...panResponder.panHandlers}
           >
-            {/* Grabber */}
-            <View style={styles.modalGrabber} />
+            {/* Grabber - visual handle */}
+            <View style={styles.dragHandleArea}>
+              <View style={styles.modalGrabber} />
+            </View>
 
             <ScrollView
               style={styles.modalScroll}
               contentContainerStyle={styles.modalScrollContent}
               showsVerticalScrollIndicator={false}
               bounces={false}
+              overScrollMode="never"
               scrollEventThrottle={16}
+              keyboardShouldPersistTaps="handled"
               onScroll={(e) => {
                 listScrollY.current = e.nativeEvent.contentOffset.y;
               }}
@@ -1264,6 +1282,15 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: Spacing.xl,
     maxHeight: '88%',
+    width: '100%',
+  },
+  dragHandleArea: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 4,
+    marginTop: -4,
+    // larger hit area for swipe down
+    minHeight: 24,
   },
   modalScroll: {
     flexShrink: 1,

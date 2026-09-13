@@ -19,15 +19,36 @@ export default function Root({ children }: PropsWithChildren) {
               *::before,
               *::after {
                 -webkit-tap-highlight-color: transparent !important;
+                -webkit-touch-callout: none !important;
               }
+              html, body {
+                overscroll-behavior: none !important;
+                overscroll-behavior-y: none !important;
+              }
+              *:focus,
+              *:focus-visible,
+              *:active,
               a:focus,
               button:focus,
               div:focus,
-              [role="button"]:focus {
+              [role="button"]:focus,
+              [tabindex]:focus {
                 outline: none !important;
+                outline-width: 0 !important;
+                outline-color: transparent !important;
+                box-shadow: none !important;
               }
               ::selection {
                 background: transparent;
+              }
+              ::-webkit-scrollbar {
+                display: none;
+                width: 0;
+                height: 0;
+              }
+              * {
+                scrollbar-width: none;
+                -ms-overflow-style: none;
               }
             `,
           }}
