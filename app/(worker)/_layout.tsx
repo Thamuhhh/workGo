@@ -11,7 +11,6 @@ export default function WorkerLayout() {
         headerTintColor: '#0F172A',
         headerTitleStyle: {
           fontFamily: 'Poppins_700Bold',
-          fontWeight: '700',
         },
         headerShadowVisible: false,
         animation: 'slide_from_right',

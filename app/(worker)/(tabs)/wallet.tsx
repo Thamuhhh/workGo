@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Icon as Ionicons } from '../../../src/components/Icon';
 import { Text, Card } from '../../../src/components/ui';
 import { ScreenSkeleton, usePageLoading } from '../../../src/components/ui/PageSkeleton';
+
 import { Colors, Spacing, BorderRadius, Shadows } from '../../../src/constants/theme';
 
 interface Txn {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text as RNText, TextProps as RNTextProps, StyleSheet } from 'react-native';
+import { Text as RNText, TextProps as RNTextProps, StyleSheet, Platform, StyleProp, TextStyle } from 'react-native';
 import { Colors, Typography } from '../../constants/theme';
 
 export const FONT_FAMILY_BY_WEIGHT: Record<string, string> = {
@@ -15,6 +15,22 @@ export interface TextProps extends RNTextProps {
   color?: string;
   weight?: keyof typeof Typography.weights;
   align?: 'left' | 'center' | 'right';
+}
+
+// Android renders the system font when fontWeight is combined with a
+// single-weight custom fontFamily. Drop fontWeight there so the exact
+// Poppins face (chosen via fontFamily) is used.
+function buildResolvedStyle(
+  base: StyleProp<TextStyle>,
+  custom: StyleProp<TextStyle>
+): StyleProp<TextStyle> {
+  const flat = StyleSheet.flatten([base, custom]);
+  if (Platform.OS === 'android') {
+    const merged = { ...flat };
+    delete merged.fontWeight;
+    return merged;
+  }
+  return flat;
 }
 
 export const Text: React.FC<TextProps> = ({
@@ -68,12 +84,11 @@ export const Text: React.FC<TextProps> = ({
 
   return (
     <RNText
-      style={[
-        getVariantStyle(),
+      style={buildResolvedStyle(getVariantStyle(), [
         { color, textAlign: align, fontFamily },
         weight ? { fontWeight: Typography.weights[weight] } : undefined,
         style,
-      ]}
+      ])}
       {...props}
     >
       {children}

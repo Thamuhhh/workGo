@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { StyleSheet, Animated } from 'react-native';
+import { StyleSheet, Animated, Pressable } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Icon as Ionicons } from '../../../src/components/Icon';
 import { Text } from '../../../src/components/ui';
@@ -37,22 +37,39 @@ const AnimatedIcon = React.memo(
   }
 );
 
+// Custom tab button: transparent ripple (no black flash on Android) and a
+// gentle fade instead of any heavy hover highlight.
+function TabButton({ children, onPress, onLongPress, style, ...rest }: any) {
+  return (
+    <Pressable
+      onPress={onPress}
+      onLongPress={onLongPress}
+      android_ripple={{ color: 'transparent' }}
+      style={({ pressed }) => [style, styles.tabPress, pressed && styles.pressed]}
+      {...rest}
+    >
+      {children}
+    </Pressable>
+  );
+}
+
 export default function WorkerTabsLayout() {
   return (
     <Tabs
       screenOptions={({ route }) => {
         const icons = ICONS[route.name as keyof typeof ICONS] ?? ICONS.home;
         return {
+          lazy: false,
           headerShown: true,
           headerStyle: { backgroundColor: Colors.surface },
           headerTintColor: '#0F172A',
           headerTitleStyle: {
             fontFamily: 'Poppins_700Bold',
-            fontWeight: '700',
           },
           headerShadowVisible: false,
           tabBarStyle: styles.tabBar,
           tabBarItemStyle: styles.tabItem,
+          tabBarButton: (props) => <TabButton {...props} />,
           tabBarLabel: ({ focused }) => (
             <Text
               variant="caption"
@@ -87,13 +104,21 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowRadius: 10,
     elevation: 10,
+    userSelect: 'none',
   },
   tabItem: {
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 4,
   },
+  tabPress: {
+    backgroundColor: 'transparent',
+  },
+  pressed: {
+    opacity: 0.6,
+  },
   label: {
     marginTop: 3,
+    userSelect: 'none',
   },
 });

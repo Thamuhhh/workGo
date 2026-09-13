@@ -17,6 +17,7 @@ import { router } from 'expo-router';
 import { Icon as Ionicons } from '../../../src/components/Icon';
 import { Text, Button, Card } from '../../../src/components/ui';
 import { ScreenSkeleton, usePageLoading } from '../../../src/components/ui/PageSkeleton';
+
 import { FadeSlide, ScalePress } from '../../../src/components/AppHeader';
 import { Colors, Spacing, BorderRadius, Shadows } from '../../../src/constants/theme';
 import { SAMPLE_JOBS } from '../../../src/data/sampleJobs';
@@ -139,6 +140,7 @@ export default function WorkerHomeScreen() {
   const [mapPos, setMapPos] = useState({ x: 0, y: 0 });
   const [mapScale, setMapScale] = useState(1);
   const [selectedNode, setSelectedNode] = useState(MAP_NODES[0]);
+  const [mapReady, setMapReady] = useState(false);
 
   const clampX = (w: number, x: number) => {
     const min = Math.min(0, w - MAP_SIZE * scaleRef.current);
@@ -189,14 +191,16 @@ export default function WorkerHomeScreen() {
   const onMapLayout = (e: any) => {
     const { width: w, height: h } = e.nativeEvent.layout;
     mapViewport.current = { w, h };
-    if (mapInit.current) return;
-    mapInit.current = true;
-    const n = MAP_NODES[0];
-    const x = clampX(w, w / 2 - n.x * scaleRef.current);
-    const y = clampY(h, h / 2 - n.y * scaleRef.current);
-    mapXY.current = { x, y };
-    setMapPos({ x, y });
-    setSelectedNode(n);
+    if (!mapInit.current) {
+      mapInit.current = true;
+      const n = MAP_NODES[0];
+      const x = clampX(w, w / 2 - n.x * scaleRef.current);
+      const y = clampY(h, h / 2 - n.y * scaleRef.current);
+      mapXY.current = { x, y };
+      setMapPos({ x, y });
+      setSelectedNode(n);
+    }
+    setMapReady(true);
   };
 
   const recenterMap = () => {
@@ -219,6 +223,7 @@ export default function WorkerHomeScreen() {
 
   const openMapPicker = () => {
     closeModal();
+    setMapReady(false);
     setTimeout(() => {
       mapInit.current = false;
       setMapVisible(true);
@@ -372,8 +377,6 @@ export default function WorkerHomeScreen() {
     router.replace('/(employer)/home');
   };
 
-  if (usePageLoading()) return <ScreenSkeleton variant="home" />;
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <LinearGradient
@@ -485,7 +488,9 @@ export default function WorkerHomeScreen() {
 
               <View style={styles.servicesGrid}>
                 {CATEGORIES.map((cat) => {
-                  return (
+if (usePageLoading()) return <ScreenSkeleton variant="home" />;
+
+  return (
                     <ScalePress
                       key={cat.id}
                       scaleTo={0.92}
@@ -780,6 +785,7 @@ export default function WorkerHomeScreen() {
           </View>
 
           <View style={styles.mapViewport} onLayout={onMapLayout}>
+            {mapReady ? (
             <View
               style={[styles.mapWorld, { transform: [{ scale: mapScale }, { translateX: mapPos.x }, { translateY: mapPos.y }] }]}
               {...mapPanResponder.panHandlers}
@@ -821,6 +827,7 @@ export default function WorkerHomeScreen() {
                 );
               })}
             </View>
+            ) : null}
 
             <View style={styles.mapPinWrap} pointerEvents="none">
               <View style={styles.mapPinPulse} />

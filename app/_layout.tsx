@@ -114,7 +114,6 @@ export default function RootLayout() {
               headerTintColor: '#0F172A',
               headerTitleStyle: {
                 fontFamily: 'Poppins_700Bold',
-                fontWeight: '700',
               },
               contentStyle: {
                 backgroundColor: Colors.background,
