@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Text, Image } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, StyleSheet, Text, Image, Dimensions, Animated } from 'react-native';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('screen');
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
@@ -70,6 +72,8 @@ export default function RootLayout() {
   const [appReady, setAppReady] = useState(false);
   const [splashElapsed, setSplashElapsed] = useState(false);
   const [splashForced, setSplashForced] = useState(false);
+  const [splashVisible, setSplashVisible] = useState(true);
+  const wipeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Promise.all([loadStoredAuth(), loadStoredMode(), loadStoredApplications()])
@@ -92,20 +96,14 @@ export default function RootLayout() {
   useEffect(() => {
     if (ready && splashElapsed) {
       SplashScreen.hideAsync().catch(() => {});
+      // Wipe transition: slide splash screen upward off screen
+      Animated.timing(wipeAnim, {
+        toValue: -SCREEN_HEIGHT,
+        duration: 600,
+        useNativeDriver: true,
+      }).start(() => setSplashVisible(false));
     }
   }, [ready, splashElapsed]);
-
-  if (!ready) {
-    return (
-      <View style={styles.splashScreen}>
-        <Image
-          source={require('../assets/splash.png')}
-          style={styles.splashImage}
-          resizeMode="cover"
-        />
-      </View>
-    );
-  }
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -133,6 +131,20 @@ export default function RootLayout() {
             <Stack.Screen name="(employer)" options={{ headerShown: false }} />
           </Stack>
         </ErrorBoundary>
+
+        {/* Wipe splash overlay — sits on top of everything, slides up when ready */}
+        {splashVisible && (
+          <Animated.View
+            style={[styles.wipeOverlay, { transform: [{ translateY: wipeAnim }] }]}
+            pointerEvents="none"
+          >
+            <Image
+              source={require('../assets/splash.png')}
+              style={styles.splashImage}
+              resizeMode="cover"
+            />
+          </Animated.View>
+        )}
       </SafeAreaProvider>
     </QueryClientProvider>
   );
@@ -143,9 +155,20 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
+  wipeOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
+    zIndex: 999,
+  },
   splashImage: {
-    width: '100%',
-    height: '100%',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
   },
   errorScreen: {
     flex: 1,
