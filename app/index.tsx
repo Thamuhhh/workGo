@@ -35,6 +35,7 @@ if (isAuthenticated && !splashTimeout) {
 <Image
           source={require('../assets/splash.png')}
           style={styles.splashImage}
+          resizeMode="cover"
         />
       </View>
     );
@@ -46,6 +47,7 @@ if (isAuthenticated && !splashTimeout) {
 <Image
           source={require('../assets/splash.png')}
           style={styles.splashImage}
+          resizeMode="cover"
         />
       </View>
     );
@@ -92,12 +94,10 @@ const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   splashImage: {
-    width: 342,
-    height: 608,
+    flex: 1,
+    width: '100%',
   },
   container: {
     flex: 1,

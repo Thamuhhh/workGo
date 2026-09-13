@@ -247,7 +247,6 @@ export default function WorkerHomeScreen() {
   const taglineHeight = scrollY.interpolate({ inputRange: [0, 48], outputRange: [16, 0], extrapolate: 'clamp' });
   const comboMargin = scrollY.interpolate({ inputRange: [0, 64], outputRange: [Spacing.md, 4], extrapolate: 'clamp' });
   const comboScale = scrollY.interpolate({ inputRange: [0, 64], outputRange: [1, 0.97], extrapolate: 'clamp' });
-  const headerShadow = scrollY.interpolate({ inputRange: [0, 18], outputRange: [0, 1], extrapolate: 'clamp' });
   const listScrollY = useRef(0);
   const backdropOpacity = sheetY.interpolate({
     inputRange: [0, 420],
@@ -470,12 +469,6 @@ export default function WorkerHomeScreen() {
                 </TouchableOpacity>
               </Animated.View>
             </LinearGradient>
-            <Animated.View style={[styles.headerShadow, { opacity: headerShadow }]} pointerEvents="none">
-              <LinearGradient
-                colors={['rgba(15, 23, 42, 0)', 'rgba(15, 23, 42, 0.07)']}
-                style={styles.headerShadowGrad}
-              />
-            </Animated.View>
           </Animated.View>
 
           <ScrollView
@@ -538,22 +531,6 @@ export default function WorkerHomeScreen() {
                   );
                 })}
               </View>
-            </View>
-          </FadeSlide>
-
-          {/* Ad Banner */}
-          <FadeSlide delay={200}>
-            <View style={styles.promoSection}>
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={() => router.push('/(worker)/jobs')}
-              >
-                <ExpoImage
-                  source={require('../../../assets/ad_banner.jpg')}
-                  style={styles.adBannerImage}
-                  contentFit="cover"
-                />
-              </TouchableOpacity>
             </View>
           </FadeSlide>
 
@@ -904,17 +881,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     zIndex: 10,
   },
-  headerShadow: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 10,
-    zIndex: 2,
-  },
-  headerShadowGrad: {
-    flex: 1,
-  },
   headerGradient: {
     paddingHorizontal: Spacing.xl,
   },
@@ -1093,23 +1059,6 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xs,
     fontSize: 12,
     lineHeight: 16,
-  },
-  promoSection: {
-    paddingHorizontal: Spacing.xl,
-    marginTop: Spacing.xs,
-    marginBottom: Spacing.lg,
-  },
-  adBannerImage: {
-    width: '100%',
-    aspectRatio: 1080 / 450,
-    borderRadius: 18,
-    overflow: 'hidden',
-    shadowColor: '#0277F4',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.18,
-    shadowRadius: 10,
-    elevation: 4,
-    backgroundColor: '#E2E8F0',
   },
   jobsHeader: {
     flexDirection: 'row',

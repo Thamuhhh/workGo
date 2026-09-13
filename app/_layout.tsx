@@ -101,6 +101,7 @@ export default function RootLayout() {
         <Image
           source={require('../assets/splash.png')}
           style={styles.splashImage}
+          resizeMode="cover"
         />
       </View>
     );
@@ -141,12 +142,9 @@ const styles = StyleSheet.create({
   splashScreen: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   splashImage: {
-    width: 342,
-    height: 608,
+    flex: 1,
   },
   errorScreen: {
     flex: 1,

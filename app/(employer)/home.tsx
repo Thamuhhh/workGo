@@ -218,22 +218,6 @@ export default function EmployerHomeScreen() {
             </View>
           </FadeSlide>
 
-          {/* Ad Banner */}
-          <FadeSlide delay={200}>
-            <View style={styles.promoSection}>
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={() => router.push('/(employer)/jobs')}
-              >
-                <ExpoImage
-                  source={require('../../assets/ad_banner.jpg')}
-                  style={styles.adBannerImage}
-                  contentFit="cover"
-                />
-              </TouchableOpacity>
-            </View>
-          </FadeSlide>
-
           {/* Quick Active Bookings / Posted Jobs Summary */}
           <FadeSlide delay={280}>
             <View style={styles.activeSummarySection}>
@@ -500,23 +484,6 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xs,
     fontSize: 12,
     lineHeight: 16,
-  },
-  promoSection: {
-    paddingHorizontal: Spacing.xl,
-    marginTop: Spacing.xs,
-    marginBottom: Spacing.lg,
-  },
-  adBannerImage: {
-    width: '100%',
-    aspectRatio: 1080 / 450,
-    borderRadius: 18,
-    overflow: 'hidden',
-    shadowColor: '#0277F4',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.18,
-    shadowRadius: 10,
-    elevation: 4,
-    backgroundColor: '#E2E8F0',
   },
   activeSummarySection: {
     paddingHorizontal: Spacing.xl,
