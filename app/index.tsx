@@ -32,7 +32,7 @@ if (isAuthenticated && !splashTimeout) {
   if (isLoading && !splashTimeout) {
     return (
       <View style={styles.loadingContainer}>
-<Image
+        <Image
           source={require('../assets/splash.png')}
           style={styles.splashImage}
           resizeMode="cover"
@@ -44,7 +44,7 @@ if (isAuthenticated && !splashTimeout) {
   if (isAuthenticated && !splashTimeout) {
     return (
       <View style={styles.loadingContainer}>
-<Image
+        <Image
           source={require('../assets/splash.png')}
           style={styles.splashImage}
           resizeMode="cover"
@@ -96,8 +96,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   splashImage: {
+    flex: 1,
     width: '100%',
-    height: '100%',
   },
   container: {
     flex: 1,
