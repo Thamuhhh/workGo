@@ -36,7 +36,6 @@
         "expo-splash-screen",
         {
           "image": "./assets/splash.png",
-          "imageWidth": 400,
           "resizeMode": "contain",
           "backgroundColor": "#FFFFFF"
         }
@@ -64,8 +63,6 @@
         {
           "android": {
             "abiFilters": ["arm64-v8a"],
-            "enableProguardInReleaseBuilds": true,
-            "enableShrinkResourcesInReleaseBuilds": true,
             "minSdkVersion": 24
           }
         }

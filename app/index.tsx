@@ -32,10 +32,9 @@ if (isAuthenticated && !splashTimeout) {
   if (isLoading && !splashTimeout) {
     return (
       <View style={styles.loadingContainer}>
-        <Image
+<Image
           source={require('../assets/splash.png')}
           style={styles.splashImage}
-          resizeMode="contain"
         />
       </View>
     );
@@ -44,10 +43,9 @@ if (isAuthenticated && !splashTimeout) {
   if (isAuthenticated && !splashTimeout) {
     return (
       <View style={styles.loadingContainer}>
-        <Image
+<Image
           source={require('../assets/splash.png')}
           style={styles.splashImage}
-          resizeMode="contain"
         />
       </View>
     );
@@ -94,10 +92,12 @@ const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   splashImage: {
-    flex: 1,
-    width: '100%',
+    width: 342,
+    height: 608,
   },
   container: {
     flex: 1,
