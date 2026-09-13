@@ -247,6 +247,7 @@ export default function WorkerHomeScreen() {
   const taglineHeight = scrollY.interpolate({ inputRange: [0, 48], outputRange: [16, 0], extrapolate: 'clamp' });
   const comboMargin = scrollY.interpolate({ inputRange: [0, 64], outputRange: [Spacing.md, 4], extrapolate: 'clamp' });
   const comboScale = scrollY.interpolate({ inputRange: [0, 64], outputRange: [1, 0.97], extrapolate: 'clamp' });
+  const headerShadow = scrollY.interpolate({ inputRange: [0, 18], outputRange: [0, 1], extrapolate: 'clamp' });
   const listScrollY = useRef(0);
   const backdropOpacity = sheetY.interpolate({
     inputRange: [0, 420],
@@ -377,6 +378,8 @@ export default function WorkerHomeScreen() {
     router.replace('/(employer)/home');
   };
 
+  if (usePageLoading()) return <ScreenSkeleton variant="home" />;
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <LinearGradient
@@ -467,6 +470,12 @@ export default function WorkerHomeScreen() {
                 </TouchableOpacity>
               </Animated.View>
             </LinearGradient>
+            <Animated.View style={[styles.headerShadow, { opacity: headerShadow }]} pointerEvents="none">
+              <LinearGradient
+                colors={['rgba(15, 23, 42, 0)', 'rgba(15, 23, 42, 0.07)']}
+                style={styles.headerShadowGrad}
+              />
+            </Animated.View>
           </Animated.View>
 
           <ScrollView
@@ -487,10 +496,8 @@ export default function WorkerHomeScreen() {
               </Text>
 
               <View style={styles.servicesGrid}>
-                {CATEGORIES.map((cat) => {
-if (usePageLoading()) return <ScreenSkeleton variant="home" />;
-
-  return (
+{CATEGORIES.map((cat) => {
+                  return (
                     <ScalePress
                       key={cat.id}
                       scaleTo={0.92}
@@ -545,7 +552,6 @@ if (usePageLoading()) return <ScreenSkeleton variant="home" />;
                   source={require('../../../assets/ad_banner.jpg')}
                   style={styles.adBannerImage}
                   contentFit="cover"
-                  transition={150}
                 />
               </TouchableOpacity>
             </View>
@@ -897,11 +903,17 @@ const styles = StyleSheet.create({
   headerShell: {
     backgroundColor: '#FFFFFF',
     zIndex: 10,
-    elevation: 6,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
+  },
+  headerShadow: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 10,
+    zIndex: 2,
+  },
+  headerShadowGrad: {
+    flex: 1,
   },
   headerGradient: {
     paddingHorizontal: Spacing.xl,

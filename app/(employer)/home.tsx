@@ -229,7 +229,6 @@ export default function EmployerHomeScreen() {
                   source={require('../../assets/ad_banner.jpg')}
                   style={styles.adBannerImage}
                   contentFit="cover"
-                  transition={150}
                 />
               </TouchableOpacity>
             </View>
