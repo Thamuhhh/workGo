@@ -14,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Icon as Ionicons } from '../../src/components/Icon';
 import { Text, Badge } from '../../src/components/ui';
+import { ScreenSkeleton, usePageLoading } from '../../src/components/ui/PageSkeleton';
 import AppHeader, { FadeSlide, ScalePress } from '../../src/components/AppHeader';
 import SearchBar from '../../src/components/SearchBar';
 import { Colors, Spacing, BorderRadius } from '../../src/constants/theme';
@@ -33,32 +34,32 @@ const SERVICES: ServiceCategory[] = [
   {
     id: 'promoter',
     name: 'Promoter',
-    image: require('../../assets/cat_promoter.jpg'),
+    image: require('../../assets/Promoter.png'),
   },
   {
     id: 'catering',
     name: 'Catering',
-    image: require('../../assets/cat_catering.jpg'),
+    image: require('../../assets/Catter.png'),
   },
   {
     id: 'mc_anchor',
     name: 'MC/Anchor',
-    image: require('../../assets/cat_anchor.jpg'),
+    image: require('../../assets/MC.png'),
   },
   {
     id: 'cleaner',
     name: 'Cleaner',
-    image: require('../../assets/cat_cleaner.jpg'),
+    image: require('../../assets/Cleaner.png'),
   },
   {
     id: 'coordinator',
     name: 'Event Coordinator',
-    image: require('../../assets/cat_coordinator.jpg'),
+    image: require('../../assets/Coordinator.png'),
   },
   {
     id: 'others',
     name: 'Others',
-    isOthers: true,
+    image: require('../../assets/Others.png'),
   },
 ];
 
@@ -92,6 +93,8 @@ export default function EmployerHomeScreen() {
     await toggleMode();
     router.replace('/(worker)/(tabs)/home');
   };
+
+  if (usePageLoading()) return <ScreenSkeleton variant="home" />;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -175,7 +178,7 @@ export default function EmployerHomeScreen() {
                             isSelected && styles.serviceIconCardSelected,
                           ]}
                         >
-                          {service.isOthers ? (
+                          {!service.image ? (
                             <LinearGradient
                               colors={['#A855F7', '#7C3AED']}
                               start={{ x: 0, y: 0 }}
@@ -453,13 +456,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 10,
     elevation: 3,
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
   },
   serviceIconCardSelected: {
-    borderColor: '#3B82F6',
     backgroundColor: '#EFF6FF',
-    borderWidth: 2,
   },
   serviceImage: {
     width: '100%',

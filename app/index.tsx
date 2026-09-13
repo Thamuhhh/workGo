@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, Image } from 'react-native';
 import { router, useRootNavigationState } from 'expo-router';
 import { useAuthStore } from '../src/store/authStore';
 import { useUserModeStore } from '../src/store/userModeStore';
@@ -26,7 +26,23 @@ export default function EntryScreen() {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={Colors.primary} />
+        <Image
+          source={require('../assets/splash.png')}
+          style={styles.splashImage}
+          resizeMode="cover"
+        />
+      </View>
+    );
+  }
+
+  if (isAuthenticated) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Image
+          source={require('../assets/splash.png')}
+          style={styles.splashImage}
+          resizeMode="cover"
+        />
       </View>
     );
   }
@@ -71,9 +87,11 @@ export default function EntryScreen() {
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
-    backgroundColor: Colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  splashImage: {
+    flex: 1,
+    width: '100%',
   },
   container: {
     flex: 1,

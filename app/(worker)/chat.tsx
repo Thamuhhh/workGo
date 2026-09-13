@@ -11,7 +11,9 @@ import {
 import { useLocalSearchParams } from 'expo-router';
 import { Icon as Ionicons } from '../../src/components/Icon';
 import { Text } from '../../src/components/ui';
+import { ScreenSkeleton, usePageLoading } from '../../src/components/ui/PageSkeleton';
 import { Colors, Spacing } from '../../src/constants/theme';
+import { useMessagesStore } from '../../src/store/messagesStore';
 
 interface ChatMessage {
   id: string;
@@ -31,13 +33,17 @@ const INITIAL_MESSAGES: ChatMessage[] = [
 export default function WorkerChatScreen() {
   const params = useLocalSearchParams<{ jobId?: string; employerName?: string; jobTitle?: string }>();
   const employerName = params.employerName || 'Employer';
+  const markThreadRead = useMessagesStore((s) => s.markThreadRead);
   const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
   const [input, setInput] = useState('');
   const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollToEnd({ animated: false });
-  }, []);
+    if (params.jobId) {
+      markThreadRead(params.jobId);
+    }
+  }, [params.jobId]);
 
   const handleSend = () => {
     const text = input.trim();
@@ -54,6 +60,8 @@ export default function WorkerChatScreen() {
     setInput('');
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
   };
+
+  if (usePageLoading()) return <ScreenSkeleton variant="chat" />;
 
   return (
     <KeyboardAvoidingView

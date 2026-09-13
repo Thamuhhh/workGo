@@ -3,6 +3,7 @@ import { View, StyleSheet, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { Icon as Ionicons } from '../../src/components/Icon';
 import { Text, Card, Badge, Button } from '../../src/components/ui';
+import { ScreenSkeleton, usePageLoading } from '../../src/components/ui/PageSkeleton';
 import { Colors, Spacing } from '../../src/constants/theme';
 import { useAuthStore } from '../../src/store/authStore';
 import { useUserModeStore } from '../../src/store/userModeStore';
@@ -20,6 +21,8 @@ export default function EmployerProfileScreen() {
     await toggleMode();
     router.replace('/(worker)/(tabs)/home');
   };
+
+  if (usePageLoading()) return <ScreenSkeleton variant="profile" />;
 
   return (
     <ScrollView contentContainerStyle={styles.container}>

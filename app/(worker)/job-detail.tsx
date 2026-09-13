@@ -7,6 +7,8 @@ import {
   Modal,
   Animated,
   Easing,
+  Share,
+  Platform,
 } from 'react-native';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -25,6 +27,12 @@ const CATEGORY_ICONS: Record<string, string> = {
   'Event Coordinator': 'calendar-outline',
 };
 
+const TRUST_POINTS = [
+  { icon: 'bank', label: 'Same-day payout', sub: 'Money hits your bank or UPI the same evening' },
+  { icon: 'shield-checkmark', label: 'No advance fees', sub: 'WorkGo never asks you to pay anything' },
+  { icon: 'time-outline', label: 'Easy cancellation', sub: 'Cancel free till 9 PM the day before' },
+];
+
 function getInitials(name: string) {
   return name
     .split(' ')
@@ -34,14 +42,13 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
-const PARTICLE_COUNT = 12;
-
 export default function JobDetailScreen() {
   const params = useLocalSearchParams<{ jobId?: string }>();
   const applications = useApplicationsStore((s) => s.applications);
   const apply = useApplicationsStore((s) => s.apply);
   const [showApplied, setShowApplied] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [saved, setSaved] = useState(false);
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const bubbleScale = useRef(new Animated.Value(0.35)).current;
   const ringScale = useRef(new Animated.Value(0)).current;
@@ -50,7 +57,6 @@ export default function JobDetailScreen() {
   const checkSpin = useRef(new Animated.Value(0)).current;
   const contentSlide = useRef(new Animated.Value(0)).current;
   const pulse = useRef(new Animated.Value(0.45)).current;
-  const particles = useRef(Array.from({ length: PARTICLE_COUNT }, () => new Animated.Value(0))).current;
 
   const job = SAMPLE_JOBS.find((j) => j.id === params.jobId);
   const similarJobs = job
@@ -87,7 +93,6 @@ export default function JobDetailScreen() {
     checkPop.setValue(0);
     checkSpin.setValue(0);
     contentSlide.setValue(0);
-    particles.forEach((p) => p.setValue(0));
 
     Animated.parallel([
       Animated.timing(overlayOpacity, {
@@ -117,17 +122,6 @@ export default function JobDetailScreen() {
         tension: 140,
         useNativeDriver: true,
       }),
-      Animated.stagger(
-        40,
-        particles.map((p) =>
-          Animated.timing(p, {
-            toValue: 1,
-            duration: 620,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: true,
-          })
-        )
-      ),
     ]).start();
 
     const t1 = setTimeout(() => {
@@ -156,7 +150,7 @@ export default function JobDetailScreen() {
       clearTimeout(t1);
       clearTimeout(t2);
     };
-  }, [showApplied, overlayOpacity, bubbleScale, ringScale, ripple2, checkPop, checkSpin, contentSlide, particles]);
+  }, [showApplied, overlayOpacity, bubbleScale, ringScale, ripple2, checkPop, checkSpin, contentSlide]);
 
   const hideAppliedPopup = () => {
     Animated.timing(overlayOpacity, {
@@ -168,7 +162,21 @@ export default function JobDetailScreen() {
 
   const openApplications = () => {
     hideAppliedPopup();
-    router.push('/(worker)/(tabs)/applications');
+    router.push('/(worker)/applications');
+  };
+
+  const handleShare = async () => {
+    if (!job) return;
+    const message = `${job.title} by ${job.employerName} • ${job.salary} • ${job.location}. Apply on WorkGo and earn daily!`;
+    try {
+      if (Platform.OS === 'web') {
+        await navigator.clipboard.writeText(message).catch(() => {});
+      } else {
+        await Share.share({ message });
+      }
+    } catch {
+      // ignore
+    }
   };
 
   if (loading) {
@@ -232,6 +240,24 @@ export default function JobDetailScreen() {
           <Text variant="body" weight="bold" color="#0F172A" numberOfLines={1} style={styles.topBarTitle}>
             {job.category}
           </Text>
+          <View style={styles.topActions}>
+            <TouchableOpacity
+              onPress={handleShare}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              style={styles.topActionBtn}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="share" size={20} color="#0F172A" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setSaved((s) => !s)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              style={[styles.topActionBtn, saved && styles.topActionBtnActive]}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="bookmark" size={20} color={saved ? Colors.primary : '#0F172A'} weight={saved ? 'fill' : 'regular'} />
+            </TouchableOpacity>
+          </View>
         </SafeAreaView>
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -245,7 +271,7 @@ export default function JobDetailScreen() {
                 <Text variant="bodySm" weight="semibold" color="#FFFFFF" style={styles.appliedBannerText}>
                   Application submitted
                 </Text>
-                <TouchableOpacity onPress={() => router.push('/(worker)/(tabs)/applications')}>
+                <TouchableOpacity onPress={() => router.push('/(worker)/applications')}>
                   <Text variant="bodySm" weight="bold" color="#FFFFFF" style={styles.appliedBannerLink}>
                     View
                   </Text>
@@ -283,10 +309,15 @@ export default function JobDetailScreen() {
                     {job.location} · {job.distance}
                   </Text>
                 </View>
-                <View style={styles.headerMetaBadges}>
-                  {isUrgent && <Badge label="Almost Full" variant="danger" size="sm" />}
-                  {job.date === 'Today' && <Badge label="Today" variant="warning" size="sm" />}
-                </View>
+              </View>
+
+              <View style={styles.headerBadges}>
+                <Badge
+                  label={job.date === 'Today' ? 'Today' : job.date === 'Tomorrow' ? 'Tomorrow' : job.date}
+                  variant={job.date === 'Today' ? 'warning' : 'neutral'}
+                  size="sm"
+                />
+                {isUrgent && <Badge label="Almost Full" variant="danger" size="sm" />}
               </View>
             </View>
           </FadeSlide>
@@ -310,6 +341,21 @@ export default function JobDetailScreen() {
                     <Text variant="caption" color={Colors.textMuted}>Rating</Text>
                   </View>
                 </View>
+              </View>
+            </FadeSlide>
+
+            {/* ─── About this job ─── */}
+            <FadeSlide delay={110}>
+              <View style={styles.aboutBlock}>
+                <View style={styles.sectionHeader}>
+                  <Ionicons name="document-text-outline" size={18} color="#0F172A" />
+                  <Text variant="body" weight="bold" color="#0F172A">
+                    About this job
+                  </Text>
+                </View>
+                <Text variant="bodySm" color={Colors.textSecondary} style={styles.aboutText}>
+                  {job.about}
+                </Text>
               </View>
             </FadeSlide>
 
@@ -441,8 +487,32 @@ export default function JobDetailScreen() {
               </Card>
             </FadeSlide>
 
-            {/* ─── Tips ─── */}
+            {/* ─── Pay & Trust ─── */}
             <FadeSlide delay={440}>
+              <Text variant="body" weight="bold" color="#0F172A" style={styles.sectionTitle}>
+                Pay & Trust
+              </Text>
+              <Card padding="lg" variant="outlined" style={styles.trustCard}>
+                {TRUST_POINTS.map((point, i) => (
+                  <View key={point.label} style={[styles.trustRow, i === TRUST_POINTS.length - 1 && styles.trustRowLast]}>
+                    <View style={styles.trustIcon}>
+                      <Ionicons name={point.icon as any} size={16} color={Colors.primary} />
+                    </View>
+                    <View style={styles.trustContent}>
+                      <Text variant="bodySm" weight="bold" color="#0F172A">
+                        {point.label}
+                      </Text>
+                      <Text variant="caption" color={Colors.textMuted}>
+                        {point.sub}
+                      </Text>
+                    </View>
+                  </View>
+                ))}
+              </Card>
+            </FadeSlide>
+
+            {/* ─── Tips ─── */}
+            <FadeSlide delay={500}>
               <Card padding="lg" style={styles.tipsCard}>
                 <View style={styles.tipsHeader}>
                   <Ionicons name="bulb-outline" size={18} color="#0F172A" />
@@ -467,7 +537,7 @@ export default function JobDetailScreen() {
 
             {/* ─── Similar Jobs ─── */}
             {similarJobs.length > 0 && (
-              <FadeSlide delay={500}>
+              <FadeSlide delay={560}>
                 <Text variant="body" weight="bold" color="#0F172A" style={styles.sectionTitle}>
                   Similar Jobs
                 </Text>
@@ -555,12 +625,18 @@ export default function JobDetailScreen() {
                   ],
                 }}
               >
-                <Text variant="h3" weight="bold" color="#0F172A" align="center" style={styles.popupTitle}>
+                <Text variant="h3" weight="bold" color="#0F172A" align="center">
                   Application Sent!
                 </Text>
                 <Text variant="bodySm" color={Colors.textSecondary} align="center" style={styles.popupText}>
-                  Your application for “{job.title}” has been submitted to {job.employerName}. They may call you soon!
+                  Applied to {job.employerName}. They'll call you if shortlisted — keep your phone ready.
                 </Text>
+                <View style={styles.popupChip}>
+                  <Ionicons name="checkmark-circle" size={16} color="#059669" />
+                  <Text variant="caption" weight="bold" color="#059669">
+                    {job.workersAccepted}/{job.workersRequired} slots reserved
+                  </Text>
+                </View>
                 <Button
                   title="View My Applications"
                   size="md"
@@ -569,7 +645,7 @@ export default function JobDetailScreen() {
                   style={styles.popupBtn}
                 />
                 <TouchableOpacity onPress={hideAppliedPopup} hitSlop={8} activeOpacity={0.6} style={styles.popupCloseWrap}>
-                  <Text variant="bodySm" weight="bold" color={Colors.textSecondary} align="center">
+                  <Text variant="caption" weight="medium" color={Colors.textMuted} align="center">
                     Close
                   </Text>
                 </TouchableOpacity>
@@ -601,31 +677,6 @@ export default function JobDetailScreen() {
                   },
                 ]}
               />
-              {particles.map((p, i) => {
-                const angle = (i / PARTICLE_COUNT) * Math.PI * 2;
-                const radius = 62 + (i % 3) * 36;
-                return (
-                  <Animated.View
-                    key={i}
-                    style={[
-                      styles.razorRay,
-                      {
-                        backgroundColor: i % 3 === 0 ? '#34D399' : i % 3 === 1 ? '#7EB8FF' : '#FFFFFF',
-                        opacity: p.interpolate({ inputRange: [0, 0.55, 1], outputRange: [0, 1, 0] }),
-                        transform: [
-                          { rotate: `${(angle * 180) / Math.PI}deg` },
-                          {
-                            translateY: p.interpolate({ inputRange: [0, 1], outputRange: [0, radius] }),
-                          },
-                          {
-                            scale: p.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] }),
-                          },
-                        ],
-                      },
-                    ]}
-                  />
-                );
-              })}
             </View>
           </Animated.View>
         </Modal>
@@ -657,6 +708,21 @@ const styles = StyleSheet.create({
   topBarTitle: {
     flex: 1,
     marginLeft: Spacing.sm,
+  },
+  topActions: {
+    flexDirection: 'row',
+    gap: Spacing.xs,
+  },
+  topActionBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F1F5F9',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  topActionBtnActive: {
+    backgroundColor: '#EFF6FF',
   },
   appliedBanner: {
     flexDirection: 'row',
@@ -716,7 +782,6 @@ const styles = StyleSheet.create({
   headerMeta: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     gap: Spacing.sm,
   },
   headerMetaItem: {
@@ -730,11 +795,13 @@ const styles = StyleSheet.create({
   },
   headerMetaLocation: {
     flex: 1,
+    minWidth: 0,
   },
-  headerMetaBadges: {
+  headerBadges: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.xs,
+    marginTop: Spacing.sm,
   },
 
   /* Body */
@@ -754,6 +821,15 @@ const styles = StyleSheet.create({
   },
   salaryBlock: {
     flex: 1,
+  },
+  aboutBlock: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    marginBottom: Spacing.md,
+  },
+  aboutText: {
+    lineHeight: 21,
   },
   ratingBlock: {
     flexDirection: 'row',
@@ -865,6 +941,36 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 
+  /* Pay & Trust */
+  trustCard: {
+    gap: Spacing.md,
+    marginBottom: Spacing.lg,
+  },
+  trustRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    paddingBottom: Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  trustRowLast: {
+    borderBottomWidth: 0,
+    paddingBottom: 0,
+  },
+  trustIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#EFF6FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  trustContent: {
+    flex: 1,
+    gap: 1,
+  },
+
   /* Tips */
   tipsCard: {
     backgroundColor: '#F8FAFC',
@@ -928,10 +1034,10 @@ const styles = StyleSheet.create({
   /* Applied Popup */
   popupOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(15,23,42,0.45)',
+    backgroundColor: 'rgba(15,23,42,0.55)',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: Spacing.xl,
+    paddingHorizontal: 24,
   },
   razorCenter: {
     ...StyleSheet.absoluteFillObject,
@@ -940,59 +1046,60 @@ const styles = StyleSheet.create({
   },
   razorRing: {
     position: 'absolute',
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    borderWidth: 2.5,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    borderWidth: 2,
     borderColor: '#FFFFFF',
   },
   razorRingGreen: {
     borderColor: '#34D399',
-    borderWidth: 2,
-  },
-  razorRay: {
-    position: 'absolute',
-    width: 3.5,
-    height: 18,
-    borderRadius: 2,
-    marginTop: -9,
-    marginLeft: -1.75,
   },
   popupCard: {
     width: '100%',
     maxWidth: 340,
     backgroundColor: '#FFFFFF',
-    borderRadius: BorderRadius.xl,
-    paddingVertical: Spacing.xl,
-    paddingHorizontal: Spacing.xl,
+    borderRadius: 24,
+    paddingVertical: 28,
+    paddingHorizontal: 24,
     alignItems: 'center',
-    gap: Spacing.sm,
-    ...Shadows.md,
+    gap: 14,
+    ...Shadows.lg,
   },
   popupCheck: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: Colors.success,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: Spacing.xs,
+  },
+  popupChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: Colors.successLight,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+    borderRadius: BorderRadius.round,
+    marginBottom: 2,
   },
   popupTitle: {
-    marginTop: Spacing.xs,
+    marginTop: 2,
   },
   popupText: {
-    lineHeight: 20,
-    marginBottom: Spacing.sm,
+    lineHeight: 19,
+    maxWidth: 286,
+    marginBottom: 4,
   },
   popupBtn: {
-    marginTop: Spacing.xs,
+    marginTop: 4,
   },
   popupCloseWrap: {
     width: '100%',
     alignItems: 'center',
-    height: 28,
     justifyContent: 'center',
+    marginTop: 2,
   },
 /* Skeleton */
   skelCircle: {

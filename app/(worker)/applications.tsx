@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
-import { Icon as Ionicons } from '../../../src/components/Icon';
-import { Text, Card, Badge, Button } from '../../../src/components/ui';
-import { SAMPLE_JOBS } from '../../../src/data/sampleJobs';
-import { useApplicationsStore, ApplicationStatus } from '../../../src/store/applicationsStore';
-import { Colors, Spacing } from '../../../src/constants/theme';
+import { Icon as Ionicons } from '../../src/components/Icon';
+import { Text, Card, Badge, Button } from '../../src/components/ui';
+import { ScreenSkeleton, usePageLoading } from '../../src/components/ui/PageSkeleton';
+import { SAMPLE_JOBS } from '../../src/data/sampleJobs';
+import { useApplicationsStore, ApplicationStatus } from '../../src/store/applicationsStore';
+import { useMessagesStore } from '../../src/store/messagesStore';
+import { Colors, Spacing } from '../../src/constants/theme';
 
 const STATUS_VARIANT: Record<ApplicationStatus, { label: string; variant: 'success' | 'info' | 'warning' | 'danger' }> = {
   APPLIED: { label: 'Applied', variant: 'info' },
@@ -33,6 +35,7 @@ function timeAgo(iso: string) {
 
 export default function WorkerMessagesScreen() {
   const applications = useApplicationsStore((s) => s.applications);
+  const readThreadIds = useMessagesStore((s) => s.readThreadIds);
   const [segment, setSegment] = useState<'chats' | 'apps'>('chats');
 
   const rows = applications.map((app) => {
@@ -46,6 +49,8 @@ export default function WorkerMessagesScreen() {
       params: { jobId, employerName, jobTitle },
     });
   };
+
+  if (usePageLoading()) return <ScreenSkeleton variant="list" />;
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -128,7 +133,7 @@ export default function WorkerMessagesScreen() {
                       <Text variant="caption" color={Colors.textMuted}>
                         {timeAgo(app.appliedAt)}
                       </Text>
-                      {index === 0 && <View style={styles.unreadDot} />}
+                      {!readThreadIds.includes(app.jobId) && <View style={styles.unreadDot} />}
                     </View>
                   </View>
                 </TouchableOpacity>

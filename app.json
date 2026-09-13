@@ -8,6 +8,11 @@
     "scheme": "workgo",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#FFFFFF"
+    },
     "ios": {
       "supportsTablet": true
     },
@@ -28,6 +33,14 @@
       "expo-router",
       "expo-asset",
       [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "resizeMode": "cover",
+          "backgroundColor": "#FFFFFF"
+        }
+      ],
+      [
         "expo-font",
         {
           "fonts": [
@@ -39,7 +52,20 @@
           ]
         }
       ],
-      "expo-video"
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "WorkGo uses your location to show jobs hiring near you."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "abiFilters": ["arm64-v8a"]
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

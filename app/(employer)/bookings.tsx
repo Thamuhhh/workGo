@@ -1,9 +1,12 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, Card, Badge, Button } from '../../src/components/ui';
+import { ScreenSkeleton, usePageLoading } from '../../src/components/ui/PageSkeleton';
 import { Colors, Spacing } from '../../src/constants/theme';
 
 export default function EmployerBookingsScreen() {
+  if (usePageLoading()) return <ScreenSkeleton variant="list" />;
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text variant="h2" weight="bold" style={styles.title}>

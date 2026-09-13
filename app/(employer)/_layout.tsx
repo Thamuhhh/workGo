@@ -14,6 +14,9 @@ export default function EmployerLayout() {
           fontWeight: '700',
         },
         headerShadowVisible: false,
+        animation: 'slide_from_right',
+        animationDuration: 240,
+        gestureEnabled: true,
       }}
     >
       <Stack.Screen name="home" options={{ title: 'WorkGo Employer', headerShown: false }} />

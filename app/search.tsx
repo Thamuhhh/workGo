@@ -22,6 +22,15 @@ const POPULAR = ['Wedding', 'Catering', 'Promoter', 'Cleaner', 'MC/Anchor', 'Coo
 
 const RECENT = ['Catering Staff', 'Event Setup'];
 
+const SEARCH_CATEGORIES = [
+  { label: 'Catering', icon: 'restaurant-outline', tint: '#ECFDF5', color: '#059669' },
+  { label: 'Promoter', icon: 'megaphone-outline', tint: '#FEF3C7', color: '#B45309' },
+  { label: 'Cleaning', icon: 'sparkles-outline', tint: '#E0F2FE', color: '#0284C7' },
+  { label: 'MC/Anchor', icon: 'mic-outline', tint: '#F5F3FF', color: '#7C3AED' },
+  { label: 'Coordinator', icon: 'calendar-outline', tint: '#EEF2FF', color: '#4F46E5' },
+  { label: 'Other', icon: 'grid-outline', tint: '#F1F5F9', color: '#475569' },
+];
+
 export default function SearchScreen() {
   const [query, setQuery] = useState('');
   const headerAnim = useRef(new Animated.Value(0)).current;
@@ -172,21 +181,21 @@ export default function SearchScreen() {
                     Browse Categories
                   </Text>
                   <View style={styles.catGrid}>
-                    {['Catering', 'Promoter', 'Cleaning', 'MC/Anchor', 'Coordinator', 'Other'].map(
-                      (c) => (
-                        <ScalePress
-                          key={c}
-                          scaleTo={0.92}
-                          style={styles.catTile}
-                          onPress={() => setQuery(c)}
-                        >
-                          <Ionicons name="grid-outline" size={18} color="#0F172A" />
-                          <Text variant="bodySm" weight="medium" color={Colors.textSecondary} style={styles.catTileText}>
-                            {c}
-                          </Text>
-                        </ScalePress>
-                      )
-                    )}
+                    {SEARCH_CATEGORIES.map((c) => (
+                      <ScalePress
+                        key={c.label}
+                        scaleTo={0.92}
+                        style={styles.catTile}
+                        onPress={() => setQuery(c.label)}
+                      >
+                        <View style={[styles.catIconChip, { backgroundColor: c.tint }]}>
+                          <Ionicons name={c.icon as any} size={20} color={c.color} />
+                        </View>
+                        <Text variant="bodySm" weight="medium" color={Colors.textSecondary} style={styles.catTileText}>
+                          {c.label}
+                        </Text>
+                      </ScalePress>
+                    ))}
                   </View>
                 </View>
               </FadeSlide>
@@ -384,6 +393,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 5,
     elevation: 2,
+  },
+  catIconChip: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   catTileText: {
     marginTop: 6,

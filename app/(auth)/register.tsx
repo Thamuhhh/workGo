@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { Text, Input, Button } from '../../src/components/ui';
+import { ScreenSkeleton, usePageLoading } from '../../src/components/ui/PageSkeleton';
 import { RegisterCartoon } from '../../src/components/AuthCartoon';
 import { Colors, Spacing } from '../../src/constants/theme';
 
@@ -31,6 +32,8 @@ export default function RegisterScreen() {
       });
     }, 600);
   };
+
+  if (usePageLoading()) return <ScreenSkeleton variant="form" />;
 
   return (
     <KeyboardAvoidingView

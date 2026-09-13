@@ -14,6 +14,9 @@ export default function WorkerLayout() {
           fontWeight: '700',
         },
         headerShadowVisible: false,
+        animation: 'slide_from_right',
+        animationDuration: 240,
+        gestureEnabled: true,
       }}
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -26,8 +29,9 @@ export default function WorkerLayout() {
           title: (route.params as { employerName?: string })?.employerName || 'Chat',
         })}
       />
-      <Stack.Screen name="wallet" options={{ title: 'My Wallet' }} />
-      <Stack.Screen name="profile" options={{ title: 'Worker Profile' }} />
+      <Stack.Screen name="bookings" options={{ title: 'My Bookings' }} />
+      <Stack.Screen name="applications" options={{ title: 'My Applications' }} />
+      <Stack.Screen name="refer" options={{ title: 'Refer & Earn' }} />
     </Stack>
   );
 }

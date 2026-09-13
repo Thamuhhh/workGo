@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, Switch } from 'react-native';
 import { router } from 'expo-router';
 import { Text, Input, Button, Card } from '../../src/components/ui';
+import { ScreenSkeleton, usePageLoading } from '../../src/components/ui/PageSkeleton';
 import { Colors, Spacing } from '../../src/constants/theme';
 
 export default function PostJobScreen() {
@@ -20,6 +21,8 @@ export default function PostJobScreen() {
       router.replace('/(employer)/home');
     }, 800);
   };
+
+  if (usePageLoading()) return <ScreenSkeleton variant="form" />;
 
   return (
     <ScrollView contentContainerStyle={styles.container}>

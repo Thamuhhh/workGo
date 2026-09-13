@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Text, Image } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import {
   Poppins_400Regular,
@@ -16,6 +17,10 @@ import { useAuthStore } from '../src/store/authStore';
 import { useUserModeStore } from '../src/store/userModeStore';
 import { useApplicationsStore } from '../src/store/applicationsStore';
 import { Colors } from '../src/constants/theme';
+
+SplashScreen.preventAutoHideAsync().catch(() => {});
+
+const MIN_SPLASH_MS = 1500;
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -63,6 +68,7 @@ export default function RootLayout() {
     Poppins_800ExtraBold,
   });
   const [appReady, setAppReady] = useState(false);
+  const [splashElapsed, setSplashElapsed] = useState(false);
 
   useEffect(() => {
     Promise.all([loadStoredAuth(), loadStoredMode(), loadStoredApplications()])
@@ -70,13 +76,26 @@ export default function RootLayout() {
       .finally(() => setAppReady(true));
   }, [loadStoredAuth, loadStoredMode, loadStoredApplications]);
 
-  if (!appReady || (!fontsLoaded && !fontError)) {
+  useEffect(() => {
+    const timer = setTimeout(() => setSplashElapsed(true), MIN_SPLASH_MS);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const ready = appReady && (fontsLoaded || fontError);
+
+  useEffect(() => {
+    if (ready && splashElapsed) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [ready, splashElapsed]);
+
+  if (!ready) {
     return (
       <View style={styles.splashScreen}>
         <Image
           source={require('../assets/splash.png')}
           style={styles.splashImage}
-          resizeMode="contain"
+          resizeMode="cover"
         />
       </View>
     );
@@ -117,7 +136,7 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   splashScreen: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: '#FFFFFF',
   },
   splashImage: {
     flex: 1,

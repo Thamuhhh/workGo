@@ -1,12 +1,13 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { router } from 'expo-router';
-import { Icon as Ionicons } from '../../../src/components/Icon';
-import { Text, Card, Badge } from '../../../src/components/ui';
-import { FadeSlide } from '../../../src/components/AppHeader';
-import { SAMPLE_JOBS } from '../../../src/data/sampleJobs';
-import { useApplicationsStore, ApplicationStatus } from '../../../src/store/applicationsStore';
-import { Colors, Spacing } from '../../../src/constants/theme';
+import { Icon as Ionicons } from '../../src/components/Icon';
+import { Text, Card, Badge } from '../../src/components/ui';
+import { ScreenSkeleton, usePageLoading } from '../../src/components/ui/PageSkeleton';
+import { FadeSlide } from '../../src/components/AppHeader';
+import { SAMPLE_JOBS } from '../../src/data/sampleJobs';
+import { useApplicationsStore, ApplicationStatus } from '../../src/store/applicationsStore';
+import { Colors, Spacing } from '../../src/constants/theme';
 
 const STATUS_META: Record<ApplicationStatus, { label: string; variant: 'success' | 'info' | 'primary' | 'danger' }> = {
   APPLIED: { label: 'Applied', variant: 'success' },
@@ -17,6 +18,8 @@ const STATUS_META: Record<ApplicationStatus, { label: string; variant: 'success'
 
 export default function WorkerBookingsScreen() {
   const applications = useApplicationsStore((s) => s.applications);
+
+  if (usePageLoading()) return <ScreenSkeleton variant="list" />;
 
   return (
     <ScrollView
