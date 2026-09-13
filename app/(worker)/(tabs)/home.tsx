@@ -264,7 +264,7 @@ export default function WorkerHomeScreen() {
 
   const panResponder = useRef(
     PanResponder.create({
-      onMoveShouldSetPanResponder: (_evt, g) =>
+      onMoveShouldSetPanResponderCapture: (_evt, g) =>
         listScrollY.current <= 0 && g.dy > 6 && g.dy > Math.abs(g.dx),
       onPanResponderMove: (_evt, g) => {
         sheetY.setValue(Math.max(0, g.dy));
