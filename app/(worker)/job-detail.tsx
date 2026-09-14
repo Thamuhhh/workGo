@@ -4,9 +4,7 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  Modal,
   Animated,
-  Easing,
   Share,
   Platform,
 } from 'react-native';
@@ -18,6 +16,8 @@ import { FadeSlide } from '../../src/components/AppHeader';
 import { SAMPLE_JOBS } from '../../src/data/sampleJobs';
 import { useApplicationsStore } from '../../src/store/applicationsStore';
 import { Colors, Spacing, BorderRadius, Shadows } from '../../src/constants/theme';
+import BottomSheet from '../../src/components/BottomSheet';
+import { SwipeToConfirm } from '../../src/components/SwipeToConfirm';
 
 const CATEGORY_ICONS: Record<string, string> = {
   Catering: 'restaurant-outline',
@@ -46,16 +46,9 @@ export default function JobDetailScreen() {
   const params = useLocalSearchParams<{ jobId?: string }>();
   const applications = useApplicationsStore((s) => s.applications);
   const apply = useApplicationsStore((s) => s.apply);
-  const [showApplied, setShowApplied] = useState(false);
+  const [showSheet, setShowSheet] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
-  const overlayOpacity = useRef(new Animated.Value(0)).current;
-  const bubbleScale = useRef(new Animated.Value(0.35)).current;
-  const ringScale = useRef(new Animated.Value(0)).current;
-  const ripple2 = useRef(new Animated.Value(0)).current;
-  const checkPop = useRef(new Animated.Value(0)).current;
-  const checkSpin = useRef(new Animated.Value(0)).current;
-  const contentSlide = useRef(new Animated.Value(0)).current;
   const pulse = useRef(new Animated.Value(0.45)).current;
 
   const job = SAMPLE_JOBS.find((j) => j.id === params.jobId);
@@ -84,85 +77,10 @@ export default function JobDetailScreen() {
     return () => clearTimeout(t);
   }, [params.jobId]);
 
-  useEffect(() => {
-    if (!showApplied) return;
-    overlayOpacity.setValue(0);
-    bubbleScale.setValue(0.35);
-    ringScale.setValue(0);
-    ripple2.setValue(0);
-    checkPop.setValue(0);
-    checkSpin.setValue(0);
-    contentSlide.setValue(0);
-
-    Animated.parallel([
-      Animated.timing(overlayOpacity, {
-        toValue: 1,
-        duration: 240,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-      Animated.timing(ringScale, {
-        toValue: 1,
-        duration: 640,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-      Animated.sequence([
-        Animated.delay(120),
-        Animated.timing(ripple2, {
-          toValue: 1,
-          duration: 520,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ]),
-      Animated.spring(bubbleScale, {
-        toValue: 1,
-        friction: 5,
-        tension: 140,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    const t1 = setTimeout(() => {
-      Animated.spring(checkPop, {
-        toValue: 1,
-        friction: 4,
-        tension: 220,
-        useNativeDriver: true,
-      }).start();
-      Animated.spring(checkSpin, {
-        toValue: 1,
-        friction: 5,
-        tension: 240,
-        useNativeDriver: true,
-      }).start();
-    }, 320);
-    const t2 = setTimeout(() => {
-      Animated.timing(contentSlide, {
-        toValue: 1,
-        duration: 280,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }).start();
-    }, 470);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
-  }, [showApplied, overlayOpacity, bubbleScale, ringScale, ripple2, checkPop, checkSpin, contentSlide]);
-
-  const hideAppliedPopup = () => {
-    Animated.timing(overlayOpacity, {
-      toValue: 0,
-      duration: 200,
-      useNativeDriver: true,
-    }).start(() => setShowApplied(false));
-  };
-
-  const openApplications = () => {
-    hideAppliedPopup();
-    router.push('/(worker)/applications');
+  const handleApplyConfirm = () => {
+    if (!job) return;
+    apply(job.id);
+    setTimeout(() => setShowSheet(false), 400);
   };
 
   const handleShare = async () => {
@@ -587,93 +505,58 @@ export default function JobDetailScreen() {
             disabled={hasApplied}
             icon={hasApplied ? <Ionicons name="checkmark" size={16} color={Colors.text} /> : undefined}
             onPress={() => {
-              apply(job.id);
-              setShowApplied(true);
+              if (!hasApplied) {
+                setShowSheet(true);
+              }
             }}
             style={styles.applyBtn}
           />
         </View>
 
-        {/* ─── Applied Success Popup ─── */}
-        <Modal
-          visible={showApplied}
-          transparent
-          statusBarTranslucent
-          animationType="none"
-          onRequestClose={hideAppliedPopup}
-        >
-          <Animated.View style={[styles.popupOverlay, { opacity: overlayOpacity }]}>
-            <Animated.View style={[styles.popupCard, { transform: [{ scale: bubbleScale }] }]}>
-              <Animated.View
-                style={[
-                  styles.popupCheck,
-                  {
-                    transform: [
-                      { scale: checkPop },
-                      { rotate: checkSpin.interpolate({ inputRange: [0, 1], outputRange: ['-140deg', '0deg'] }) },
-                    ],
-                  },
-                ]}
-              >
-                <Ionicons name="checkmark" size={36} color="#FFFFFF" />
-              </Animated.View>
-              <Animated.View
-                style={{
-                  opacity: contentSlide,
-                  transform: [
-                    { translateY: contentSlide.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) },
-                  ],
-                }}
-              >
-                <Text variant="h3" weight="bold" color="#0F172A" align="center">
-                  Application Sent!
+        {/* ─── Apply Bottom Sheet ─── */}
+        <BottomSheet visible={showSheet} onClose={() => setShowSheet(false)}>
+          <View style={styles.sheetContent}>
+            <Text variant="h3" weight="bold" color="#0F172A" align="center">
+              Apply for this job?
+            </Text>
+            <View style={styles.sheetJobSummary}>
+              <View style={styles.sheetSummaryRow}>
+                <Ionicons name="briefcase-outline" size={18} color={Colors.primary} />
+                <Text variant="body" weight="semibold" color="#0F172A" style={styles.sheetSummaryText}>
+                  {job.title}
                 </Text>
-                <Text variant="bodySm" color={Colors.textSecondary} align="center" style={styles.popupText}>
-                  Applied to {job.employerName}. They'll call you if shortlisted — keep your phone ready.
+              </View>
+              <View style={styles.sheetSummaryRow}>
+                <Ionicons name="location-outline" size={18} color={Colors.textSecondary} />
+                <Text variant="bodySm" color={Colors.textSecondary} style={styles.sheetSummaryText}>
+                  {job.location}
                 </Text>
-                <Button
-                  title="View Application"
-                  size="md"
-                  fullWidth
-                  onPress={openApplications}
-                  style={styles.popupBtn}
-                />
-                <TouchableOpacity onPress={hideAppliedPopup} hitSlop={8} activeOpacity={0.6} style={styles.popupCloseWrap}>
-                  <Text variant="caption" weight="medium" color={Colors.textMuted} align="center">
-                    Close
-                  </Text>
-                </TouchableOpacity>
-              </Animated.View>
-            </Animated.View>
-
-            {/* Rays + ripples ON TOP of card */}
-            <View style={styles.razorCenter} pointerEvents="none">
-              <Animated.View
-                style={[
-                  styles.razorRing,
-                  {
-                    opacity: ringScale.interpolate({ inputRange: [0, 0.3, 1], outputRange: [0, 0.65, 0] }),
-                    transform: [
-                      { scale: ringScale.interpolate({ inputRange: [0, 1], outputRange: [0.7, 2.2] }) },
-                    ],
-                  },
-                ]}
-              />
-              <Animated.View
-                style={[
-                  styles.razorRing,
-                  styles.razorRingGreen,
-                  {
-                    opacity: ripple2.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0, 0.55, 0] }),
-                    transform: [
-                      { scale: ripple2.interpolate({ inputRange: [0, 1], outputRange: [1, 2.8] }) },
-                    ],
-                  },
-                ]}
-              />
+              </View>
+              <View style={styles.sheetSummaryRow}>
+                <Ionicons name="cash-outline" size={18} color="#059669" />
+                <Text variant="body" weight="bold" color="#059669" style={styles.sheetSummaryText}>
+                  {job.salary}
+                </Text>
+              </View>
             </View>
-          </Animated.View>
-        </Modal>
+
+            <SwipeToConfirm
+              onConfirm={handleApplyConfirm}
+              trackText="Swipe to Apply →"
+              confirmText="✓ Applied!"
+            />
+
+            <TouchableOpacity
+              onPress={() => setShowSheet(false)}
+              style={styles.sheetCancel}
+              activeOpacity={0.6}
+            >
+              <Text variant="bodySm" weight="medium" color={Colors.textMuted} align="center">
+                Cancel
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </BottomSheet>
       </View>
     </>
   );
@@ -1025,63 +908,30 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  /* Applied Popup */
-  popupOverlay: {
+  /* ─── Bottom Sheet ─── */
+  sheetContent: {
+    paddingBottom: Spacing.lg,
+    alignItems: 'center',
+  },
+  sheetJobSummary: {
+    width: '100%',
+    backgroundColor: '#F8FAFC',
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    gap: Spacing.sm,
+    marginBottom: Spacing.xs,
+  },
+  sheetSummaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  sheetSummaryText: {
     flex: 1,
-    backgroundColor: 'rgba(15,23,42,0.55)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
   },
-  razorCenter: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  razorRing: {
-    position: 'absolute',
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
-  razorRingGreen: {
-    borderColor: '#34D399',
-  },
-  popupCard: {
-    width: '100%',
-    maxWidth: 320,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 22,
-    paddingVertical: 22,
-    paddingHorizontal: 20,
-    alignItems: 'center',
-    gap: 12,
-    ...Shadows.lg,
-  },
-  popupCheck: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.success,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  popupTitle: {
-    marginTop: 2,
-  },
-  popupText: {
-    lineHeight: 19,
-    maxWidth: 280,
-  },
-  popupBtn: {
-    marginTop: 2,
-  },
-  popupCloseWrap: {
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
+  sheetCancel: {
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
   },
 /* Skeleton */
   skelCircle: {

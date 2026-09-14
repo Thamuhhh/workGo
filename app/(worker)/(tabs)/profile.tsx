@@ -1,23 +1,18 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Icon as Ionicons } from '../../../src/components/Icon';
-import { Text, Card, Button } from '../../../src/components/ui';
-import { ScreenSkeleton, usePageLoading } from '../../../src/components/ui/PageSkeleton';
-
-import { Colors, Spacing, BorderRadius, Shadows } from '../../../src/constants/theme';
+import { Text, Button } from '../../../src/components/ui';
+import { Colors, Spacing, BorderRadius } from '../../../src/constants/theme';
 import { useAuthStore } from '../../../src/store/authStore';
 import { useUserModeStore } from '../../../src/store/userModeStore';
 
 interface MenuItem {
   icon: string;
   label: string;
-  color?: string;
-  bg?: string;
   value?: string;
   badge?: string;
-  highlight?: boolean;
+  color?: string;
   onPress?: () => void;
 }
 
@@ -43,13 +38,7 @@ export default function WorkerProfileScreen() {
     { icon: 'briefcase-outline', label: 'My Bookings', onPress: () => router.push('/(worker)/bookings') },
     { icon: 'document-text-outline', label: 'My Applications', onPress: () => router.push('/(worker)/applications') },
     { icon: 'wallet-outline', label: 'Wallet', value: '₹2,430', onPress: () => router.push('/(worker)/(tabs)/wallet') },
-    {
-      icon: 'gift',
-      label: 'Refer & Earn',
-      badge: '₹100',
-      highlight: true,
-      onPress: () => router.push('/(worker)/refer'),
-    },
+    { icon: 'gift', label: 'Refer & Earn', badge: '₹100', onPress: () => router.push('/(worker)/refer') },
   ];
 
   const menuAccount: MenuItem[] = [
@@ -67,78 +56,68 @@ export default function WorkerProfileScreen() {
     { icon: 'document-text-outline', label: 'Terms of Service' },
   ];
 
-  if (usePageLoading()) return <ScreenSkeleton variant="profile" />;
-
   return (
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Cover Header */}
-      <LinearGradient
-        colors={['#0F172A', '#1E3A8A']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.cover}
-      >
-        <View style={styles.decoCircle1} />
-        <View style={styles.decoCircle2} />
-
-        <View style={styles.coverTop}>
-          <View style={styles.avatar}>
-            <Text variant="h1" weight="heavy" color={Colors.primary}>
-              {initial}
-            </Text>
-          </View>
-          <View style={styles.avatarDetails}>
-            <Text variant="caption" color="rgba(255,255,255,0.6)">
-              Good to see you!
-            </Text>
-            <Text variant="h2" weight="bold" color="#FFFFFF" numberOfLines={1}>
-              {displayName}
-            </Text>
-            <Text variant="bodySm" color="rgba(255,255,255,0.7)">
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.avatar}>
+          <Text variant="h1" weight="heavy" color="#0277F4">
+            {initial}
+          </Text>
+        </View>
+        <View style={styles.headerDetails}>
+          <Text variant="h2" weight="bold" color="#0F172A" numberOfLines={1}>
+            {displayName}
+          </Text>
+          <View style={styles.headerMetaRow}>
+            <Text variant="bodySm" color={Colors.textSecondary}>
               +91 {displayPhone}
             </Text>
-            <View style={styles.verifiedRow}>
-              <Ionicons name="shield-checkmark" size={14} color="#4ADE80" />
-              <Text variant="caption" color="rgba(255,255,255,0.75)">
-                Verified Profile
+            <View style={styles.verifiedChip}>
+              <Ionicons name="shield-checkmark" size={12} color="#0F9D58" />
+              <Text variant="caption" weight="semibold" color="#0F9D58">
+                Verified
               </Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.editBtn}>
-            <Ionicons name="settings" size={18} color="rgba(255,255,255,0.75)" />
+          <TouchableOpacity style={styles.editProfileRow} activeOpacity={0.6} onPress={() => router.push('/(worker)/edit-profile')}>
+            <Ionicons name="person-outline" size={14} color="#0277F4" />
+            <Text variant="bodySm" weight="bold" color="#0277F4">
+              Edit Profile
+            </Text>
           </TouchableOpacity>
         </View>
+      </View>
 
-        {/* Stats */}
-        <View style={styles.statsRow}>
-          <View style={styles.statBlock}>
-            <Text variant="h3" weight="bold" color="#FFFFFF">
-              24
-            </Text>
-            <Text variant="caption" color="rgba(255,255,255,0.6)">
-              Jobs Done
-            </Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statBlock}>
-            <Text variant="h3" weight="bold" color="#FFFFFF">
-              4.8★
-            </Text>
-            <Text variant="caption" color="rgba(255,255,255,0.6)">
-              Rating
-            </Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statBlock}>
-            <Text variant="h3" weight="bold" color="#FFFFFF">
-              ₹9.6k
-            </Text>
-            <Text variant="caption" color="rgba(255,255,255,0.6)">
-              Earned
-            </Text>
-          </View>
+      {/* Stats */}
+      <View style={styles.statsCard}>
+        <View style={styles.statBlock}>
+          <Text variant="h3" weight="bold" color="#0F172A">
+            24
+          </Text>
+          <Text variant="caption" color={Colors.textMuted}>
+            Jobs Done
+          </Text>
         </View>
-      </LinearGradient>
+        <View style={styles.statDivider} />
+        <View style={styles.statBlock}>
+          <Text variant="h3" weight="bold" color="#0F172A">
+            4.8★
+          </Text>
+          <Text variant="caption" color={Colors.textMuted}>
+            Rating
+          </Text>
+        </View>
+        <View style={styles.statDivider} />
+        <View style={styles.statBlock}>
+          <Text variant="h3" weight="bold" color="#0F172A">
+            ₹9.6k
+          </Text>
+          <Text variant="caption" color={Colors.textMuted}>
+            Earned
+          </Text>
+        </View>
+      </View>
 
       <MenuCard title="Jobs & Money" items={menuJobs} />
       <MenuCard title="Account" items={menuAccount} />
@@ -149,18 +128,15 @@ export default function WorkerProfileScreen() {
         <Button
           title="Switch to Employer Mode"
           variant="outline"
-          size="lg"
-          fullWidth
-          onPress={handleSwitchMode}
-          style={styles.switchBtn}
-        />
-        <Button
-          title="Log Out"
-          variant="danger"
           size="md"
           fullWidth
-          onPress={handleLogout}
+          onPress={handleSwitchMode}
         />
+        <TouchableOpacity style={styles.logoutRow} onPress={handleLogout} activeOpacity={0.6}>
+          <Text variant="bodySm" weight="medium" color="#EF4444">
+            Log out
+          </Text>
+        </TouchableOpacity>
       </View>
       <Text variant="caption" color={Colors.textMuted} style={styles.footer}>
         WorkGo v1.0.0 • Made with care
@@ -175,42 +151,26 @@ function MenuCard({ title, items }: { title: string; items: MenuItem[] }) {
       <Text variant="caption" weight="bold" color={Colors.textMuted} style={styles.menuTitle}>
         {title.toUpperCase()}
       </Text>
-      <Card padding="xs" style={styles.menuCard}>
+      <View style={styles.menuCard}>
         {items.map((item, index) => (
           <TouchableOpacity
             key={item.label}
-            activeOpacity={0.7}
+            activeOpacity={0.6}
             disabled={!item.onPress}
             onPress={item.onPress}
           >
-            <View
-              style={[
-                styles.menuRow,
-                index === items.length - 1 && styles.lastRow,
-                item.highlight && styles.menuRowHighlight,
-              ]}
-            >
-              <View
-                style={[
-                  styles.menuIcon,
-                  { backgroundColor: item.highlight ? '#EFF6FF' : item.bg ?? '#F1F5F9' },
-                ]}
-              >
+            <View style={[styles.menuRow, index === items.length - 1 && styles.lastRow]}>
+              <View style={[styles.menuIcon, item.color ? { backgroundColor: '#EFF6FF' } : undefined]}>
                 <Ionicons
                   name={item.icon}
                   size={18}
-                  color={item.color ?? (item.highlight ? Colors.primary : '#0F172A')}
+                  color={item.color ?? '#475569'}
                 />
               </View>
               <View style={styles.menuMiddle}>
                 <Text variant="body" weight="semibold" color="#0F172A">
                   {item.label}
                 </Text>
-                {item.highlight && (
-                  <Text variant="caption" color={Colors.primary}>
-                    Invite friends, earn ₹100 each
-                  </Text>
-                )}
               </View>
               {item.value && (
                 <Text variant="bodySm" weight="bold" color={Colors.textSecondary}>
@@ -228,81 +188,65 @@ function MenuCard({ title, items }: { title: string; items: MenuItem[] }) {
             </View>
           </TouchableOpacity>
         ))}
-      </Card>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    padding: Spacing.lg,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: 36,
     paddingBottom: Spacing.xxxl,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.surface,
   },
-  cover: {
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.lg,
-    marginBottom: Spacing.lg,
-    overflow: 'hidden',
-    ...Shadows.lg,
-  },
-  decoCircle1: {
-    position: 'absolute',
-    top: -50,
-    right: -30,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-  },
-  decoCircle2: {
-    position: 'absolute',
-    bottom: -60,
-    left: -40,
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-  },
-  coverTop: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: Spacing.lg,
   },
   avatar: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    backgroundColor: '#FFFFFF',
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: '#EFF0F6',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: Spacing.md,
-    borderWidth: 3,
-    borderColor: Colors.primary,
+    marginRight: Spacing.lg,
   },
-  avatarDetails: {
+  headerDetails: {
     flex: 1,
   },
-  verifiedRow: {
+  headerMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    marginTop: 4,
+    gap: Spacing.sm,
+    marginTop: 2,
   },
-  editBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  statsRow: {
+  editProfileRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: Spacing.xl,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: BorderRadius.md,
-    paddingVertical: Spacing.md,
+    gap: 6,
+    marginTop: Spacing.sm,
+  },
+  verifiedChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#ECFDF5',
+    borderRadius: 999,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+  },
+  statsCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    borderRadius: BorderRadius.lg,
+    paddingVertical: Spacing.lg,
+    marginBottom: Spacing.xl,
   },
   statBlock: {
     flex: 1,
@@ -311,7 +255,7 @@ const styles = StyleSheet.create({
   statDivider: {
     width: 1,
     height: 28,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: '#EEF2F7',
   },
   menuSection: {
     marginBottom: Spacing.lg,
@@ -322,7 +266,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
   },
   menuCard: {
-    paddingVertical: Spacing.xs,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    borderRadius: BorderRadius.lg,
+    paddingHorizontal: Spacing.sm,
   },
   menuRow: {
     flexDirection: 'row',
@@ -332,14 +280,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
   },
-  menuRowHighlight: {
-    backgroundColor: '#EFF6FF',
-    marginHorizontal: Spacing.xs,
-    borderRadius: BorderRadius.md,
-    borderBottomWidth: 0,
-    paddingVertical: Spacing.sm + 4,
-    marginVertical: Spacing.xs,
-  },
   lastRow: {
     borderBottomWidth: 0,
   },
@@ -347,6 +287,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
+    backgroundColor: '#F1F5F9',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: Spacing.md,
@@ -366,10 +307,12 @@ const styles = StyleSheet.create({
     marginLeft: 2,
   },
   actions: {
-    marginTop: Spacing.xs,
+    marginTop: Spacing.xl,
   },
-  switchBtn: {
-    marginBottom: Spacing.md,
+  logoutRow: {
+    alignSelf: 'center',
+    marginTop: Spacing.lg,
+    paddingVertical: 4,
   },
   footer: {
     textAlign: 'center',

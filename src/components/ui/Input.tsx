@@ -15,6 +15,7 @@ export interface InputProps extends TextInputProps {
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
   onRightIconPress?: () => void;
+  inputRef?: React.Ref<TextInput>;
 }
 
 export const Input: React.FC<InputProps> = ({
@@ -23,6 +24,7 @@ export const Input: React.FC<InputProps> = ({
   leftIcon,
   rightIcon,
   onRightIconPress,
+  inputRef,
   style,
   onFocus,
   onBlur,
@@ -46,6 +48,7 @@ export const Input: React.FC<InputProps> = ({
       >
         {leftIcon && <View style={styles.leftIcon}>{leftIcon}</View>}
         <TextInput
+          ref={inputRef}
           style={[styles.input, style]}
           placeholderTextColor={Colors.textMuted}
           onFocus={(e) => {

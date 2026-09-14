@@ -15,9 +15,9 @@ export default function AuthLayout() {
         headerShadowVisible: false,
       }}
     >
-      <Stack.Screen name="login" options={{ title: 'Login or Register' }} />
-      <Stack.Screen name="register" options={{ title: 'Create Account' }} />
-      <Stack.Screen name="otp" options={{ title: 'Verify OTP' }} />
+      <Stack.Screen name="login" options={{ headerShown: false }} />
+      <Stack.Screen name="register" options={{ headerShown: false }} />
+      <Stack.Screen name="otp" options={{ headerShown: false }} />
       <Stack.Screen name="role-selection" options={{ title: 'Choose Role', headerBackVisible: false }} />
     </Stack>
   );

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { StyleSheet, Animated, Pressable } from 'react-native';
+import { StyleSheet, Animated } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Icon as Ionicons } from '../../../src/components/Icon';
 import { Text } from '../../../src/components/ui';
@@ -37,21 +37,8 @@ const AnimatedIcon = React.memo(
   }
 );
 
-// Custom tab button: transparent ripple (no black flash on Android) and a
-// gentle fade instead of any heavy hover highlight.
-function TabButton({ children, onPress, onLongPress, style, ...rest }: any) {
-  return (
-    <Pressable
-      onPress={onPress}
-      onLongPress={onLongPress}
-      android_ripple={{ color: 'transparent' }}
-      style={({ pressed }) => [style, styles.tabPress, pressed && styles.pressed]}
-      {...rest}
-    >
-      {children}
-    </Pressable>
-  );
-}
+// Custom tab button removed — default PlatformPressable handles web
+// link navigation (preventDefault + SPA) correctly without reloads.
 
 export default function WorkerTabsLayout() {
   return (
@@ -69,7 +56,6 @@ export default function WorkerTabsLayout() {
           headerShadowVisible: false,
           tabBarStyle: styles.tabBar,
           tabBarItemStyle: styles.tabItem,
-          tabBarButton: (props) => <TabButton {...props} />,
           tabBarLabel: ({ focused }) => (
             <Text
               variant="caption"
@@ -87,8 +73,8 @@ export default function WorkerTabsLayout() {
       }}
     >
       <Tabs.Screen name="home" options={{ title: 'Home', headerShown: false }} />
-      <Tabs.Screen name="wallet" options={{ title: 'Wallet' }} />
-      <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
+      <Tabs.Screen name="wallet" options={{ title: 'Wallet', headerShown: false }} />
+      <Tabs.Screen name="profile" options={{ title: 'Profile', headerShown: false }} />
     </Tabs>
   );
 }
@@ -110,12 +96,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 4,
-  },
-  tabPress: {
-    backgroundColor: 'transparent',
-  },
-  pressed: {
-    opacity: 0.6,
   },
   label: {
     marginTop: 3,

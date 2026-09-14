@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Text, Input, Button } from '../../src/components/ui';
-import { ScreenSkeleton, usePageLoading } from '../../src/components/ui/PageSkeleton';
-import { OtpCartoon } from '../../src/components/AuthCartoon';
 import { Colors, Spacing } from '../../src/constants/theme';
 
 export default function OtpScreen() {
@@ -26,82 +24,112 @@ export default function OtpScreen() {
     }, 600);
   };
 
-  if (usePageLoading()) return <ScreenSkeleton variant="form" />;
-
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.illustration}>
-        <OtpCartoon />
-      </View>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={styles.container}
+    >
+      <View style={styles.inner}>
+        {/* Brand */}
+        <View style={styles.brand}>
+          <Text variant="h1" weight="heavy" color="#0F172A">
+            Work<Text variant="h1" weight="heavy" color="#0277F4">Go</Text>
+          </Text>
+          <Text variant="bodySm" weight="medium" color="#64748B" style={styles.tagline}>
+            Work nearby. Earn today.
+          </Text>
+        </View>
 
-      <View style={styles.header}>
-        <Text variant="h2" weight="bold" align="center" style={styles.title}>
-          Verify OTP
-        </Text>
-        <Text variant="body" color={Colors.textSecondary} align="center">
-          Enter the code sent to +91 {phone || 'XXXXX XXXXX'}
-        </Text>
-      </View>
+        {/* Center form */}
+        <View style={styles.center}>
+          <Text variant="h2" weight="bold" align="center" color="#0F172A">
+            Verify OTP
+          </Text>
+          <Text variant="body" color={Colors.textSecondary} align="center" style={styles.subtitle}>
+            Enter the code sent to{' '}
+            <Text variant="body" weight="bold" color="#0F172A">
+              +91 {phone || 'XXXXX XXXXX'}
+            </Text>
+          </Text>
 
-      <View style={styles.form}>
-        <Input
-          label="One Time Password (OTP)"
-          placeholder="e.g. 1234"
-          keyboardType="number-pad"
-          maxLength={6}
-          value={otp}
-          onChangeText={(text) => {
-            setOtp(text);
-            if (error) setError('');
-          }}
-          error={error}
-        />
+          <View style={styles.form}>
+            <Input
+              placeholder="····"
+              keyboardType="number-pad"
+              maxLength={6}
+              value={otp}
+              onChangeText={(text) => {
+                setOtp(text.replace(/[^0-9]/g, ''));
+                if (error) setError('');
+              }}
+              error={error}
+              style={styles.otpInput}
+            />
 
-        <Button
-          title="Verify & Continue"
-          size="lg"
-          fullWidth
-          loading={loading}
-          onPress={handleVerify}
-          style={styles.button}
-        />
-      </View>
+            <Button
+              title="Verify & Continue"
+              size="lg"
+              fullWidth
+              loading={loading}
+              onPress={handleVerify}
+              style={styles.button}
+            />
+          </View>
+        </View>
 
-      <View style={styles.resendSection}>
-        <Text variant="bodySm" color={Colors.textSecondary} align="center">
-          Didn't receive code? <Text variant="bodySm" color="#0F172A" weight="bold">Resend OTP</Text>
-        </Text>
+        {/* Footer */}
+        <View style={styles.footer}>
+          <Text variant="bodySm" color={Colors.textSecondary} align="center">
+            Didn't receive code?{' '}
+            <Text variant="bodySm" weight="bold" color="#0F172A">
+              Resend OTP
+            </Text>
+          </Text>
+        </View>
       </View>
-    </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
-    backgroundColor: Colors.background,
-    padding: Spacing.xl,
-    justifyContent: 'center',
-    flexDirection: 'column',
+    flex: 1,
+    backgroundColor: Colors.surface,
   },
-  illustration: {
+  inner: {
+    flex: 1,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.xxxl,
+  },
+  brand: {
     alignItems: 'center',
-    marginBottom: Spacing.lg,
+    paddingTop: Spacing.lg,
   },
-  header: {
-    alignItems: 'center',
-    marginBottom: Spacing.lg,
+  tagline: {
+    marginTop: 4,
   },
-  title: {
-    marginBottom: Spacing.xs,
+  center: {
+    marginTop: 'auto',
+    marginBottom: 'auto',
+    width: '100%',
+  },
+  subtitle: {
+    marginTop: Spacing.xs,
   },
   form: {
-    marginTop: Spacing.sm,
+    marginTop: Spacing.xl,
+  },
+  otpInput: {
+    fontSize: 24,
+    fontWeight: '700',
+    letterSpacing: 12,
+    textAlign: 'center',
+    paddingVertical: Spacing.md,
   },
   button: {
     marginTop: Spacing.md,
   },
-  resendSection: {
-    marginTop: Spacing.xl,
+  footer: {
+    marginTop: 'auto',
   },
 });

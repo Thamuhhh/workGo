@@ -1,29 +1,54 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, TextInput, Keyboard, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { Text, Input, Button } from '../../src/components/ui';
-import { ScreenSkeleton, usePageLoading } from '../../src/components/ui/PageSkeleton';
-import { RegisterCartoon } from '../../src/components/AuthCartoon';
-import { Colors, Spacing } from '../../src/constants/theme';
+import { Icon } from '../../src/components/Icon';
+import { BottomSheet } from '../../src/components/BottomSheet';
+import { Colors, Spacing, BorderRadius } from '../../src/constants/theme';
+
+const CITIES = [
+  'Chennai',
+  'Coimbatore',
+  'Madurai',
+  'Tiruchirappalli',
+  'Salem',
+  'Tirunelveli',
+  'Vellore',
+  'Erode',
+  'Thoothukudi',
+  'Kanyakumari',
+  'Dindigul',
+  'Karur',
+];
 
 export default function RegisterScreen() {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [error, setError] = useState('');
+  const [city, setCity] = useState('');
+  const [nameError, setNameError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+  const [cityError, setCityError] = useState('');
+  const [cityModalVisible, setCityModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
+  const phoneRef = useRef<TextInput>(null);
 
   const handleRegister = () => {
+    let hasError = false;
     if (!name.trim()) {
-      setError('Please enter your full name');
-      return;
+      setNameError('Please enter your full name');
+      hasError = true;
     }
     if (!phone || phone.length < 10) {
-      setError('Please enter a valid 10-digit mobile number');
-      return;
+      setPhoneError('Please enter a valid 10-digit mobile number');
+      hasError = true;
     }
-    setError('');
-    setLoading(true);
+    if (!city) {
+      setCityError('Please select your city');
+      hasError = true;
+    }
+    if (hasError) return;
 
+    setLoading(true);
     setTimeout(() => {
       setLoading(false);
       router.push({
@@ -33,71 +58,168 @@ export default function RegisterScreen() {
     }, 600);
   };
 
-  if (usePageLoading()) return <ScreenSkeleton variant="form" />;
-
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={styles.container}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.illustration}>
-          <RegisterCartoon />
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        onScrollBeginDrag={Keyboard.dismiss}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Brand */}
+        <View style={styles.brand}>
+          <Text variant="h1" weight="heavy" color="#0F172A">
+            Work<Text variant="h1" weight="heavy" color="#0277F4">Go</Text>
+          </Text>
+          <Text variant="bodySm" weight="medium" color="#64748B" style={styles.tagline}>
+            Work nearby. Earn today.
+          </Text>
         </View>
 
-        <View style={styles.header}>
-          <Text variant="h2" weight="bold" align="center" style={styles.title}>
+        {/* Center form */}
+        <View style={styles.center}>
+          <Text variant="h2" weight="bold" align="center" color="#0F172A">
             Create your account
           </Text>
-          <Text variant="body" color={Colors.textSecondary} align="center">
+          <Text variant="body" color={Colors.textSecondary} align="center" style={styles.subtitle}>
             Join WorkGo and start earning from jobs nearby today
           </Text>
+
+          <View style={styles.form}>
+            <Input
+              placeholder="Full name"
+              autoCapitalize="words"
+              returnKeyType="next"
+              blurOnSubmit={false}
+              value={name}
+              onChangeText={(text) => {
+                setName(text);
+                if (nameError) setNameError('');
+              }}
+              onSubmitEditing={() => phoneRef.current?.focus()}
+              error={nameError}
+              style={styles.field}
+            />
+
+            <Input
+              inputRef={phoneRef}
+              placeholder="Mobile number"
+              keyboardType="phone-pad"
+              maxLength={10}
+              value={phone}
+              onChangeText={(text) => {
+                setPhone(text.replace(/[^0-9]/g, ''));
+                if (phoneError) setPhoneError('');
+              }}
+              error={phoneError}
+              style={styles.field}
+            />
+
+            {/* City selector */}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => {
+                Keyboard.dismiss();
+                setCityModalVisible(true);
+              }}
+              style={[styles.cityField, cityError ? styles.cityFieldError : undefined]}
+            >
+              <Icon name="location-outline" size={20} color="#94A3B8" />
+              <Text
+                variant="body"
+                style={[styles.cityText, !city && styles.cityPlaceholder]}
+              >
+                {city || 'Select your city'}
+              </Text>
+              <Icon name="chevron-down" size={18} color="#94A3B8" />
+            </TouchableOpacity>
+            {cityError ? (
+              <Text variant="caption" color={Colors.danger} style={styles.errorText}>
+                {cityError}
+              </Text>
+            ) : null}
+
+            <Button
+              title="Create Account & Send OTP"
+              size="lg"
+              fullWidth
+              loading={loading}
+              onPress={handleRegister}
+              style={styles.button}
+            />
+          </View>
         </View>
 
-        <View style={styles.form}>
-          <Input
-            label="Full Name"
-            placeholder="e.g. Arun Kumar"
-            autoCapitalize="words"
-            value={name}
-            onChangeText={(text) => {
-              setName(text);
-              if (error) setError('');
-            }}
-          />
-
-          <Input
-            label="Mobile Phone"
-            placeholder="e.g. 9876543210"
-            keyboardType="phone-pad"
-            maxLength={10}
-            value={phone}
-            onChangeText={(text) => {
-              setPhone(text.replace(/[^0-9]/g, ''));
-              if (error) setError('');
-            }}
-            error={error}
-          />
-
-          <Button
-            title="Create Account & Send OTP"
-            size="lg"
-            fullWidth
-            loading={loading}
-            onPress={handleRegister}
-            style={styles.button}
-          />
-        </View>
-
+        {/* Footer */}
         <View style={styles.footer}>
           <Text variant="bodySm" color={Colors.textSecondary} align="center">
             Already have an account?{' '}
-            <Text variant="bodySm" weight="bold" color="#0277F4" onPress={() => router.push('/(auth)/login')}>
+            <Text
+              variant="bodySm"
+              weight="bold"
+              color="#0277F4"
+              onPress={() => router.push('/(auth)/login')}
+            >
               Login here
             </Text>
           </Text>
         </View>
       </ScrollView>
+
+      {/* City picker bottom sheet */}
+      <BottomSheet
+        visible={cityModalVisible}
+        onClose={() => setCityModalVisible(false)}
+        maxHeightRatio={0.7}
+      >
+        <Text variant="h3" weight="bold" color="#0F172A">
+          Select City
+        </Text>
+        <Text variant="bodySm" color={Colors.textSecondary}>
+          We show nearby work based on your city
+        </Text>
+        <ScrollView style={styles.cityList} contentContainerStyle={styles.cityListContent}>
+          {CITIES.map((c) => {
+            const selected = city === c;
+            return (
+              <TouchableOpacity
+                key={c}
+                activeOpacity={0.7}
+                style={styles.cityRow}
+                onPress={() => {
+                  setCity(c);
+                  if (cityError) setCityError('');
+                  setCityModalVisible(false);
+                }}
+              >
+                <Icon
+                  name="location-outline"
+                  size={18}
+                  color={selected ? '#0277F4' : '#94A3B8'}
+                />
+                <Text
+                  variant="body"
+                  weight={selected ? 'bold' : 'regular'}
+                  color={selected ? '#0277F4' : '#0F172A'}
+                  style={styles.cityRowName}
+                >
+                  {c}
+                </Text>
+                {selected && <Icon name="checkmark" size={18} color="#0277F4" />}
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+        <Button
+          title="Done"
+          variant="outline"
+          fullWidth
+          onPress={() => setCityModalVisible(false)}
+          style={styles.modalDone}
+        />
+      </BottomSheet>
     </KeyboardAvoidingView>
   );
 }
@@ -105,33 +227,86 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.surface,
   },
   scrollContent: {
     flexGrow: 1,
-    padding: Spacing.xl,
-    justifyContent: 'center',
-    flexDirection: 'column',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.xxxl,
   },
-  illustration: {
+  brand: {
     alignItems: 'center',
-    marginBottom: Spacing.lg,
+    paddingTop: Spacing.lg,
   },
-  header: {
-    alignItems: 'center',
-    marginBottom: Spacing.lg,
+  tagline: {
+    marginTop: 4,
   },
-  title: {
-    marginBottom: Spacing.xs,
+  center: {
+    width: '100%',
+  },
+  subtitle: {
+    marginTop: Spacing.xs,
   },
   form: {
-    marginTop: Spacing.sm,
+    marginTop: Spacing.xl,
+  },
+  field: {
+    marginBottom: Spacing.md,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  cityField: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.md,
+    minHeight: 48,
+    gap: Spacing.sm,
+  },
+  cityFieldError: {
+    borderColor: Colors.danger,
+  },
+  cityText: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  cityPlaceholder: {
+    color: Colors.textMuted,
+  },
+  errorText: {
+    marginTop: Spacing.xs,
+    marginLeft: Spacing.xs,
   },
   button: {
-    marginTop: Spacing.md,
+    marginTop: Spacing.sm,
   },
   footer: {
-    marginTop: Spacing.xl,
-    paddingBottom: Spacing.lg,
+    marginTop: 'auto',
+  },
+  cityList: {
+    marginTop: Spacing.md,
+  },
+  cityListContent: {
+    paddingBottom: Spacing.sm,
+  },
+  cityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  cityRowName: {
+    flex: 1,
+  },
+  modalDone: {
+    marginTop: Spacing.lg,
   },
 });

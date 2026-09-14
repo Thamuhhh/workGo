@@ -29,6 +29,7 @@ export default function WorkerLayout() {
         })}
       />
       <Stack.Screen name="bookings" options={{ title: 'My Bookings' }} />
+      <Stack.Screen name="edit-profile" options={{ title: 'Edit Profile' }} />
       <Stack.Screen name="applications" options={{ title: 'Chats' }} />
       <Stack.Screen name="refer" options={{ title: 'Refer & Earn' }} />
     </Stack>

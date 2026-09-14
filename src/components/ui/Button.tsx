@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   TouchableOpacity,
   ActivityIndicator,
@@ -6,6 +6,7 @@ import {
   ViewStyle,
   TextStyle,
   View,
+  Animated,
 } from 'react-native';
 import { Text } from './Text';
 import { Colors, BorderRadius, Spacing } from '../../constants/theme';
@@ -35,6 +36,16 @@ export const Button: React.FC<ButtonProps> = ({
   style,
   textStyle,
 }) => {
+  const scale = useRef(new Animated.Value(1)).current;
+
+  const animateScale = (toValue: number) => {
+    Animated.timing(scale, {
+      toValue,
+      duration: 90,
+      useNativeDriver: true,
+    }).start();
+  };
+
   const getContainerStyle = (): ViewStyle => {
     const base: ViewStyle = {
       flexDirection: 'row',
@@ -103,28 +114,32 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.8}
-      onPress={onPress}
-      disabled={disabled || loading}
-      style={[getContainerStyle(), style]}
-    >
-      {loading ? (
-        <ActivityIndicator color={getTextColor()} size="small" />
-      ) : (
-        <>
-          {icon && <View style={styles.iconContainer}>{icon}</View>}
-          <Text
-            variant={size === 'lg' ? 'h3' : size === 'sm' ? 'bodySm' : 'body'}
-            weight="bold"
-            color={getTextColor()}
-            style={textStyle}
-          >
-            {title}
-          </Text>
-        </>
-      )}
-    </TouchableOpacity>
+    <Animated.View style={{ transform: [{ scale }] }}>
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPressIn={() => animateScale(0.97)}
+        onPressOut={() => animateScale(1)}
+        onPress={onPress}
+        disabled={disabled || loading}
+        style={[getContainerStyle(), style]}
+      >
+        {loading ? (
+          <ActivityIndicator color={getTextColor()} size="small" />
+        ) : (
+          <>
+            {icon && <View style={styles.iconContainer}>{icon}</View>}
+            <Text
+              variant={size === 'lg' ? 'h3' : size === 'sm' ? 'bodySm' : 'body'}
+              weight="bold"
+              color={getTextColor()}
+              style={textStyle}
+            >
+              {title}
+            </Text>
+          </>
+        )}
+      </TouchableOpacity>
+    </Animated.View>
   );
 };
 

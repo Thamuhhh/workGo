@@ -4,6 +4,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  TextInput,
   Modal,
   Animated,
   PanResponder,
@@ -15,12 +16,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import { Icon as Ionicons } from '../../../src/components/Icon';
-import { Text, Button, Card } from '../../../src/components/ui';
+import { Text, Button } from '../../../src/components/ui';
 import { ScreenSkeleton, usePageLoading } from '../../../src/components/ui/PageSkeleton';
 
 import { FadeSlide, ScalePress } from '../../../src/components/AppHeader';
+import { BannerCarousel, Banner as HomeBanner } from '../../../src/components/BannerCarousel';
 import { Colors, Spacing, BorderRadius, Shadows } from '../../../src/constants/theme';
-import { SAMPLE_JOBS } from '../../../src/data/sampleJobs';
 import { useApplicationsStore } from '../../../src/store/applicationsStore';
 import { useAuthStore } from '../../../src/store/authStore';
 import { useMessagesStore } from '../../../src/store/messagesStore';
@@ -33,25 +34,9 @@ interface ServiceCategory {
   isOthers?: boolean;
 }
 
-const DAILY_TIPS: string[] = [
-  'Always verify the employer identity before accepting any job.',
-  'Keep your profile photo updated — verified workers get hired first.',
-  'Arrive 10 minutes early; punctuality keeps your rating high.',
-  'Update your skills list — workers with more skills earn more jobs.',
-  'Complete every job you accept; reliability builds repeat clients.',
-  'Ask the employer about food and transport before you start.',
-  'Keep last month\'s earnings in your wallet for quick cash-outs.',
-  'Mark your availability "yes" to show up in employer search first.',
-  'Read the job requirements fully before applying — fewer rejections.',
-  'Leave a polite follow-up after a job to get rebooked.',
-  'Emergency slot? Apply instantly — early applications win.',
-  'Keep WhatsApp notifications on to catch new nearby jobs fast.',
-];
-
 const DAY_OF_YEAR = Math.floor(
   (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000
 );
-const DAILY_TIP = DAILY_TIPS[DAY_OF_YEAR % DAILY_TIPS.length];
 const GREETING_MSG = (() => {
   const h = new Date().getHours();
   if (h >= 5 && h < 12) return 'Vanakkam';
@@ -98,6 +83,39 @@ const SAVED_PLACES = [
   { label: 'Work', address: 'Anna Nagar, Chennai', icon: 'briefcase-outline' },
 ];
 
+const WORK_STEPS = [
+  { icon: 'search-outline', title: 'Find jobs', desc: 'Browse gigs near you by category or area' },
+  { icon: 'paper-plane-outline', title: 'Apply in a tap', desc: 'Employers see your profile instantly' },
+  { icon: 'wallet-outline', title: 'Earn same day', desc: 'Get paid to your wallet after every gig' },
+];
+
+const HOME_BANNERS: HomeBanner[] = [
+  {
+    id: 'weekend',
+    title: 'Weekend Gig Surge',
+    subtitle: 'Catering, events & retail are hiring big this weekend.',
+    cta: 'See weekend jobs',
+    icon: 'calendar-outline',
+    onPress: () => router.push('/(worker)/jobs'),
+  },
+  {
+    id: 'bonus',
+    title: 'First Job Bonus',
+    subtitle: 'Earn an extra ₹100 on top of your first gig.',
+    cta: 'Learn how',
+    icon: 'ticket-outline',
+    onPress: () => router.push('/(worker)/jobs'),
+  },
+  {
+    id: 'highpay',
+    title: 'Highest Pay This Week',
+    subtitle: 'Catering staff at ₹1,200/day is trending nearby.',
+    cta: 'Browse now',
+    icon: 'arrow-up-right',
+    onPress: () => router.push('/(worker)/jobs'),
+  },
+];
+
 const QUICK_AREAS = [
   'Kanchipuram',
   'Chengalpattu',
@@ -139,6 +157,8 @@ export default function WorkerHomeScreen() {
   const [picked, setPicked] = useState<AreaOption>(area);
   const [modalVisible, setModalVisible] = useState(false);
   const [locating, setLocating] = useState(false);
+  const [query, setQuery] = useState('');
+  const jobsNearby = AREA_JOB_COUNT[area.label] ?? 24;
 
   const sheetY = useRef(new Animated.Value(0)).current;
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -201,6 +221,7 @@ export default function WorkerHomeScreen() {
   const openLocationPicker = () => {
     sheetY.setValue(420);
     setPicked(area);
+    setQuery('');
     setModalVisible(true);
     requestAnimationFrame(() => {
       Animated.spring(sheetY, {
@@ -391,6 +412,11 @@ export default function WorkerHomeScreen() {
             scrollEventThrottle={16}
           >
 
+          {/* Promo Banner Carousel */}
+          <FadeSlide delay={80}>
+            <BannerCarousel banners={HOME_BANNERS} />
+          </FadeSlide>
+
           {/* Select Your Services Category Grid */}
           <FadeSlide delay={120}>
             <View style={styles.sectionContainer}>
@@ -444,118 +470,90 @@ export default function WorkerHomeScreen() {
             </View>
           </FadeSlide>
 
-          {/* WorkGo Tip of the Day */}
-          <FadeSlide delay={200}>
-            <View style={styles.tipCard}>
-              <View style={styles.tipIcon}>
-                <Ionicons name="bulb-outline" size={20} color="#0277F4" />
-              </View>
-              <View style={styles.tipContent}>
-                <Text variant="caption" weight="bold" color="#0277F4" style={styles.tipLabel}>
-                  WORKGO TIP OF THE DAY
-                </Text>
-                <Text variant="bodySm" weight="medium" color="#334155" style={styles.tipText}>
-                  {DAILY_TIP}
-                </Text>
-              </View>
-            </View>
-          </FadeSlide>
-
-          {/* Nearby Jobs Section */}
+          {/* Earnings Stat Strip */}
           <FadeSlide delay={280}>
-            <View style={styles.jobsHeader}>
-              <Text variant="h3" weight="bold" color="#0F172A">
-                Nearby Jobs
-              </Text>
-              <TouchableOpacity onPress={() => router.push('/(worker)/jobs')}>
-                <Text variant="bodySm" weight="bold" color="#0F172A">
-                  View All (12) →
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </FadeSlide>
-
-          {/* Job Cards */}
-          <FadeSlide delay={360}>
-            <View style={styles.jobsList}>
-              {SAMPLE_JOBS.slice(0, 3).map((job) => (
-                <Card
-                  key={job.id}
-                  padding="md"
-                  style={styles.jobCard}
-                  onPress={() =>
-                    router.push({ pathname: '/(worker)/job-detail', params: { jobId: job.id } })
-                  }
-                >
-                  <View style={styles.jobCardTop}>
-                    <View style={styles.jobTitleCol}>
-                      <Text variant="body" weight="semibold" color="#0F172A" numberOfLines={1}>
-                        {job.title}
-                      </Text>
-                      <Text variant="caption" color="#64748B" style={styles.categoryTag}>
-                        {job.category} • {job.location} ({job.distance})
-                      </Text>
-                    </View>
-                    <View style={styles.salaryBadge}>
-                      <Text variant="bodySm" weight="heavy" color="#0F172A">
-                        {job.salary}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.jobMetaRow}>
-                    <Text variant="caption" color="#64748B">
-                      {job.date} • {job.timing}
-                    </Text>
-                    <View style={styles.ratingPill}>
-                      <Ionicons name="star" size={11} color="#F59E0B" />
-                      <Text variant="caption" weight="bold" color="#0F172A">
-                        {job.employerRating.replace(' Rating', '')}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.applyRow}>
-                    <Text variant="bodySm" weight="bold" color="#0277F4">
-                      Apply now
-                    </Text>
-                    <Ionicons name="arrow-right" size={12} color="#0277F4" weight="bold" />
-                  </View>
-                </Card>
-              ))}
-            </View>
-          </FadeSlide>
-
-          {/* Refer & Earn */}
-          <FadeSlide delay={440}>
-            <TouchableOpacity
-              activeOpacity={0.9}
-              onPress={() => router.push('/(worker)/refer')}
-              style={styles.referCardWrap}
+            <LinearGradient
+              colors={['#0EA5E9', '#0277F4']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.statsCard}
             >
-              <LinearGradient
-                colors={['#0277F4', '#0EA5E9']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.referCard}
-              >
-                <View style={styles.referTextCol}>
-                  <Text variant="caption" weight="bold" color="#BAE6FD" style={styles.referLabel}>
-                    REFER & EARN
-                  </Text>
-                  <Text variant="h3" weight="bold" color="#FFFFFF">
-                    Earn ₹100 per friend
-                  </Text>
-                  <Text variant="bodySm" color="#E0F2FE">
-                    Share your code — you both get rewards.
-                  </Text>
-                </View>
-                <View style={styles.referIconCircle}>
-                  <Ionicons name="gift" size={22} color="#FFFFFF" />
-                </View>
-                <Ionicons name="arrow-right" size={18} color="#FFFFFF" weight="bold" />
-              </LinearGradient>
-            </TouchableOpacity>
+              <View style={styles.statCol}>
+                <Text variant="h3" weight="heavy" color="#FFFFFF">
+                  {jobsNearby}
+                </Text>
+                <Text variant="caption" weight="medium" color="#E0F2FE">
+                  Jobs in {area.label}
+                </Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statCol}>
+                <Text variant="h3" weight="heavy" color="#FFFFFF">
+                  ₹1,200
+                </Text>
+                <Text variant="caption" weight="medium" color="#E0F2FE">
+                  Highest pay today
+                </Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statCol}>
+                <Text variant="h3" weight="heavy" color="#FFFFFF">
+                  ₹550
+                </Text>
+                <Text variant="caption" weight="medium" color="#E0F2FE">
+                  Avg. daily earning
+                </Text>
+              </View>
+            </LinearGradient>
+          </FadeSlide>
+
+          {/* How It Works */}
+          <FadeSlide delay={380}>
+            <View style={styles.sectionContainer}>
+              <Text variant="h3" weight="bold" color="#0F172A" style={styles.sectionTitle}>
+                How it works
+              </Text>
+              <View style={styles.stepsRow}>
+                {WORK_STEPS.map((step, i) => (
+                  <View key={step.title} style={styles.stepItem}>
+                    <View style={styles.stepIconWrap}>
+                      <Ionicons name={step.icon} size={18} color="#0277F4" />
+                      <View style={styles.stepBadge}>
+                        <Text style={styles.stepBadgeText}>{i + 1}</Text>
+                      </View>
+                    </View>
+                    <Text variant="bodySm" weight="bold" color="#0F172A" style={styles.stepTitle}>
+                      {step.title}
+                    </Text>
+                    <Text variant="caption" color="#64748B" align="center" style={styles.stepDesc}>
+                      {step.desc}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          </FadeSlide>
+
+          {/* Brand Footer */}
+          <FadeSlide delay={520}>
+            <View style={styles.landingFooter}>
+              <Text variant="caption" weight="bold" color="#64748B" style={styles.landingFooterTagline}>
+                For India. For gig workers.
+              </Text>
+              <Text variant="caption" color="#94A3B8" style={styles.landingFooterMeta}>
+                Find work nearby · Earn daily · Grow steady
+              </Text>
+              <View style={styles.landingFooterDivider} />
+              <View style={styles.landingFooterMetaRow}>
+                <Text variant="caption" color="#CBD5E1">
+                  Crafted with{" "}
+                </Text>
+                <Ionicons name="heart" size={11} color="#F87171" />
+                <Text variant="caption" color="#CBD5E1">
+                  {" "}in Kanchipuram · WorkGo v1.0.0
+                </Text>
+              </View>
+            </View>
           </FadeSlide>
         </ScrollView>
       </View>
@@ -605,28 +603,55 @@ export default function WorkerHomeScreen() {
             >
             <View style={styles.modalHeader}>
               <Text variant="h3" weight="bold" color="#0F172A">
-                Choose your location
+                Select your location
               </Text>
               <Text variant="bodySm" color="#64748B" style={styles.modalSubheader}>
-                Jobs available in your area
+                Jobs near your area will show on your home screen
               </Text>
             </View>
 
-            {/* Current Location */}
+            {/* Search */}
+            <View style={styles.modalSearchBox}>
+              <Ionicons name="search-outline" size={18} color="#64748B" />
+              <TextInput
+                value={query}
+                onChangeText={setQuery}
+                placeholder="Search for area, street, locality"
+                placeholderTextColor="#94A3B8"
+                autoCorrect={false}
+                autoCapitalize="none"
+                style={styles.modalSearchInput}
+              />
+              {query.length > 0 && (
+                <TouchableOpacity
+                  onPress={() => setQuery('')}
+                  hitSlop={8}
+                  style={styles.modalSearchClear}
+                >
+                  <Ionicons name="close-circle" size={18} color="#94A3B8" />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Use My Current Location CTA */}
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={handleUseCurrentLocation}
               style={[styles.modalPlaceRow, picked.label === 'Current location' && styles.modalPlaceRowActive]}
             >
               <View style={[styles.modalPlaceIcon, { backgroundColor: '#E0F2FE' }]}>
-                <Ionicons name="navigate" size={16} color="#0277F4" />
+                <Ionicons name="navigate" size={18} color="#0277F4" />
               </View>
               <View style={styles.modalPlaceCol}>
                 <Text variant="body" weight="bold" color="#0F172A">
-                  {locating ? 'Locating you…' : 'Use current location'}
+                  {locating ? 'Locating you…' : 'Use my current location'}
                 </Text>
                 <Text variant="caption" color="#64748B">
-                  {locating ? 'Finding your area…' : picked.label === 'Current location' ? picked.address : 'Gandhi Road, Kanchipuram'}
+                  {locating
+                    ? 'Finding your area…'
+                    : picked.label === 'Current location'
+                    ? picked.address
+                    : 'Detect your area automatically'}
                 </Text>
               </View>
               {picked.label === 'Current location' && !locating && (
@@ -634,52 +659,116 @@ export default function WorkerHomeScreen() {
               )}
             </TouchableOpacity>
 
-            {/* Saved Places */}
-            <View style={styles.modalSection}>
-              <Text variant="caption" weight="semibold" color="#94A3B8" style={styles.modalSectionLabel}>
-                SAVED PLACES
-              </Text>
-              {SAVED_PLACES.map((p) => (
-                <TouchableOpacity
-                  key={p.label}
-                  activeOpacity={0.8}
-                  onPress={() => setPicked(p)}
-                  style={[styles.modalPlaceRow, picked.label === p.label && styles.modalPlaceRowActive]}
-                >
-                  <View style={[styles.modalPlaceIcon, { backgroundColor: '#F0FDF4' }]}>
-                    <Ionicons name={p.icon as any} size={16} color="#059669" />
-                  </View>
-                  <View style={styles.modalPlaceCol}>
-                    <Text variant="body" weight="bold" color="#0F172A">{p.label}</Text>
-                    <Text variant="caption" color="#64748B">{p.address}</Text>
-                  </View>
-                  {picked.label === p.label && (
-                    <Ionicons name="checkmark-circle" size={20} color="#0277F4" />
-                  )}
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            {/* Quick Area Chips */}
-            <View style={styles.modalSection}>
-              <Text variant="caption" weight="semibold" color="#94A3B8" style={styles.modalSectionLabel}>
-                NEARBY AREAS
-              </Text>
-              <View style={styles.modalChipWrap}>
-                {QUICK_AREAS.map((a) => (
-                  <TouchableOpacity
-                    key={a}
-                    activeOpacity={0.85}
-                    onPress={() => setPicked({ label: a, address: a })}
-                    style={[styles.modalChip, picked.label === a && styles.modalChipActive]}
-                  >
-                    <Text variant="caption" weight="bold" color={picked.label === a ? '#FFFFFF' : '#334155'}>
-                      {a}
+            {query.trim().length > 0 ? (
+              (() => {
+                const q = query.trim().toLowerCase();
+                const savedMatches = SAVED_PLACES.filter((p) =>
+                  p.label.toLowerCase().includes(q)
+                );
+                const areaMatches = QUICK_AREAS.filter((a) => a.toLowerCase().includes(q));
+                return (
+                  <View style={styles.modalSection}>
+                    <Text variant="caption" weight="semibold" color="#94A3B8" style={styles.modalSectionLabel}>
+                      SEARCH RESULTS
                     </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
+                    {savedMatches.map((p) => (
+                      <TouchableOpacity
+                        key={p.label}
+                        activeOpacity={0.8}
+                        onPress={() => setPicked(p)}
+                        style={[styles.modalPlaceRow, picked.label === p.label && styles.modalPlaceRowActive]}
+                      >
+                        <View style={[styles.modalPlaceIcon, { backgroundColor: '#F0FDF4' }]}>
+                          <Ionicons name={p.icon as any} size={16} color="#059669" />
+                        </View>
+                        <View style={styles.modalPlaceCol}>
+                          <Text variant="body" weight="bold" color="#0F172A">{p.label}</Text>
+                          <Text variant="caption" color="#64748B">{p.address}</Text>
+                        </View>
+                        {picked.label === p.label && (
+                          <Ionicons name="checkmark-circle" size={20} color="#0277F4" />
+                        )}
+                      </TouchableOpacity>
+                    ))}
+                    {areaMatches.map((a) => (
+                      <TouchableOpacity
+                        key={a}
+                        activeOpacity={0.8}
+                        onPress={() => setPicked({ label: a, address: a })}
+                        style={[styles.modalPlaceRow, picked.label === a && styles.modalPlaceRowActive]}
+                      >
+                        <View style={[styles.modalPlaceIcon, { backgroundColor: '#F1F5F9' }]}>
+                          <Ionicons name="location-outline" size={16} color="#64748B" />
+                        </View>
+                        <View style={styles.modalPlaceCol}>
+                          <Text variant="body" weight="bold" color="#0F172A">{a}</Text>
+                          <Text variant="caption" color="#64748B">
+                            {AREA_JOB_COUNT[a] ?? 0} jobs near here
+                          </Text>
+                        </View>
+                        {picked.label === a && (
+                          <Ionicons name="checkmark-circle" size={20} color="#0277F4" />
+                        )}
+                      </TouchableOpacity>
+                    ))}
+                    {savedMatches.length === 0 && areaMatches.length === 0 && (
+                      <Text variant="bodySm" color="#64748B" style={styles.noResults}>
+                        No areas found for “{query.trim()}”. Try a different name.
+                      </Text>
+                    )}
+                  </View>
+                );
+              })()
+            ) : (
+              <>
+                {/* Saved Places */}
+                <View style={styles.modalSection}>
+                  <Text variant="caption" weight="semibold" color="#94A3B8" style={styles.modalSectionLabel}>
+                    SAVED ADDRESSES
+                  </Text>
+                  {SAVED_PLACES.map((p) => (
+                    <TouchableOpacity
+                      key={p.label}
+                      activeOpacity={0.8}
+                      onPress={() => setPicked(p)}
+                      style={[styles.modalPlaceRow, picked.label === p.label && styles.modalPlaceRowActive]}
+                    >
+                      <View style={[styles.modalPlaceIcon, { backgroundColor: '#F0FDF4' }]}>
+                        <Ionicons name={p.icon as any} size={16} color="#059669" />
+                      </View>
+                      <View style={styles.modalPlaceCol}>
+                        <Text variant="body" weight="bold" color="#0F172A">{p.label}</Text>
+                        <Text variant="caption" color="#64748B">{p.address}</Text>
+                      </View>
+                      {picked.label === p.label && (
+                        <Ionicons name="checkmark-circle" size={20} color="#0277F4" />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                {/* Quick Area Chips */}
+                <View style={styles.modalSection}>
+                  <Text variant="caption" weight="semibold" color="#94A3B8" style={styles.modalSectionLabel}>
+                    NEARBY AREAS
+                  </Text>
+                  <View style={styles.modalChipWrap}>
+                    {QUICK_AREAS.map((a) => (
+                      <TouchableOpacity
+                        key={a}
+                        activeOpacity={0.85}
+                        onPress={() => setPicked({ label: a, address: a })}
+                        style={[styles.modalChip, picked.label === a && styles.modalChipActive]}
+                      >
+                        <Text variant="caption" weight="bold" color={picked.label === a ? '#FFFFFF' : '#334155'}>
+                          {a}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              </>
+            )}
 
             </ScrollView>
 
@@ -899,115 +988,94 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
   },
-  tipCard: {
+  statsCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.md,
-    backgroundColor: '#EFF6FF',
-    borderWidth: 1,
-    borderColor: '#BFDBFE',
-    borderRadius: BorderRadius.lg,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
     marginHorizontal: Spacing.xl,
+    borderRadius: BorderRadius.lg,
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.md,
     marginBottom: Spacing.xl,
   },
-  tipIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#DBEAFE',
-    justifyContent: 'center',
+  statCol: {
+    flex: 1,
     alignItems: 'center',
   },
-  tipContent: {
-    flex: 1,
+  statDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: 'rgba(255,255,255,0.25)',
   },
-  tipLabel: {
-    letterSpacing: 1.2,
+  stepsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.md,
+  },
+  stepItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: 2,
+  },
+  stepIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#DBEAFE',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.sm,
+  },
+  stepBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#0277F4',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  stepBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    lineHeight: 14,
+    fontWeight: '700',
+  },
+  stepTitle: {
+    textAlign: 'center',
+    minHeight: 34,
     marginBottom: 2,
   },
-  tipText: {
-    lineHeight: 18,
+  stepDesc: {
+    textAlign: 'center',
+    lineHeight: 15,
+    minHeight: 30,
   },
-  jobsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  landingFooter: {
     alignItems: 'center',
-    paddingHorizontal: Spacing.xl,
-    marginBottom: Spacing.md,
-  },
-  jobsList: {
+    paddingTop: 40,
+    paddingBottom: 56,
     paddingHorizontal: Spacing.xl,
   },
-  jobCard: {
-    marginBottom: Spacing.lg,
-  },
-  jobCardTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: Spacing.xs,
-  },
-  jobTitleCol: {
-    flex: 1,
-    marginRight: Spacing.sm,
-  },
-  categoryTag: {
-    marginTop: 2,
-  },
-  salaryBadge: {
-    backgroundColor: '#EEF2FF',
-    paddingVertical: 3,
-    paddingHorizontal: 6,
-    borderRadius: BorderRadius.sm,
-  },
-  jobMetaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  ratingPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: '#F1F5F9',
-    paddingVertical: 2,
-    paddingHorizontal: 6,
-    borderRadius: 999,
-  },
-  applyRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: Spacing.xs,
-  },
-  referCardWrap: {
-    paddingHorizontal: Spacing.xl,
-    marginBottom: Spacing.xxxl,
-  },
-  referCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.lg,
-  },
-  referTextCol: {
-    flex: 1,
-  },
-  referLabel: {
-    letterSpacing: 1.2,
+  landingFooterTagline: {
+    letterSpacing: 0.8,
     marginBottom: 4,
   },
-  referIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+  landingFooterMeta: {
+    marginBottom: Spacing.md,
+  },
+  landingFooterDivider: {
+    alignSelf: 'center',
+    width: 40,
+    height: 1,
+    backgroundColor: '#E2E8F0',
+    marginBottom: Spacing.md,
+  },
+  landingFooterMetaRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
   },
   modalBackdrop: {
     flex: 1,
@@ -1018,13 +1086,33 @@ const styles = StyleSheet.create({
   },
   modalSheet: {
     backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
     paddingHorizontal: Spacing.xl,
     paddingTop: 12,
-    paddingBottom: Spacing.xl,
-    maxHeight: '88%',
+    paddingBottom: Spacing.xxxl,
+    height: '100%',
     width: '100%',
+  },
+  modalSearchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surfaceAlt,
+    borderRadius: 12,
+    paddingHorizontal: Spacing.md,
+    minHeight: 46,
+    marginBottom: Spacing.lg,
+  },
+  modalSearchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: '#0F172A',
+    paddingVertical: Spacing.sm,
+    marginLeft: Spacing.sm,
+  },
+  modalSearchClear: {
+    marginLeft: Spacing.sm,
+  },
+  noResults: {
+    marginTop: Spacing.xs,
   },
   dragHandleArea: {
     alignItems: 'center',

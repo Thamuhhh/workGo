@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, ViewProps, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ViewProps, TouchableOpacity, Platform } from 'react-native';
 import { Colors, BorderRadius, Spacing, Shadows } from '../../constants/theme';
 
 export interface CardProps extends ViewProps {
@@ -17,10 +17,18 @@ export const Card: React.FC<CardProps> = ({
   ...props
 }) => {
   const getCardStyle = () => {
-    const base = {
+    const base: Record<string, any> = {
       padding: Spacing[padding],
       borderRadius: BorderRadius.lg,
       backgroundColor: Colors.surface,
+      ...(Platform.OS === 'web'
+        ? {
+            userSelect: 'none' as const,
+            WebkitTouchCallout: 'none' as const,
+            WebkitTapHighlightColor: 'rgba(0,0,0,0)',
+            outlineStyle: 'none' as const,
+          }
+        : {}),
     };
 
     if (variant === 'elevated') {
