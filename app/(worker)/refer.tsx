@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Share, Platform } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Icon as Ionicons } from '../../src/components/Icon';
 import { Text, Card } from '../../src/components/ui';
 import { ScreenSkeleton, usePageLoading } from '../../src/components/ui/PageSkeleton';
-import { Colors, Spacing, BorderRadius, Shadows } from '../../src/constants/theme';
+import { Colors, Spacing, BorderRadius } from '../../src/constants/theme';
 
 const REFERRAL_CODE = 'KG72H4';
 
 const STEPS = [
-  { icon: 'share', title: 'Share your code', sub: 'Send it to friends via WhatsApp, SMS or any chat app' },
-  { icon: 'person-outline', title: 'They join & work', sub: 'Friend signs up with your code and completes their first job' },
+  { icon: 'share', title: 'Share your code', sub: 'WhatsApp, SMS or any chat app' },
+  { icon: 'person-outline', title: 'They join & work', sub: 'Friend signs up and finishes their first job' },
   { icon: 'wallet-outline', title: 'Both earn ₹100', sub: 'Bonus lands in both wallets within 24 hours' },
 ];
 
@@ -25,34 +24,29 @@ export default function ReferScreen() {
   const [copied, setCopied] = useState(false);
   const [shared, setShared] = useState(false);
 
-  const text = `Work around the corner and earn daily. Use my WorkGo code ${REFERRAL_CODE} when you sign up — we both get ₹100!`;
+  const text = `Work around the corner and earn daily. Use my Gigro code ${REFERRAL_CODE} when you sign up — we both get ₹100!`;
+
+  const flash = (setter: (v: boolean) => void) => {
+    setter(true);
+    setTimeout(() => setter(false), 2000);
+  };
 
   const handleCopy = async () => {
     try {
       if (Platform.OS === 'web') {
         await navigator.clipboard.writeText(text);
-      } else {
-        // fallback: expose code by prompting share
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-        return;
       }
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
     } catch {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      // ignore
     }
+    flash(setCopied);
   };
 
   const handleShare = async () => {
     try {
       if (Platform.OS === 'web') {
-        await navigator.clipboard
-          .writeText(text)
-          .then(() => setShared(true))
-          .catch(() => {});
-        setTimeout(() => setShared(false), 2000);
+        await navigator.clipboard.writeText(text);
+        flash(setShared);
         return;
       }
       await Share.share({ message: text });
@@ -61,222 +55,184 @@ export default function ReferScreen() {
     }
   };
 
-  const earnedCount = INVITES.filter((i) => i.status === 'Earned').length;
-  const totalEarned = earnedCount * 100;
-
   if (usePageLoading()) return <ScreenSkeleton variant="refer" />;
 
   return (
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Hero cover */}
-      <LinearGradient
-        colors={['#0277F4', '#1E4FD7']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.cover}
-      >
-        <View style={styles.decoCircle1} />
-        <View style={styles.decoCircle2} />
-        <View style={styles.coverBadge}>
-          <Ionicons name="gift" size={15} color="#FFFFFF" />
-          <Text variant="caption" weight="bold" color="#FFFFFF">
-            REFER & EARN
-          </Text>
-        </View>
-        <Text variant="h1" weight="heavy" color="#FFFFFF" style={styles.coverTitle}>
-          Earn ₹100
-        </Text>
-        <Text variant="body" color="rgba(255,255,255,0.85)">
-          for every friend who joins and finishes a job
-        </Text>
-
-        <View style={styles.codeBox}>
-          <View style={styles.codeCol}>
-            <Text variant="caption" color={Colors.textMuted}>
-              YOUR REFERRAL CODE
-            </Text>
-            <Text variant="h2" weight="heavy" color="#0F172A" style={styles.codeText}>
-              {REFERRAL_CODE}
-            </Text>
+      {/* Refer hero */}
+        <View style={styles.hero}>
+          <View style={styles.giftIcon}>
+            <Ionicons name="gift" size={18} color="#0277F4" />
           </View>
-          <View style={styles.codeActions}>
+          <Text variant="h2" weight="bold" color="#0F172A" style={styles.heroTitle}>
+            Earn ₹100
+          </Text>
+          <Text variant="bodySm" color={Colors.textSecondary} style={styles.heroSub}>
+            for every friend who joins and finishes a job
+          </Text>
+
+          <View style={styles.codeBox}>
+            <View style={styles.codeCol}>
+              <Text variant="caption" weight="bold" color={Colors.textMuted}>
+                YOUR REFERRAL CODE
+              </Text>
+              <Text variant="h2" weight="heavy" color="#0F172A" style={styles.codeText}>
+                {REFERRAL_CODE}
+              </Text>
+            </View>
             <TouchableOpacity
               style={[styles.codeIcon, copied && styles.codeIconDone]}
               activeOpacity={0.8}
               onPress={handleCopy}
+              hitSlop={8}
             >
-              <Ionicons name={copied ? 'checkmark' : 'copy'} size={18} color={copied ? '#16A34A' : '#0F172A'} />
+              <Ionicons
+                name={copied ? 'checkmark' : 'copy'}
+                size={18}
+                color={copied ? '#16A34A' : '#0F172A'}
+              />
             </TouchableOpacity>
           </View>
+
+          <TouchableOpacity style={styles.shareBtn} activeOpacity={0.9} onPress={handleShare}>
+            <Ionicons name="share" size={17} color="#FFFFFF" weight="fill" />
+            <Text variant="body" weight="bold" color="#FFFFFF">
+              {shared ? 'Copied to clipboard!' : 'Share with friends'}
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.shareBtn} activeOpacity={0.9} onPress={handleShare}>
-          <Ionicons name="share" size={18} color="#0277F4" weight="fill" />
-          <Text variant="body" weight="bold" color="#0277F4">
-            {shared ? 'Copied to clipboard!' : 'Share with friends'}
-          </Text>
-        </TouchableOpacity>
-      </LinearGradient>
-
-      {/* Reward summary */}
-      <View style={styles.rewardRow}>
-        <View style={styles.rewardBlock}>
-          <Text variant="h3" weight="bold" color="#0F172A">
-            ₹{totalEarned}
-          </Text>
-          <Text variant="caption" color={Colors.textMuted}>
-            Bonuses earned
-          </Text>
-        </View>
-        <View style={styles.rewardDivider} />
-        <View style={styles.rewardBlock}>
-          <Text variant="h3" weight="bold" color="#0F172A">
-            {earnedCount}
-          </Text>
-          <Text variant="caption" color={Colors.textMuted}>
-            Friends joined
-          </Text>
-        </View>
-        <View style={styles.rewardDivider} />
-        <View style={styles.rewardBlock}>
-          <Text variant="h3" weight="bold" color="#0F172A">
-            ₹100
-          </Text>
-          <Text variant="caption" color={Colors.textMuted}>
-            Per referral
-          </Text>
-        </View>
-      </View>
-
-      {/* How it works */}
-      <Text variant="h3" weight="bold" style={styles.sectionTitle}>
-        How it works
-      </Text>
-      <Card padding="md" style={styles.sectionCard}>
-        {STEPS.map((step, index) => (
-          <View key={step.title} style={[styles.stepRow, index === STEPS.length - 1 && styles.stepRowLast]}>
-            <View style={styles.stepMarker}>
-              <Text variant="caption" weight="heavy" color="#FFFFFF">
-                {index + 1}
-              </Text>
-            </View>
-            <View style={styles.stepIcon}>
-              <Ionicons name={step.icon} size={18} color={Colors.primary} />
-            </View>
-            <View style={styles.stepMiddle}>
-              <Text variant="body" weight="bold" color="#0F172A">
-                {step.title}
-              </Text>
-              <Text variant="caption" color={Colors.textMuted}>
-                {step.sub}
-              </Text>
-            </View>
+        {/* Reward summary */}
+        <View style={styles.rewardRow}>
+          <View style={styles.rewardBlock}>
+            <Text variant="h3" weight="bold" color="#0F172A">
+              ₹{INVITES.filter((i) => i.status === 'Earned').length * 100}
+            </Text>
+            <Text variant="caption" color={Colors.textMuted}>
+              Bonuses earned
+            </Text>
           </View>
-        ))}
-      </Card>
+          <View style={styles.rewardDivider} />
+          <View style={styles.rewardBlock}>
+            <Text variant="h3" weight="bold" color="#0F172A">
+              {INVITES.filter((i) => i.status === 'Earned').length}
+            </Text>
+            <Text variant="caption" color={Colors.textMuted}>
+              Friends joined
+            </Text>
+          </View>
+          <View style={styles.rewardDivider} />
+          <View style={styles.rewardBlock}>
+            <Text variant="h3" weight="bold" color="#0F172A">
+              ₹100
+            </Text>
+            <Text variant="caption" color={Colors.textMuted}>
+              Per referral
+            </Text>
+          </View>
+        </View>
 
-      {/* Invites */}
-      <View style={styles.sectionHead}>
-        <Text variant="h3" weight="bold">
-          Your invites
+        {/* How it works */}
+        <Text variant="h3" weight="bold" style={styles.sectionTitle}>
+          How it works
         </Text>
-        <Text variant="bodySm" weight="bold" color={Colors.primary}>
-          Invite more
-        </Text>
-      </View>
-      <Card padding="md" style={styles.sectionCard}>
-        {INVITES.map((inv, index) => {
-          const isEarned = inv.status === 'Earned';
-          return (
-            <View key={inv.name} style={[styles.inviteRow, index === INVITES.length - 1 && styles.stepRowLast]}>
-              <View style={[styles.inviteAvatar, isEarned ? styles.inviteAvatarEarned : styles.inviteAvatarPending]}>
-                <Text variant="body" weight="heavy" color={isEarned ? '#16A34A' : '#64748B'}>
-                  {inv.name.charAt(0)}
-                </Text>
+        <Card padding="lg" variant="outlined" style={styles.sectionCard}>
+          {STEPS.map((step, index) => (
+            <View key={step.title} style={[styles.stepRow, index === STEPS.length - 1 && styles.stepRowLast]}>
+              <View style={styles.stepIcon}>
+                <Ionicons name={step.icon} size={17} color="#0F172A" />
               </View>
               <View style={styles.stepMiddle}>
-                <Text variant="body" weight="bold" color="#0F172A">
-                  {inv.name}
-                </Text>
+                <View style={styles.stepTitleRow}>
+                  <Text variant="caption" weight="heavy" color={Colors.textMuted} style={styles.stepNum}>
+                    {index + 1}
+                  </Text>
+                  <Text variant="body" weight="bold" color="#0F172A">
+                    {step.title}
+                  </Text>
+                </View>
                 <Text variant="caption" color={Colors.textMuted}>
-                  {inv.time}
-                </Text>
-              </View>
-              <View style={[styles.statusPill, isEarned ? styles.statusPillEarned : styles.statusPillPending]}>
-                <Text variant="caption" weight="bold" color={isEarned ? '#16A34A' : '#B45309'}>
-                  {isEarned ? `${inv.amount} • ${inv.status}` : inv.status}
+                  {step.sub}
                 </Text>
               </View>
             </View>
-          );
-        })}
-      </Card>
+          ))}
+        </Card>
 
-      {/* Terms */}
-      <View style={styles.termsRow}>
-        <Ionicons name="info" size={14} color={Colors.textMuted} />
-        <Text variant="caption" color={Colors.textMuted} style={styles.termsText}>
-          Bonus is credited after your friend completes their first job. Limited to 20 referrals per account.
+        {/* Invites */}
+        <Text variant="h3" weight="bold" style={styles.sectionTitle}>
+          Your invites
         </Text>
-      </View>
-    </ScrollView>
+        <Card padding="lg" variant="outlined" style={styles.sectionCard}>
+          {INVITES.map((inv, index) => {
+            const isEarned = inv.status === 'Earned';
+            return (
+              <View key={inv.name} style={[styles.inviteRow, index === INVITES.length - 1 && styles.stepRowLast]}>
+                <View style={[styles.inviteAvatar, isEarned && styles.inviteAvatarEarned]}>
+                  <Text variant="body" weight="heavy" color={isEarned ? '#16A34A' : '#94A3B8'}>
+                    {inv.name.charAt(0)}
+                  </Text>
+                </View>
+                <View style={styles.stepMiddle}>
+                  <Text variant="body" weight="bold" color="#0F172A">
+                    {inv.name}
+                  </Text>
+                  <Text variant="caption" color={Colors.textMuted}>
+                    {inv.time}
+                  </Text>
+                </View>
+                <Text variant="caption" weight="bold" color={isEarned ? '#16A34A' : Colors.textMuted}>
+                  {isEarned ? inv.amount : inv.status}
+                </Text>
+              </View>
+            );
+          })}
+        </Card>
+
+        {/* Terms */}
+        <View style={styles.termsRow}>
+          <Ionicons name="info" size={13} color={Colors.textMuted} />
+          <Text variant="caption" color={Colors.textMuted} style={styles.termsText}>
+            Bonus is credited after your friend completes their first job. Limited to 20 referrals per account.
+          </Text>
+        </View>
+      </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    padding: Spacing.lg,
+    padding: Spacing.xl,
     paddingBottom: Spacing.xxxl,
-    backgroundColor: Colors.background,
+    backgroundColor: '#FFFFFF',
   },
-  cover: {
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.lg,
+  hero: {
     marginBottom: Spacing.lg,
-    overflow: 'hidden',
-    ...Shadows.lg,
   },
-  decoCircle1: {
-    position: 'absolute',
-    top: -50,
-    right: -30,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  decoCircle2: {
-    position: 'absolute',
-    bottom: -60,
-    left: -40,
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-  },
-  coverBadge: {
-    flexDirection: 'row',
+  giftIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#EFF6FF',
     alignItems: 'center',
-    gap: 6,
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255,255,255,0.16)',
-    borderRadius: 999,
-    paddingVertical: 5,
-    paddingHorizontal: 12,
-    marginBottom: Spacing.sm,
+    justifyContent: 'center',
+    marginBottom: Spacing.md,
   },
-  coverTitle: {
-    fontSize: 34,
-    lineHeight: 42,
+  heroTitle: {
+    marginBottom: 2,
+  },
+  heroSub: {
+    marginBottom: Spacing.lg,
   },
   codeBox: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
-    marginTop: Spacing.lg,
+    marginBottom: Spacing.sm,
   },
   codeCol: {
     flex: 1,
@@ -284,10 +240,6 @@ const styles = StyleSheet.create({
   codeText: {
     letterSpacing: 4,
     marginTop: 2,
-  },
-  codeActions: {
-    flexDirection: 'row',
-    gap: Spacing.xs,
   },
   codeIcon: {
     width: 40,
@@ -305,10 +257,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#0F172A',
     borderRadius: BorderRadius.md,
     paddingVertical: 14,
-    marginTop: Spacing.sm,
   },
   rewardRow: {
     flexDirection: 'row',
@@ -316,7 +267,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: BorderRadius.md,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: '#E2E8F0',
     paddingVertical: Spacing.md,
     marginBottom: Spacing.lg,
   },
@@ -346,20 +297,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0,
     paddingBottom: 0,
   },
-  stepMarker: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: Colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: Spacing.sm,
-  },
   stepIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#EFF6FF',
+    backgroundColor: '#F1F5F9',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: Spacing.md,
@@ -367,11 +309,13 @@ const styles = StyleSheet.create({
   stepMiddle: {
     flex: 1,
   },
-  sectionHead: {
+  stepTitleRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.sm,
+  },
+  stepNum: {
+    minWidth: 16,
+    marginRight: 2,
   },
   inviteRow: {
     flexDirection: 'row',
@@ -384,26 +328,13 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
+    backgroundColor: '#F1F5F9',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: Spacing.md,
   },
   inviteAvatarEarned: {
     backgroundColor: '#E6F9EC',
-  },
-  inviteAvatarPending: {
-    backgroundColor: '#F1F5F9',
-  },
-  statusPill: {
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 999,
-  },
-  statusPillEarned: {
-    backgroundColor: '#E6F9EC',
-  },
-  statusPillPending: {
-    backgroundColor: '#FEF3C7',
   },
   termsRow: {
     flexDirection: 'row',

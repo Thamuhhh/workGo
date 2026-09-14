@@ -18,7 +18,7 @@ export default function EmployerLayout() {
         gestureEnabled: true,
       }}
     >
-      <Stack.Screen name="home" options={{ title: 'WorkGo Employer', headerShown: false }} />
+      <Stack.Screen name="home" options={{ title: 'Gigro Employer', headerShown: false }} />
       <Stack.Screen name="post-job" options={{ title: '+ Post a New Job' }} />
       <Stack.Screen name="jobs" options={{ title: 'Manage Posted Jobs' }} />
       <Stack.Screen name="bookings" options={{ title: 'Hired Workers & Bookings' }} />

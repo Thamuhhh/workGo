@@ -32,78 +32,100 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
 
   const translateY = useRef(new Animated.Value(sheetMaxHeight)).current;
   const backdropOpacity = useRef(new Animated.Value(0)).current;
+  const contentOpacity = useRef(new Animated.Value(0)).current;
+  const handleScale = useRef(new Animated.Value(1)).current;
+  const handleWidth = useRef(new Animated.Value(36)).current;
 
-  useEffect(() => {
-    if (visible) {
+  const openSheet = (open: boolean) => {
+    if (open) {
+      contentOpacity.setValue(0);
       translateY.setValue(sheetMaxHeight);
       backdropOpacity.setValue(0);
+      handleWidth.setValue(36);
+
       Animated.parallel([
         Animated.spring(translateY, {
           toValue: 0,
-          damping: 22,
-          stiffness: 260,
+          damping: 16,
+          stiffness: 220,
           useNativeDriver: true,
         }),
         Animated.timing(backdropOpacity, {
-          toValue: 1,
-          duration: 200,
+          toValue: 0.55,
+          duration: 240,
           useNativeDriver: true,
         }),
+        Animated.sequence([
+          Animated.delay(200),
+          Animated.timing(contentOpacity, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+        ]),
       ]).start();
+
+      // handle pulse: subtle width grow then settle
+      Animated.sequence([
+        Animated.timing(handleWidth, {
+          toValue: 52,
+          duration: 260,
+          useNativeDriver: false,
+        }),
+        Animated.spring(handleWidth, {
+          toValue: 36,
+          damping: 12,
+          stiffness: 200,
+          useNativeDriver: false,
+        }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(translateY, {
+          toValue: sheetMaxHeight,
+          duration: 200,
+          easing: (t) => t * (2 - t), // ease-out quad
+          useNativeDriver: true,
+        }),
+        Animated.timing(backdropOpacity, {
+          toValue: 0,
+          duration: 180,
+          useNativeDriver: true,
+        }),
+        Animated.timing(contentOpacity, {
+          toValue: 0,
+          duration: 120,
+          useNativeDriver: true,
+        }),
+      ]).start(() => onClose());
     }
-  }, [visible, sheetMaxHeight, translateY, backdropOpacity]);
-
-  const animateOpen = () => {
-    Animated.parallel([
-      Animated.spring(translateY, {
-        toValue: 0,
-        damping: 22,
-        stiffness: 260,
-        useNativeDriver: true,
-      }),
-      Animated.timing(backdropOpacity, {
-        toValue: 1,
-        duration: 180,
-        useNativeDriver: true,
-      }),
-    ]).start();
   };
 
-  const animateClose = () => {
-    Animated.parallel([
-      Animated.spring(translateY, {
-        toValue: sheetMaxHeight,
-        damping: 24,
-        stiffness: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(backdropOpacity, {
-        toValue: 0,
-        duration: 180,
-        useNativeDriver: true,
-      }),
-    ]).start(() => onClose());
-  };
+  useEffect(() => {
+    openSheet(visible);
+  }, [visible, sheetMaxHeight]);
 
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_e, g) => g.dy > 8 && g.dy > Math.abs(g.dx),
       onPanResponderMove: (_e, g) => {
         translateY.setValue(Math.max(0, g.dy));
-        backdropOpacity.setValue(Math.max(0, Math.min(1, 1 - g.dy / sheetMaxHeight)));
+        backdropOpacity.setValue(
+          Math.max(0, 0.55 - (g.dy / sheetMaxHeight) * 0.55)
+        );
       },
       onPanResponderRelease: (_e, g) => {
         if (g.dy > CLOSE_DISTANCE || g.vy > CLOSE_VELOCITY) {
-          animateClose();
+          openSheet(false);
         } else {
-          animateOpen();
+          openSheet(true);
         }
       },
       onPanResponderTerminate: (_e, g) => {
-        if (g.dy > CLOSE_DISTANCE) {
-          animateClose();
+        if (g.dy > CLOSE_DISTANCE || g.vy > CLOSE_VELOCITY) {
+          openSheet(false);
         } else {
-          animateOpen();
+          openSheet(true);
         }
       },
     })
@@ -115,7 +137,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
       transparent
       animationType="none"
       statusBarTranslucent={Platform.OS === 'android'}
-      onRequestClose={animateClose}
+      onRequestClose={() => openSheet(false)}
     >
       <View style={styles.overlay}>
         <Animated.View
@@ -124,15 +146,27 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
           <TouchableOpacity
             style={StyleSheet.absoluteFill}
             activeOpacity={1}
-            onPress={animateClose}
+            onPress={() => openSheet(false)}
           />
         </Animated.View>
 
-        <Animated.View style={[styles.sheet, { maxHeight: sheetMaxHeight, transform: [{ translateY }] }]}>
+        <Animated.View
+          style={[
+            styles.sheet,
+            {
+              maxHeight: sheetMaxHeight,
+              transform: [{ translateY }],
+            },
+          ]}
+        >
           <View style={styles.grabArea} {...panResponder.panHandlers}>
-            <View style={styles.handle} />
+            <Animated.View
+              style={[styles.handle, { width: handleWidth }]}
+            />
           </View>
-          {children}
+          <Animated.View style={[styles.sheetContent, { opacity: contentOpacity }]}>
+            {children}
+          </Animated.View>
         </Animated.View>
       </View>
     </Modal>
@@ -145,7 +179,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   backdrop: {
-    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    backgroundColor: '#0F172A',
   },
   sheet: {
     width: '100%',
@@ -156,9 +190,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xl,
     paddingBottom: Spacing.xl,
   },
+  sheetContent: {
+    width: '100%',
+  },
   handle: {
     alignSelf: 'center',
-    width: 36,
     height: 4,
     borderRadius: 2,
     backgroundColor: '#E2E8F0',

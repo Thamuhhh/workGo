@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Icon as Ionicons } from '../../../src/components/Icon';
 import { Text, Button } from '../../../src/components/ui';
@@ -50,14 +51,20 @@ export default function WorkerProfileScreen() {
 
   const menuSupport: MenuItem[] = [
     { icon: 'help', label: 'Help & Support' },
-    { icon: 'info', label: 'About WorkGo', value: 'v1.0.0' },
+    { icon: 'info', label: 'About Gigro', value: 'v1.0.0' },
     { icon: 'star', label: 'Rate Us' },
     { icon: 'shield-checkmark', label: 'Privacy Policy' },
     { icon: 'document-text-outline', label: 'Terms of Service' },
   ];
 
   return (
-    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+    <SafeAreaView edges={['top']} style={styles.safeArea}>
+      <View style={styles.headerTitleWrap}>
+        <Text variant="h2" weight="bold" color="#0F172A">
+          Profile
+        </Text>
+      </View>
+      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.avatar}>
@@ -139,9 +146,10 @@ export default function WorkerProfileScreen() {
         </TouchableOpacity>
       </View>
       <Text variant="caption" color={Colors.textMuted} style={styles.footer}>
-        WorkGo v1.0.0 • Made with care
+        Gigro v1.0.0 • Made with care
       </Text>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -194,9 +202,18 @@ function MenuCard({ title, items }: { title: string; items: MenuItem[] }) {
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: Colors.surface,
+  },
+  headerTitleWrap: {
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.md,
+  },
   container: {
-    paddingHorizontal: Spacing.lg,
-    paddingTop: 36,
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.xs,
     paddingBottom: Spacing.xxxl,
     backgroundColor: Colors.surface,
   },

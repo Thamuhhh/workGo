@@ -29,7 +29,7 @@ const CATEGORY_ICONS: Record<string, string> = {
 
 const TRUST_POINTS = [
   { icon: 'bank', label: 'Same-day payout', sub: 'Money hits your bank or UPI the same evening' },
-  { icon: 'shield-checkmark', label: 'No advance fees', sub: 'WorkGo never asks you to pay anything' },
+  { icon: 'shield-checkmark', label: 'No advance fees', sub: 'Gigro never asks you to pay anything' },
   { icon: 'time-outline', label: 'Easy cancellation', sub: 'Cancel free till 9 PM the day before' },
 ];
 
@@ -85,7 +85,7 @@ export default function JobDetailScreen() {
 
   const handleShare = async () => {
     if (!job) return;
-    const message = `${job.title} by ${job.employerName} • ${job.salary} • ${job.location}. Apply on WorkGo and earn daily!`;
+    const message = `${job.title} by ${job.employerName} • ${job.salary} • ${job.location}. Apply on Gigro and earn daily!`;
     try {
       if (Platform.OS === 'web') {
         await navigator.clipboard.writeText(message).catch(() => {});
@@ -329,7 +329,7 @@ export default function JobDetailScreen() {
                 <View style={styles.sectionHeader}>
                   <Ionicons name="people-outline" size={18} color="#0F172A" />
                   <Text variant="body" weight="bold" color="#0F172A">
-                    Hiring Progress
+                    People Needed
                   </Text>
                 </View>
                 <View style={styles.progressTrack}>
@@ -346,41 +346,6 @@ export default function JobDetailScreen() {
                   />
                 </View>
               </Card>
-            </FadeSlide>
-
-            {/* ─── Amenities ─── */}
-            <FadeSlide delay={320}>
-              <Text variant="body" weight="bold" color="#0F172A" style={styles.sectionTitle}>
-                What's Included
-              </Text>
-              <View style={styles.amenitiesRow}>
-                <View style={[styles.amenityCard, { backgroundColor: job.foodProvided ? '#ECFDF5' : '#F8FAFC' }]}>
-                  <Ionicons
-                    name={job.foodProvided ? 'restaurant' : 'restaurant-outline'}
-                    size={24}
-                    color={job.foodProvided ? '#059669' : Colors.textMuted}
-                  />
-                  <Text variant="bodySm" weight="bold" color={job.foodProvided ? '#059669' : Colors.textMuted}>
-                    Food
-                  </Text>
-                  <Text variant="caption" color={job.foodProvided ? '#059669' : Colors.textMuted}>
-                    {job.foodProvided ? 'Meals provided' : 'Not included'}
-                  </Text>
-                </View>
-                <View style={[styles.amenityCard, { backgroundColor: job.transportProvided ? '#EEF2FF' : '#F8FAFC' }]}>
-                  <Ionicons
-                    name={job.transportProvided ? 'car' : 'car-outline'}
-                    size={24}
-                    color={job.transportProvided ? '#4F46E5' : Colors.textMuted}
-                  />
-                  <Text variant="bodySm" weight="bold" color={job.transportProvided ? '#4F46E5' : Colors.textMuted}>
-                    Transport
-                  </Text>
-                  <Text variant="caption" color={job.transportProvided ? '#4F46E5' : Colors.textMuted}>
-                    {job.transportProvided ? 'Pickup available' : 'Not included'}
-                  </Text>
-                </View>
-              </View>
             </FadeSlide>
 
             {/* ─── Requirements ─── */}
@@ -542,8 +507,8 @@ export default function JobDetailScreen() {
 
             <SwipeToConfirm
               onConfirm={handleApplyConfirm}
-              trackText="Swipe to Apply →"
-              confirmText="✓ Applied!"
+              label="Swipe to Apply"
+              confirmText="Applied!"
             />
 
             <TouchableOpacity
@@ -787,20 +752,6 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: Colors.primary,
     borderRadius: 4,
-  },
-
-  /* Amenities */
-  amenitiesRow: {
-    flexDirection: 'row',
-    gap: Spacing.md,
-    marginBottom: Spacing.lg,
-  },
-  amenityCard: {
-    flex: 1,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.lg,
-    alignItems: 'center',
-    gap: 4,
   },
 
   /* Requirements */

@@ -47,7 +47,7 @@ export default function RoleSelectionScreen() {
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.header}>
         <Text variant="h2" weight="bold" style={styles.title}>
-          How do you want to use WorkGo?
+          How do you want to use Gigro?
         </Text>
         <Text variant="body" color={Colors.textSecondary}>
           You can also switch modes anytime from your profile settings.

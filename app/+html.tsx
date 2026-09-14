@@ -11,7 +11,7 @@ export default function Root({ children }: PropsWithChildren) {
           name="viewport"
           content="width=device-width, initial-scale=1, shrink-to-fit=no"
         />
-        <title>WorkGo</title>
+        <title>Gigro</title>
         <style
           dangerouslySetInnerHTML={{
             __html: `

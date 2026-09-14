@@ -9,6 +9,8 @@ import {
   Animated,
   PanResponder,
   Platform,
+  Dimensions,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image as ExpoImage } from 'expo-image';
@@ -20,6 +22,7 @@ import { Text, Button } from '../../../src/components/ui';
 import { ScreenSkeleton, usePageLoading } from '../../../src/components/ui/PageSkeleton';
 
 import { FadeSlide, ScalePress } from '../../../src/components/AppHeader';
+import { LocationPickerMap } from '../../../src/components/LocationPickerMap';
 import { BannerCarousel, Banner as HomeBanner } from '../../../src/components/BannerCarousel';
 import { Colors, Spacing, BorderRadius, Shadows } from '../../../src/constants/theme';
 import { useApplicationsStore } from '../../../src/store/applicationsStore';
@@ -141,6 +144,140 @@ const AREA_JOB_COUNT: Record<string, number> = {
   'Current location': 18,
 };
 
+const AREA_COORDS: Record<string, [number, number]> = {
+  Home: [79.7000, 12.8352],
+  Work: [80.2110, 13.0827],
+  Kanchipuram: [79.7000, 12.8352],
+  Chengalpattu: [79.9750, 12.6850],
+  Madurantakam: [79.8593, 12.5111],
+  Sriperumbudur: [79.9420, 12.9670],
+  Uthiramerur: [79.7610, 12.6080],
+  Oragadam: [79.9569, 12.9111],
+  'Maraimalai Nagar': [80.0350, 12.7930],
+  Tambaram: [80.1170, 12.9230],
+};
+
+// Known Chennai localities — reverse geocoders return "Ward/Zone" junk,
+// so we snap to the nearest real locality first.
+const LOCALITY_COORDS: Record<string, [number, number]> = {
+  Virugambakkam: [80.1931, 13.0502],
+  Kodambakkam: [80.2010, 13.0530],
+  Vadapalani: [80.2130, 13.0490],
+  Valasaravakkam: [80.1800, 13.0600],
+  Saligramam: [80.2050, 13.0360],
+  Koyambedu: [80.2010, 13.0730],
+  'Maduravoyal': [80.1560, 13.0620],
+  'MMDA Colony': [80.1780, 13.0520],
+  'Anna Nagar': [80.2110, 13.0820],
+  'Mogappair': [80.1780, 13.0820],
+  Ambattur: [80.1320, 13.0980],
+  'Poonamallee': [80.1070, 13.0840],
+  'Guindy': [80.2160, 13.0060],
+  'Nungambakkam': [80.2420, 13.0580],
+  'T. Nagar': [80.2310, 13.0410],
+  'West Mambalam': [80.2230, 13.0340],
+  'Ashok Nagar': [80.2170, 13.0320],
+  'Arumbakkam': [80.2190, 13.0740],
+  'Alwarthirunagar': [80.2210, 13.0350],
+  'Porur': [80.1570, 13.0370],
+  'Ramapuram': [80.1720, 13.0320],
+  'Iyyapanthangal': [80.1580, 13.0280],
+  'Vellala Nagar': [80.2260, 13.0110],
+  'Ekkaduthangal': [80.2050, 13.0150],
+  'Nandanam': [80.2370, 13.0280],
+  'Adyar': [80.2550, 13.0050],
+  'Teynampet': [80.2460, 13.0350],
+  'Royapettah': [80.2600, 13.0500],
+  'Mylapore': [80.2700, 13.0360],
+  'Velachery': [80.2210, 12.9750],
+  'Chromepet': [80.1510, 12.9520],
+  'Pallavaram': [80.1600, 12.9670],
+  'Tambaram': [80.1170, 12.9230],
+  'Perungudi': [80.2410, 12.9600],
+  'Thoraipakkam': [80.2400, 12.9340],
+  'Sholinganallur': [80.2300, 12.9010],
+  'OMR': [80.2460, 12.9700],
+  'Medavakkam': [80.1850, 12.9160],
+  'Madipakkam': [80.1990, 12.9600],
+  'Pallikaranai': [80.2100, 12.9360],
+  'Guduvancheri': [80.0720, 12.8450],
+  'Urapakkam': [80.0950, 12.8680],
+  'Vandalur': [80.0900, 12.8920],
+};
+
+const nearestLocality = (coords: [number, number]): string | null => {
+  let best: string | null = null;
+  let bestD = Infinity;
+  for (const name of Object.keys(LOCALITY_COORDS)) {
+    const d = distKm(coords, LOCALITY_COORDS[name]);
+    if (d < bestD) {
+      bestD = d;
+      best = name;
+    }
+  }
+  return bestD < 6 ? best : null;
+};
+
+const reverseGeocodeName = async (coords: [number, number]): Promise<string | null> => {
+  const local = nearestLocality(coords);
+  if (local) return local;
+  const [lng, lat] = coords;
+  try {
+    if (Platform.OS === 'web') {
+      const res = await fetch(
+        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
+      );
+      if (!res.ok) return null;
+      const data = await res.json();
+      const admins: { name: string; adminLevel: number; order: number }[] =
+        data.localityInfo?.administrative ?? [];
+      const suburb =
+        admins
+          .filter((a) => a.adminLevel >= 7 && a.adminLevel <= 10)
+          .sort((a, b) => b.adminLevel - a.adminLevel)[0]?.name ?? null;
+      const locality = data.locality && data.locality !== data.city ? data.locality : null;
+      const city = data.city ?? null;
+      return suburb ?? locality ?? city ??
+        admins.sort((a, b) => b.order - a.order)[0]?.name ?? null;
+    }
+    const [place] = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
+    if (place) {
+      const parts = [place.subregion, place.city, place.district, place.region].filter(Boolean);
+      return parts[0] ?? null;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+const distKm = (a: [number, number], b: [number, number]) => {
+  const R = 6371;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(b[1] - a[1]);
+  const dLng = toRad(b[0] - a[0]);
+  const la = toRad(a[1]);
+  const lb = toRad(b[1]);
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(la) * Math.cos(lb) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+};
+
+const nearestArea = (coords: [number, number]): string => {
+  const names = Object.keys(AREA_COORDS).filter((k) => k !== 'Home' && k !== 'Work');
+  let best = names[0];
+  let bestD = Infinity;
+  for (const n of names) {
+    const d = distKm(coords, AREA_COORDS[n]);
+    if (d < bestD) {
+      bestD = d;
+      best = n;
+    }
+  }
+  return best;
+};
+
 interface AreaOption {
   label: string;
   address: string;
@@ -158,10 +295,17 @@ export default function WorkerHomeScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [locating, setLocating] = useState(false);
   const [query, setQuery] = useState('');
+  const [mapMode, setMapMode] = useState(false);
+  const [mapCoords, setMapCoords] = useState<[number, number]>(AREA_COORDS['Kanchipuram']);
+  const [snappedArea, setSnappedArea] = useState('Kanchipuram');
+  const [placeName, setPlaceName] = useState<string | null>(null);
+  const [mapDist, setMapDist] = useState(0);
+  const placeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const jobsNearby = AREA_JOB_COUNT[area.label] ?? 24;
 
   const sheetY = useRef(new Animated.Value(0)).current;
   const scrollY = useRef(new Animated.Value(0)).current;
+  const SCREEN_HEIGHT = Dimensions.get('window').height;
 
   const headerPadTop = scrollY.interpolate({ inputRange: [0, 64], outputRange: [16, 9], extrapolate: 'clamp' });
   const headerPadBottom = scrollY.interpolate({ inputRange: [0, 64], outputRange: [20, 10], extrapolate: 'clamp' });
@@ -171,15 +315,17 @@ export default function WorkerHomeScreen() {
   const comboMargin = scrollY.interpolate({ inputRange: [0, 64], outputRange: [Spacing.md, 4], extrapolate: 'clamp' });
   const comboScale = scrollY.interpolate({ inputRange: [0, 64], outputRange: [1, 0.97], extrapolate: 'clamp' });
   const listScrollY = useRef(0);
+  const mapModeRef = useRef(mapMode);
+  mapModeRef.current = mapMode;
   const backdropOpacity = sheetY.interpolate({
-    inputRange: [0, 420],
+    inputRange: [0, SCREEN_HEIGHT],
     outputRange: [1, 0],
     extrapolate: 'clamp',
   });
 
   const closeModal = () => {
     Animated.timing(sheetY, {
-      toValue: 420,
+      toValue: SCREEN_HEIGHT,
       duration: 180,
       useNativeDriver: true,
     }).start(() => setModalVisible(false));
@@ -189,9 +335,9 @@ export default function WorkerHomeScreen() {
     PanResponder.create({
       onStartShouldSetPanResponder: () => false,
       onMoveShouldSetPanResponder: (_evt, g) =>
-        listScrollY.current <= 0 && g.dy > 5 && Math.abs(g.dy) > Math.abs(g.dx),
+        !mapModeRef.current && listScrollY.current <= 0 && g.dy > 5 && Math.abs(g.dy) > Math.abs(g.dx),
       onMoveShouldSetPanResponderCapture: (_evt, g) =>
-        listScrollY.current <= 0 && g.dy > 5 && Math.abs(g.dy) > Math.abs(g.dx),
+        !mapModeRef.current && listScrollY.current <= 0 && g.dy > 5 && Math.abs(g.dy) > Math.abs(g.dx),
       onPanResponderGrant: () => {},
       onPanResponderMove: (_evt, g) => {
         if (g.dy > 0) sheetY.setValue(g.dy);
@@ -219,9 +365,10 @@ export default function WorkerHomeScreen() {
   ).current;
 
   const openLocationPicker = () => {
-    sheetY.setValue(420);
+    sheetY.setValue(SCREEN_HEIGHT);
     setPicked(area);
     setQuery('');
+    setMapMode(false);
     setModalVisible(true);
     requestAnimationFrame(() => {
       Animated.spring(sheetY, {
@@ -262,32 +409,45 @@ export default function WorkerHomeScreen() {
   const handleUseCurrentLocation = async () => {
     setLocating(true);
     try {
-      let perm = await Location.getForegroundPermissionsAsync();
-      if (Platform.OS !== 'web' && perm.status !== Location.PermissionStatus.GRANTED) {
-        perm = await Location.requestForegroundPermissionsAsync();
-      }
-      if (Platform.OS !== 'web' && perm.status !== Location.PermissionStatus.GRANTED) {
-        setLocating(false);
-        return;
-      }
-      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      let address = 'Current location';
-      if (Platform.OS !== 'web') {
-        try {
-          const [place] = await Location.reverseGeocodeAsync(pos.coords);
-          if (place) {
-            const parts = [place.district, place.city, place.region].filter(Boolean);
-            if (parts.length) address = parts.slice(0, 2).join(', ');
-          }
-        } catch {
-          // keep fallback address
+      let lat: number;
+      let lng: number;
+
+      if (Platform.OS === 'web') {
+        const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+          if (!navigator.geolocation) return reject(new Error('no geolocation'));
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0,
+          });
+        });
+        lat = pos.coords.latitude;
+        lng = pos.coords.longitude;
+      } else {
+        let perm = await Location.getForegroundPermissionsAsync();
+        if (perm.status !== Location.PermissionStatus.GRANTED) {
+          perm = await Location.requestForegroundPermissionsAsync();
         }
+        if (perm.status !== Location.PermissionStatus.GRANTED) {
+          setLocating(false);
+          return;
+        }
+        const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        lat = pos.coords.latitude;
+        lng = pos.coords.longitude;
       }
-      setPicked({ label: 'Current location', address });
-      setArea({ label: 'Current location', address });
-      closeModal();
+
+      setMapCoords([lng, lat]);
+      const snap = nearestArea([lng, lat]);
+      setSnappedArea(snap);
+      setMapDist(Math.round(distKm([lng, lat], AREA_COORDS[snap]) * 10) / 10);
+      const name = (await reverseGeocodeName([lng, lat])) ?? 'Current location';
+      if (name) setSnappedArea(name);
+      setPicked({ label: 'Current location', address: `${name}` });
+      setMapMode(true);
     } catch {
-      setPicked({ label: 'Current location', address: 'Gandhi Road, Kanchipuram' });
+      setLocating(false);
+      Alert.alert('Location unavailable', 'Could not get your location. Try the map instead.');
     } finally {
       setLocating(false);
     }
@@ -333,7 +493,7 @@ export default function WorkerHomeScreen() {
               <Animated.View style={[styles.headerTopRow, { transform: [{ scale: brandScale }] }]}>
                 <View style={styles.brandCol}>
                   <Text variant="h2" weight="heavy" color="#0F172A" style={styles.brandTitle}>
-                    Work<Text variant="h2" weight="heavy" color="#0277F4">Go</Text>
+                    Gig<Text variant="h2" weight="heavy" color="#0277F4">ro</Text>
                   </Text>
                   <Animated.View style={{ height: taglineHeight, opacity: taglineOpacity }}>
                     <Text variant="caption" weight="medium" color="#64748B" style={styles.brandTagline}>
@@ -380,9 +540,16 @@ export default function WorkerHomeScreen() {
                   <View style={styles.locationIconChip}>
                     <Ionicons name="location-outline" size={16} color="#0277F4" />
                   </View>
-                  <Text variant="body" weight="bold" color="#0F172A" numberOfLines={1} style={styles.comboLocationLabel}>
-                    {area.label}
-                  </Text>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text variant="body" weight="bold" color="#0F172A" numberOfLines={1} style={styles.comboLocationLabel}>
+                      {area.label}
+                    </Text>
+                    {area.address && area.label !== area.address && (
+                      <Text variant="caption" color="#64748B" numberOfLines={1}>
+                        {area.address}
+                      </Text>
+                    )}
+                  </View>
                   <Ionicons name="chevron-down" size={14} color="#94A3B8" />
                 </TouchableOpacity>
 
@@ -483,7 +650,7 @@ export default function WorkerHomeScreen() {
                   {jobsNearby}
                 </Text>
                 <Text variant="caption" weight="medium" color="#E0F2FE">
-                  Jobs in {area.label}
+                  Jobs nearby you
                 </Text>
               </View>
               <View style={styles.statDivider} />
@@ -546,11 +713,11 @@ export default function WorkerHomeScreen() {
               <View style={styles.landingFooterDivider} />
               <View style={styles.landingFooterMetaRow}>
                 <Text variant="caption" color="#CBD5E1">
-                  Crafted with{" "}
+                  Created in{" "}
                 </Text>
                 <Ionicons name="heart" size={11} color="#F87171" />
                 <Text variant="caption" color="#CBD5E1">
-                  {" "}in Kanchipuram · WorkGo v1.0.0
+                  {" "}Tamilnadu
                 </Text>
               </View>
             </View>
@@ -564,6 +731,7 @@ export default function WorkerHomeScreen() {
         visible={modalVisible}
         animationType="none"
         transparent
+        statusBarTranslucent={Platform.OS === 'android'}
         onRequestClose={closeModal}
       >
         <View style={styles.modalBackdrop}>
@@ -602,110 +770,194 @@ export default function WorkerHomeScreen() {
               }}
             >
             <View style={styles.modalHeader}>
-              <Text variant="h3" weight="bold" color="#0F172A">
-                Select your location
-              </Text>
-              <Text variant="bodySm" color="#64748B" style={styles.modalSubheader}>
-                Jobs near your area will show on your home screen
-              </Text>
-            </View>
-
-            {/* Search */}
-            <View style={styles.modalSearchBox}>
-              <Ionicons name="search-outline" size={18} color="#64748B" />
-              <TextInput
-                value={query}
-                onChangeText={setQuery}
-                placeholder="Search for area, street, locality"
-                placeholderTextColor="#94A3B8"
-                autoCorrect={false}
-                autoCapitalize="none"
-                style={styles.modalSearchInput}
-              />
-              {query.length > 0 && (
+              {mapMode && (
                 <TouchableOpacity
-                  onPress={() => setQuery('')}
+                  activeOpacity={0.8}
+                  onPress={() => setMapMode(false)}
+                  style={styles.mapBack}
                   hitSlop={8}
-                  style={styles.modalSearchClear}
                 >
-                  <Ionicons name="close-circle" size={18} color="#94A3B8" />
+                  <Ionicons name="chevron-back" size={22} color="#0F172A" />
                 </TouchableOpacity>
               )}
+              <View style={{ flex: 1 }}>
+                <Text variant="h3" weight="bold" color="#0F172A">
+                  {mapMode ? 'Pick on map' : 'Select your location'}
+                </Text>
+                <Text variant="bodySm" color="#64748B" style={styles.modalSubheader}>
+                  {mapMode ? 'Move the pin to your exact spot' : 'Jobs near your area will show on your home screen'}
+                </Text>
+              </View>
             </View>
 
-            {/* Use My Current Location CTA */}
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={handleUseCurrentLocation}
-              style={[styles.modalPlaceRow, picked.label === 'Current location' && styles.modalPlaceRowActive]}
-            >
-              <View style={[styles.modalPlaceIcon, { backgroundColor: '#E0F2FE' }]}>
-                <Ionicons name="navigate" size={18} color="#0277F4" />
-              </View>
-              <View style={styles.modalPlaceCol}>
-                <Text variant="body" weight="bold" color="#0F172A">
-                  {locating ? 'Locating you…' : 'Use my current location'}
-                </Text>
-                <Text variant="caption" color="#64748B">
-                  {locating
-                    ? 'Finding your area…'
-                    : picked.label === 'Current location'
-                    ? picked.address
-                    : 'Detect your area automatically'}
-                </Text>
-              </View>
-              {picked.label === 'Current location' && !locating && (
-                <Ionicons name="checkmark-circle" size={20} color="#0277F4" />
-              )}
-            </TouchableOpacity>
-
-            {query.trim().length > 0 ? (
-              (() => {
-                const q = query.trim().toLowerCase();
-                const savedMatches = SAVED_PLACES.filter((p) =>
-                  p.label.toLowerCase().includes(q)
-                );
-                const areaMatches = QUICK_AREAS.filter((a) => a.toLowerCase().includes(q));
-                return (
-                  <View style={styles.modalSection}>
-                    <Text variant="caption" weight="semibold" color="#94A3B8" style={styles.modalSectionLabel}>
-                      SEARCH RESULTS
+            {mapMode ? (
+              <>
+                <View style={styles.mapContainer}>
+                  <LocationPickerMap
+                    initial={mapCoords}
+                    onPick={(coords) => {
+                      setMapCoords(coords);
+                      const snap = nearestArea(coords);
+                      setSnappedArea(snap);
+                      setMapDist(Math.round(distKm(coords, AREA_COORDS[snap]) * 10) / 10);
+                      if (placeTimer.current) clearTimeout(placeTimer.current);
+                      placeTimer.current = setTimeout(async () => {
+                        const name = await reverseGeocodeName(coords);
+                        if (name) setSnappedArea(name);
+                        else setPlaceName(null);
+                      }, 400);
+                    }}
+                  />
+                  <View style={styles.mapBadge}>
+                    <Ionicons name="location-outline" size={14} color="#059669" />
+                    <Text variant="caption" weight="bold" color="#0F172A">
+                      {snappedArea}
                     </Text>
-                    {savedMatches.map((p) => (
-                      <TouchableOpacity
-                        key={p.label}
-                        activeOpacity={0.8}
-                        onPress={() => setPicked(p)}
-                        style={[styles.modalPlaceRow, picked.label === p.label && styles.modalPlaceRowActive]}
-                      >
-                        <View style={[styles.modalPlaceIcon, { backgroundColor: '#F0FDF4' }]}>
-                          <Ionicons name={p.icon as any} size={16} color="#059669" />
-                        </View>
-                        <View style={styles.modalPlaceCol}>
-                          <Text variant="body" weight="bold" color="#0F172A">{p.label}</Text>
-                          <Text variant="caption" color="#64748B">{p.address}</Text>
-                        </View>
-                        {picked.label === p.label && (
-                          <Ionicons name="checkmark-circle" size={20} color="#0277F4" />
-                        )}
-                      </TouchableOpacity>
-                    ))}
-                    {areaMatches.map((a) => (
-                      <TouchableOpacity
-                        key={a}
-                        activeOpacity={0.8}
-                        onPress={() => setPicked({ label: a, address: a })}
-                        style={[styles.modalPlaceRow, picked.label === a && styles.modalPlaceRowActive]}
-                      >
-                        <View style={[styles.modalPlaceIcon, { backgroundColor: '#F1F5F9' }]}>
-                          <Ionicons name="location-outline" size={16} color="#64748B" />
-                        </View>
-                        <View style={styles.modalPlaceCol}>
-                          <Text variant="body" weight="bold" color="#0F172A">{a}</Text>
-                          <Text variant="caption" color="#64748B">
-                            {AREA_JOB_COUNT[a] ?? 0} jobs near here
-                          </Text>
-                        </View>
+                  </View>
+                </View>
+                <View style={styles.mapHelper}>
+                  <Ionicons name="finger-print" size={13} color="#94A3B8" />
+                  <Text variant="caption" color="#94A3B8">
+                    {'Drag the pin or tap anywhere on the map'}
+                  </Text>
+                </View>
+              </>
+            ) : (
+              <>
+                {/* Search */}
+                <View style={styles.modalSearchBox}>
+                  <Ionicons name="search-outline" size={18} color="#64748B" />
+                  <TextInput
+                    value={query}
+                    onChangeText={setQuery}
+                    placeholder="Search for area, street, locality"
+                    placeholderTextColor="#94A3B8"
+                    autoCorrect={false}
+                    autoCapitalize="none"
+                    style={styles.modalSearchInput}
+                  />
+                  {query.length > 0 && (
+                    <TouchableOpacity
+                      onPress={() => setQuery('')}
+                      hitSlop={8}
+                      style={styles.modalSearchClear}
+                    >
+                      <Ionicons name="close-circle" size={18} color="#94A3B8" />
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {/* Use My Current Location CTA */}
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={handleUseCurrentLocation}
+                  style={[styles.modalPlaceRow, picked.label === 'Current location' && styles.modalPlaceRowActive]}
+                >
+                  <View style={[styles.modalPlaceIcon, { backgroundColor: '#E0F2FE' }]}>
+                    <Ionicons name="navigate" size={18} color="#0277F4" />
+                  </View>
+                  <View style={styles.modalPlaceCol}>
+                    <Text variant="body" weight="bold" color="#0F172A">
+                      {locating ? 'Locating you…' : 'Use my current location'}
+                    </Text>
+                    <Text variant="caption" color="#64748B">
+                      {locating
+                        ? 'Finding your area…'
+                        : picked.label === 'Current location'
+                        ? picked.address
+                        : 'Detect your area automatically'}
+                    </Text>
+                  </View>
+                  {picked.label === 'Current location' && !locating && (
+                    <Ionicons name="checkmark-circle" size={20} color="#0277F4" />
+                  )}
+                </TouchableOpacity>
+
+                {/* Choose on map */}
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    const base =
+                      picked.label === 'Current location'
+                        ? mapCoords
+                        : AREA_COORDS[picked.label] ?? AREA_COORDS['Kanchipuram'];
+                    setMapCoords(base);
+                    const snap = nearestArea(base);
+                    setSnappedArea(snap);
+                    setMapDist(Math.round(distKm(base, AREA_COORDS[snap]) * 10) / 10);
+                    reverseGeocodeName(base).then((name) => {
+                      if (name) setSnappedArea(name);
+                    });
+                    setMapMode(true);
+                  }}
+                  style={styles.modalPlaceRow}
+                >
+                  <View style={[styles.modalPlaceIcon, { backgroundColor: '#F0FDF4' }]}>
+                    <Ionicons name="map" size={18} color="#059669" />
+                  </View>
+                  <View style={styles.modalPlaceCol}>
+                    <Text variant="body" weight="bold" color="#0F172A">
+                      Choose on map
+                    </Text>
+                    <Text variant="caption" color="#64748B">
+                      Drop the pin on your exact spot
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color="#CBD5E1" />
+                </TouchableOpacity>
+
+                {query.trim().length > 0 ? (
+                  (() => {
+                    const q = query.trim().toLowerCase();
+                    const savedMatches = SAVED_PLACES.filter((p) =>
+                      p.label.toLowerCase().includes(q)
+                    );
+                    const areaMatches = QUICK_AREAS.filter((a) => a.toLowerCase().includes(q));
+                    return (
+                      <View style={styles.modalSection}>
+                        <Text variant="caption" weight="semibold" color="#94A3B8" style={styles.modalSectionLabel}>
+                          SEARCH RESULTS
+                        </Text>
+                        {savedMatches.map((p) => (
+                          <TouchableOpacity
+                            key={p.label}
+                            activeOpacity={0.8}
+                            onPress={() => setPicked(p)}
+                            style={[styles.modalPlaceRow, picked.label === p.label && styles.modalPlaceRowActive]}
+                          >
+                            <View style={[styles.modalPlaceIcon, { backgroundColor: '#F0FDF4' }]}>
+                              <Ionicons name={p.icon as any} size={16} color="#059669" />
+                            </View>
+                            <View style={styles.modalPlaceCol}>
+                              <Text variant="body" weight="bold" color="#0F172A">{p.label}</Text>
+                              <Text variant="caption" color="#64748B">{p.address}</Text>
+                            </View>
+                            {picked.label === p.label && (
+                              <Ionicons name="checkmark-circle" size={20} color="#0277F4" />
+                            )}
+                          </TouchableOpacity>
+                        ))}
+                        {areaMatches.map((a) => (
+                          <TouchableOpacity
+                            key={a}
+                            activeOpacity={0.8}
+                            onPress={() => {
+                              const option = { label: a, address: a };
+                              setPicked(option);
+                              setArea(option);
+                              closeModal();
+                            }}
+                            style={[styles.modalPlaceRow, picked.label === a && styles.modalPlaceRowActive]}
+                          >
+                            <View style={[styles.modalPlaceIcon, { backgroundColor: '#F1F5F9' }]}>
+                              <Ionicons name="location-outline" size={16} color="#64748B" />
+                            </View>
+                            <View style={styles.modalPlaceCol}>
+                              <Text variant="body" weight="bold" color="#0F172A">{a}</Text>
+                              <Text variant="caption" color="#64748B">
+                                {AREA_JOB_COUNT[a] ?? 0} jobs near here
+                              </Text>
+                            </View>
                         {picked.label === a && (
                           <Ionicons name="checkmark-circle" size={20} color="#0277F4" />
                         )}
@@ -730,7 +982,11 @@ export default function WorkerHomeScreen() {
                     <TouchableOpacity
                       key={p.label}
                       activeOpacity={0.8}
-                      onPress={() => setPicked(p)}
+                      onPress={() => {
+                        setPicked(p);
+                        setArea(p);
+                        closeModal();
+                      }}
                       style={[styles.modalPlaceRow, picked.label === p.label && styles.modalPlaceRowActive]}
                     >
                       <View style={[styles.modalPlaceIcon, { backgroundColor: '#F0FDF4' }]}>
@@ -757,7 +1013,12 @@ export default function WorkerHomeScreen() {
                       <TouchableOpacity
                         key={a}
                         activeOpacity={0.85}
-                        onPress={() => setPicked({ label: a, address: a })}
+                        onPress={() => {
+                          const option = { label: a, address: a };
+                          setPicked(option);
+                          setArea(option);
+                          closeModal();
+                        }}
                         style={[styles.modalChip, picked.label === a && styles.modalChipActive]}
                       >
                         <Text variant="caption" weight="bold" color={picked.label === a ? '#FFFFFF' : '#334155'}>
@@ -769,15 +1030,27 @@ export default function WorkerHomeScreen() {
                 </View>
               </>
             )}
+            </>
+          )}
 
             </ScrollView>
 
             {/* Apply button */}
             <View style={styles.modalFooter}>
               <Button
-                title={`Show jobs in ${picked.label}`}
+                title={mapMode ? `Confirm in ${snappedArea}` : `Show jobs in ${picked.label}`}
                 fullWidth
-                onPress={confirmLocation}
+                onPress={() => {
+                  if (mapMode) {
+                    const label = picked.label === 'Current location' ? 'Current location' : snappedArea;
+                    const option = { label, address: `${snappedArea}` };
+                    setPicked(option);
+                    setArea(option);
+                    closeModal();
+                  } else {
+                    confirmLocation();
+                  }
+                }}
               />
             </View>
           </Animated.View>
@@ -803,7 +1076,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingTop: Spacing.md,
-    paddingBottom: 110,
+    paddingBottom: 16,
   },
   headerShell: {
     backgroundColor: '#FFFFFF',
@@ -949,15 +1222,12 @@ const styles = StyleSheet.create({
     width: 78,
     height: 78,
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 6,
-    shadowColor: '#64748B',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 3,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
   },
   serviceImage: {
     width: '100%',
@@ -1056,7 +1326,7 @@ const styles = StyleSheet.create({
   landingFooter: {
     alignItems: 'center',
     paddingTop: 40,
-    paddingBottom: 56,
+    paddingBottom: 24,
     paddingHorizontal: Spacing.xl,
   },
   landingFooterTagline: {
@@ -1110,6 +1380,46 @@ const styles = StyleSheet.create({
   },
   modalSearchClear: {
     marginLeft: Spacing.sm,
+  },
+  mapBack: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: Spacing.sm,
+  },
+  mapContainer: {
+    height: 360,
+    borderRadius: BorderRadius.lg,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: Spacing.sm,
+  },
+  mapBadge: {
+    position: 'absolute',
+    top: 10,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    zIndex: 10,
+  },
+  mapHelper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: -Spacing.sm,
+    marginBottom: Spacing.sm,
   },
   noResults: {
     marginTop: Spacing.xs,

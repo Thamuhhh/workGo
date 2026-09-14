@@ -79,7 +79,7 @@ export default function LoginScreen() {
         {/* Footer */}
         <View style={styles.footer}>
           <Text variant="bodySm" color={Colors.textSecondary} align="center">
-            New to WorkGo?{' '}
+            New to Gigro?{' '}
             <Text
               variant="bodySm"
               weight="bold"

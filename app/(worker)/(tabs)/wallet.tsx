@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon as Ionicons } from '../../../src/components/Icon';
 import { Text, Button } from '../../../src/components/ui';
 import { Colors, Spacing, BorderRadius } from '../../../src/constants/theme';
@@ -22,7 +23,7 @@ const TRANSACTIONS: Txn[] = [
   { id: '4', title: 'Instant withdrawal to UPI', meta: 'arun*****@okhdfc • 06:12 PM', amount: '-₹500', type: 'debit', group: 'Yesterday' },
   { id: '5', title: 'Event Support — Stage', meta: 'RPS Events • Fri', amount: '+₹600', type: 'credit', group: 'Earlier' },
   { id: '6', title: 'Instant withdrawal to UPI', meta: 'arun*****@okhdfc • Wed', amount: '-₹800', type: 'debit', group: 'Earlier' },
-  { id: '7', title: 'Service fee', meta: 'WorkGo • Wed', amount: '-₹20', type: 'debit', group: 'Earlier' },
+  { id: '7', title: 'Service fee', meta: 'Gigro • Wed', amount: '-₹20', type: 'debit', group: 'Earlier' },
 ];
 
 export default function WorkerWalletScreen() {
@@ -37,7 +38,13 @@ export default function WorkerWalletScreen() {
   const mask = (s: string) => (hidden ? '••••••' : s);
 
   return (
-    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+    <SafeAreaView edges={['top']} style={styles.safeArea}>
+      <View style={styles.header}>
+        <Text variant="h2" weight="bold" color="#0F172A">
+          Wallet
+        </Text>
+      </View>
+      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
       {/* Balance */}
       <View style={styles.balanceCard}>
         <View style={styles.balanceTop}>
@@ -167,13 +174,24 @@ export default function WorkerWalletScreen() {
           </Text>
         )}
       </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: Colors.surface,
+  },
+  header: {
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.md,
+  },
   container: {
-    padding: Spacing.lg,
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.xs,
     paddingBottom: Spacing.xxxl,
     backgroundColor: Colors.surface,
   },

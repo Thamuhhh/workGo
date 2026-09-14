@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "WorkGo",
+    "name": "Gigro",
     "slug": "workgo",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/adaptive-icon.png",
     "scheme": "workgo",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
@@ -31,6 +31,7 @@
     },
     "plugins": [
       "expo-router",
+      "@maplibre/maplibre-react-native",
       "expo-asset",
       [
         "expo-splash-screen",
@@ -56,7 +57,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "WorkGo uses your location to show jobs hiring near you."
+          "locationWhenInUsePermission": "Gigro uses your location to show jobs hiring near you."
         }
       ],
       [

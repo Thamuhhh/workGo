@@ -84,7 +84,7 @@ export default function RegisterScreen() {
             Create your account
           </Text>
           <Text variant="body" color={Colors.textSecondary} align="center" style={styles.subtitle}>
-            Join WorkGo and start earning from jobs nearby today
+            Join Gigro and start earning from jobs nearby today
           </Text>
 
           <View style={styles.form}>

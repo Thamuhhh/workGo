@@ -15,6 +15,8 @@ export interface SampleJob {
   transportProvided: boolean;
   requirements: string;
   about: string;
+  latitude: number;
+  longitude: number;
 }
 
 export const SAMPLE_JOBS: SampleJob[] = [
@@ -36,6 +38,8 @@ export const SAMPLE_JOBS: SampleJob[] = [
     requirements: 'Basic catering experience preferred.',
     about:
       'Join Sri Balaji Caterers for a full-day wedding event at Kanchipuram. Serve guests, help with setup and cleanup, and support the kitchen team through the function.',
+    latitude: 12.8352,
+    longitude: 79.7000,
   },
   {
     id: 'job_2',
@@ -55,6 +59,8 @@ export const SAMPLE_JOBS: SampleJob[] = [
     requirements: 'Good communication and energetic promotion.',
     about:
       'Represent SparkPromo at our event zone today — greet visitors, explain offers, hand out samples and keep the booth lively. A friendly, outgoing personality is all you need.',
+    latitude: 13.0035,
+    longitude: 80.1990,
   },
   {
     id: 'job_3',
@@ -74,6 +80,8 @@ export const SAMPLE_JOBS: SampleJob[] = [
     requirements: 'Cleaning and post-event hall cleanup.',
     about:
       'Help keep the banquet hall spotless before, during and after the evening function tomorrow. You will work in a small team with a supervisor on site.',
+    latitude: 12.9966,
+    longitude: 80.2031,
   },
   {
     id: 'job_4',
@@ -93,6 +101,8 @@ export const SAMPLE_JOBS: SampleJob[] = [
     requirements: 'Fluent in Tamil & English hosting.',
     about:
       'Host a traditional Kanchipuram wedding — manage introductions and announcements smoothly and keep the crowd engaged in Tamil and English through the evening.',
+    latitude: 12.8475,
+    longitude: 79.7082,
   },
   {
     id: 'job_5',
@@ -112,5 +122,7 @@ export const SAMPLE_JOBS: SampleJob[] = [
     requirements: 'Coordination and on-ground management.',
     about:
       'Manage volunteers, timings and logistics for a community event on Gandhi Road. You will be the on-ground point of contact and report directly to the organiser.',
+    latitude: 12.9910,
+    longitude: 80.2110,
   },
 ];
