@@ -1,7 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Image, Dimensions } from 'react-native';
-
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('screen');
+import React, { useEffect } from 'react';
+import { View, StyleSheet } from 'react-native';
 import { router, useRootNavigationState } from 'expo-router';
 import { useAuthStore } from '../src/store/authStore';
 import { useUserModeStore } from '../src/store/userModeStore';
@@ -12,17 +10,11 @@ export default function EntryScreen() {
   const { isAuthenticated, isLoading } = useAuthStore();
   const { mode } = useUserModeStore();
   const rootNavigationState = useRootNavigationState();
-  const [splashTimeout, setSplashTimeout] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setSplashTimeout(true), 5000);
-    return () => clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     if (!rootNavigationState?.key) return;
     if (isLoading) return;
-if (isAuthenticated && !splashTimeout) {
+    if (isAuthenticated) {
       if (mode === 'employer') {
         router.replace('/(employer)/home');
       } else {
@@ -31,28 +23,8 @@ if (isAuthenticated && !splashTimeout) {
     }
   }, [rootNavigationState?.key, isAuthenticated, isLoading, mode]);
 
-  if (isLoading && !splashTimeout) {
-    return (
-      <View style={styles.loadingContainer}>
-        <Image
-          source={require('../assets/splash.png')}
-          style={styles.splashImage}
-          resizeMode="cover"
-        />
-      </View>
-    );
-  }
-
-  if (isAuthenticated && !splashTimeout) {
-    return (
-      <View style={styles.loadingContainer}>
-        <Image
-          source={require('../assets/splash.png')}
-          style={styles.splashImage}
-          resizeMode="cover"
-        />
-      </View>
-    );
+  if (isLoading || isAuthenticated) {
+    return <View style={styles.loadingContainer} />;
   }
 
   return (
@@ -95,14 +67,7 @@ if (isAuthenticated && !splashTimeout) {
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#000000',
-  },
-  splashImage: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT,
+    backgroundColor: '#FFFFFF',
   },
   container: {
     flex: 1,
