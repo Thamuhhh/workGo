@@ -1,5 +1,5 @@
-import React, { useRef } from 'react';
-import { View, StyleSheet, Animated, PanResponder, Text as RNText } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, StyleSheet, Animated, Text as RNText, LayoutChangeEvent, GestureResponderEvent } from 'react-native';
 import { Icon } from './Icon';
 import { BorderRadius, Spacing } from '../constants/theme';
 
@@ -10,7 +10,7 @@ interface SwipeToConfirmProps {
   disabled?: boolean;
 }
 
-const SWIPE_THRESHOLD = 0.75;
+const SWIPE_THRESHOLD = 0.7;
 
 export const SwipeToConfirm: React.FC<SwipeToConfirmProps> = ({
   onConfirm,
@@ -18,91 +18,108 @@ export const SwipeToConfirm: React.FC<SwipeToConfirmProps> = ({
   confirmText = '✓ Applied!',
   disabled = false,
 }) => {
-  const TRACK_WIDTH = 280;
   const THUMB_SIZE = 50;
-  const MAX_DRAG = TRACK_WIDTH - THUMB_SIZE - 4;
 
   const thumbX = useRef(new Animated.Value(0)).current;
-  const isComplete = useRef(false);
+  const thumbXVal = useRef(0);
+  const trackWidth = useRef(280);
+  const startX = useRef(0);
+  const [complete, setComplete] = useState(false);
+
+  useEffect(() => {
+    const id = thumbX.addListener(({ value }) => { thumbXVal.current = value; });
+    return () => thumbX.removeListener(id);
+  }, [thumbX]);
+
+  const MAX_DRAG = () => trackWidth.current - THUMB_SIZE - 8;
 
   const fillWidth = thumbX.interpolate({
-    inputRange: [0, MAX_DRAG],
-    outputRange: [0, TRACK_WIDTH],
+    inputRange: [0, MAX_DRAG()],
+    outputRange: [0, trackWidth.current],
     extrapolate: 'clamp',
   });
 
   const textOpacity = thumbX.interpolate({
-    inputRange: [0, MAX_DRAG * 0.3, MAX_DRAG * 0.8],
+    inputRange: [0, MAX_DRAG() * 0.25, MAX_DRAG() * 0.75],
     outputRange: [1, 0.6, 0],
     extrapolate: 'clamp',
   });
 
   const confirmOpacity = thumbX.interpolate({
-    inputRange: [MAX_DRAG * 0.6, MAX_DRAG * 0.85],
+    inputRange: [MAX_DRAG() * 0.5, MAX_DRAG() * 0.8],
     outputRange: [0, 1],
     extrapolate: 'clamp',
   });
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 6 && Math.abs(g.dx) > Math.abs(g.dy),
-      onPanResponderMove: (_, g) => {
-        if (disabled || isComplete.current) return;
-        const x = Math.max(0, Math.min(MAX_DRAG, g.dx));
-        thumbX.setValue(x);
-      },
-      onPanResponderRelease: (_, g) => {
-        if (disabled || isComplete.current) return;
-        const progress = g.dx / MAX_DRAG;
-        if (progress >= SWIPE_THRESHOLD || g.vx > 0.8) {
-          isComplete.current = true;
-          Animated.spring(thumbX, {
-            toValue: MAX_DRAG,
-            useNativeDriver: false,
-            bounciness: 0,
-            speed: 20,
-          }).start(() => {
-            onConfirm();
-          });
-        } else {
-          Animated.spring(thumbX, {
-            toValue: 0,
-            useNativeDriver: false,
-            friction: 7,
-            tension: 150,
-          }).start();
-        }
-      },
-      onPanResponderTerminate: () => {
-        if (isComplete.current) return;
-        Animated.spring(thumbX, {
-          toValue: 0,
-          useNativeDriver: false,
-          friction: 7,
-        }).start();
-      },
-    })
-  ).current;
+  const onTrackLayout = (e: LayoutChangeEvent) => {
+    trackWidth.current = e.nativeEvent.layout.width;
+  };
+
+  const handleTouchStart = (e: GestureResponderEvent) => {
+    if (disabled || complete) return;
+    startX.current = e.nativeEvent.pageX;
+  };
+
+  const handleTouchMove = (e: GestureResponderEvent) => {
+    if (disabled || complete) return;
+    const dx = e.nativeEvent.pageX - startX.current;
+    const clamped = Math.max(0, Math.min(MAX_DRAG(), dx));
+    thumbX.setValue(clamped);
+  };
+
+  const handleTouchEnd = (e: GestureResponderEvent) => {
+    if (disabled || complete) return;
+    const currentVal = thumbXVal.current;
+    const progress = currentVal / MAX_DRAG();
+
+    if (progress >= SWIPE_THRESHOLD) {
+      setComplete(true);
+      Animated.spring(thumbX, {
+        toValue: MAX_DRAG(),
+        useNativeDriver: false,
+        friction: 8,
+        tension: 200,
+      }).start(() => {
+        onConfirm();
+      });
+    } else {
+      Animated.spring(thumbX, {
+        toValue: 0,
+        useNativeDriver: false,
+        friction: 6,
+        tension: 140,
+      }).start();
+    }
+    startX.current = 0;
+  };
 
   return (
     <View style={styles.container}>
-      <View style={[styles.track, { width: TRACK_WIDTH }]}>
-        {/* Fill */}
-        <Animated.View
-          style={[styles.fill, { width: fillWidth }]}
-        />
+      <View
+        style={[styles.track, { width: trackWidth.current || 280 }]}
+        onLayout={onTrackLayout}
+        onStartShouldSetResponder={() => true}
+        onMoveShouldSetResponder={() => true}
+        onResponderGrant={handleTouchStart}
+        onResponderMove={handleTouchMove}
+        onResponderRelease={handleTouchEnd}
+        onResponderTerminate={() => {
+          startX.current = 0;
+          if (!complete) {
+            Animated.spring(thumbX, { toValue: 0, useNativeDriver: false, friction: 6 }).start();
+          }
+        }}
+      >
+        <Animated.View style={[styles.fill, { width: fillWidth }]} />
 
-        {/* Track text */}
         <Animated.View style={[styles.trackLabel, { opacity: textOpacity }]}>
           <RNText style={styles.trackLabelText}>{trackText}</RNText>
         </Animated.View>
 
-        {/* Confirm text */}
         <Animated.View style={[styles.trackLabel, styles.confirmLabel, { opacity: confirmOpacity }]}>
           <RNText style={styles.confirmLabelText}>{confirmText}</RNText>
         </Animated.View>
 
-        {/* Thumb */}
         <Animated.View
           style={[
             styles.thumb,
@@ -113,9 +130,8 @@ export const SwipeToConfirm: React.FC<SwipeToConfirmProps> = ({
               transform: [{ translateX: thumbX }],
             },
           ]}
-          {...panResponder.panHandlers}
         >
-          <Icon name="arrow-right" size={22} color="#FFFFFF" weight="bold" />
+          <Icon name="arrow-forward" size={20} color="#FFFFFF" weight="bold" />
         </Animated.View>
       </View>
     </View>
