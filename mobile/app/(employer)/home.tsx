@@ -4,32 +4,21 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Platform,
   Animated,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Image as ExpoImage } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Icon as Ionicons } from '../../src/components/Icon';
 import { Text, Badge } from '../../src/components/ui';
 import { ScreenSkeleton, usePageLoading } from '../../src/components/ui/PageSkeleton';
-
-import { FadeSlide, ScalePress } from '../../src/components/AppHeader';
-import { BannerCarousel, Banner as HomeBanner } from '../../src/components/BannerCarousel';
+import { ScalePress, FadeSlide } from '../../src/components/AppHeader';
 import { Colors, Spacing, BorderRadius } from '../../src/constants/theme';
 import { useAuthStore } from '../../src/store/authStore';
 import { useUserModeStore } from '../../src/store/userModeStore';
 import { useApplicationsStore } from '../../src/store/applicationsStore';
 import { useMessagesStore } from '../../src/store/messagesStore';
-import { useLocationStore } from '../../src/store/locationStore';
-
-interface ServiceCategory {
-  id: string;
-  name: string;
-  image?: any;
-  isOthers?: boolean;
-}
 
 const GREETING_MSG = (() => {
   const h = new Date().getHours();
@@ -39,63 +28,51 @@ const GREETING_MSG = (() => {
   return 'Good night';
 })();
 
-const SERVICES: ServiceCategory[] = [
-  {
-    id: 'promoter',
-    name: 'Promoter',
-    image: require('../../assets/Promoter.png'),
-  },
-  {
-    id: 'catering',
-    name: 'Catering',
-    image: require('../../assets/Catter.png'),
-  },
-  {
-    id: 'mc_anchor',
-    name: 'MC/Anchor',
-    image: require('../../assets/MC.png'),
-  },
-  {
-    id: 'cleaner',
-    name: 'Cleaner',
-    image: require('../../assets/Cleaner.png'),
-  },
-  {
-    id: 'coordinator',
-    name: 'Event Coordinator',
-    image: require('../../assets/Coordinator.png'),
-  },
-  {
-    id: 'others',
-    name: 'Others',
-    image: require('../../assets/Others.png'),
-  },
+interface Applicant {
+  id: string;
+  name: string;
+  service: string;
+  area: string;
+  status: 'NEW' | 'SHORTLISTED' | 'HIRED';
+}
+
+const REVIEW_APPLICANTS: Applicant[] = [
+  { id: 'a1', name: 'Murugan S', service: 'Catering Staff', area: 'Kanchipuram', status: 'NEW' },
+  { id: 'a2', name: 'Priya R', service: 'Event Coordinator', area: 'Chengalpattu', status: 'NEW' },
+  { id: 'a3', name: 'Karthik V', service: 'MC/Anchor', area: 'Chennai', status: 'SHORTLISTED' },
 ];
 
-const HOME_BANNERS: HomeBanner[] = [
+interface PostedJob {
+  id: string;
+  title: string;
+  service: string;
+  status: 'OPEN' | 'FILLING' | 'CLOSED';
+  hired: number;
+  needed: number;
+  pay: string;
+  date: string;
+}
+
+const ACTIVE_JOBS: PostedJob[] = [
   {
-    id: 'firstjob',
-    title: 'Post Your First Job',
-    subtitle: 'Tell workers what you need and get applicants in minutes.',
-    cta: 'Post a job',
-    icon: 'add-circle-outline',
-    onPress: () => router.push('/(employer)/post-job'),
+    id: 'j1',
+    title: 'Wedding Catering Staff',
+    service: 'Catering',
+    status: 'OPEN',
+    hired: 12,
+    needed: 15,
+    pay: '₹900/day',
+    date: 'Tomorrow, 6 AM - 4 PM',
   },
   {
-    id: 'weekend',
-    title: 'Hiring for this weekend?',
-    subtitle: 'Catering staff, cleaners and MCs are active nearby right now.',
-    cta: 'Manage jobs',
-    icon: 'calendar-outline',
-    onPress: () => router.push('/(employer)/jobs'),
-  },
-  {
-    id: 'shortlist',
-    title: 'Review applicants faster',
-    subtitle: 'Shortlist, call or message your shortlisted workers.',
-    cta: 'View bookings',
-    icon: 'people-outline',
-    onPress: () => router.push('/(employer)/bookings'),
+    id: 'j2',
+    title: 'Product Launch Promoters',
+    service: 'Promoter',
+    status: 'FILLING',
+    hired: 8,
+    needed: 10,
+    pay: '₹1,100/day',
+    date: 'Sat, 9 AM - 6 PM',
   },
 ];
 
@@ -106,26 +83,13 @@ export default function EmployerHomeScreen() {
   const applications = useApplicationsStore((s) => s.applications);
   const readThreadIds = useMessagesStore((s) => s.readThreadIds);
   const unreadCount = applications.filter((a) => !readThreadIds.includes(a.jobId)).length;
-  const locationLabel = useLocationStore((s) => s.label);
-  const locationAddress = useLocationStore((s) => s.address);
   const businessName = user?.businessName || user?.name || 'there';
   const businessFirstName = businessName.split(' ')[0];
 
   const scrollY = useRef(new Animated.Value(0)).current;
-
   const headerPadTop = scrollY.interpolate({ inputRange: [0, 64], outputRange: [16, 9], extrapolate: 'clamp' });
-  const headerPadBottom = scrollY.interpolate({ inputRange: [0, 64], outputRange: [20, 10], extrapolate: 'clamp' });
+  const headerPadBottom = scrollY.interpolate({ inputRange: [0, 64], outputRange: [16, 8], extrapolate: 'clamp' });
   const brandScale = scrollY.interpolate({ inputRange: [0, 64], outputRange: [1, 0.93], extrapolate: 'clamp' });
-  const taglineOpacity = scrollY.interpolate({ inputRange: [0, 48], outputRange: [1, 0], extrapolate: 'clamp' });
-  const taglineHeight = scrollY.interpolate({ inputRange: [0, 48], outputRange: [16, 0], extrapolate: 'clamp' });
-  const comboMargin = scrollY.interpolate({ inputRange: [0, 64], outputRange: [Spacing.md, 4], extrapolate: 'clamp' });
-  const comboScale = scrollY.interpolate({ inputRange: [0, 64], outputRange: [1, 0.97], extrapolate: 'clamp' });
-
-  const handleSelectService = () => {
-    router.push({
-      pathname: '/(employer)/post-job',
-    });
-  };
 
   const handleSwitchMode = async () => {
     await toggleMode();
@@ -144,7 +108,7 @@ export default function EmployerHomeScreen() {
         style={styles.gradient}
       >
       <View style={styles.mainContainer}>
-          {/* Sticky animated header — stays on top while scrolling */}
+          {/* Sticky header */}
           <Animated.View
             style={[
               styles.headerShell,
@@ -162,11 +126,9 @@ export default function EmployerHomeScreen() {
                   <Text variant="h2" weight="heavy" color="#0F172A" style={styles.brandTitle}>
                     Gig<Text variant="h2" weight="heavy" color="#0277F4">ro</Text>
                   </Text>
-                  <Animated.View style={{ height: taglineHeight, opacity: taglineOpacity }}>
-                    <Text variant="caption" weight="medium" color="#64748B" style={styles.brandTagline}>
-                      {GREETING_MSG}, <Text variant="caption" weight="bold" color="#0277F4">{businessFirstName}</Text>!
-                    </Text>
-                  </Animated.View>
+                  <Text variant="caption" weight="medium" color="#64748B" style={styles.brandTagline}>
+                    {GREETING_MSG}, <Text variant="caption" weight="bold" color="#0277F4">{businessFirstName}</Text>!
+                  </Text>
                 </View>
 
                 <View style={styles.headerActions}>
@@ -188,51 +150,6 @@ export default function EmployerHomeScreen() {
                   </View>
                 </View>
               </Animated.View>
-
-              {/* Combined Location + Search */}
-              <Animated.View
-                style={[
-                  styles.comboCard,
-                  { marginTop: comboMargin, transform: [{ scale: comboScale }] },
-                ]}
-              >
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  style={[
-                    styles.comboLocationZone,
-                    Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null,
-                  ]}
-                  onPress={() => router.push('/(worker)/location-picker')}
-                >
-                  <View style={styles.locationIconChip}>
-                    <Ionicons name="location-outline" size={16} color="#0277F4" />
-                  </View>
-                  <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text variant="body" weight="bold" color="#0F172A" numberOfLines={1} style={styles.comboLocationLabel}>
-                      {locationLabel}
-                    </Text>
-                    {locationAddress && locationLabel !== locationAddress && (
-                      <Text variant="caption" color="#64748B" numberOfLines={1}>
-                        {locationAddress}
-                      </Text>
-                    )}
-                  </View>
-                  <Ionicons name="chevron-down" size={14} color="#94A3B8" />
-                </TouchableOpacity>
-
-                <View style={styles.comboDivider} />
-
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  style={styles.comboSearchZone}
-                  onPress={() => router.push('/search')}
-                >
-                  <Ionicons name="search-outline" size={16} color="#0277F4" />
-                  <Text variant="body" color={Colors.textMuted} numberOfLines={1} style={styles.comboSearchText}>
-                    Search for services...
-                  </Text>
-                </TouchableOpacity>
-              </Animated.View>
             </LinearGradient>
           </Animated.View>
 
@@ -246,130 +163,118 @@ export default function EmployerHomeScreen() {
             scrollEventThrottle={16}
           >
 
-          {/* Promo Banner Carousel */}
+          {/* Post Job Hero CTA */}
           <FadeSlide delay={80}>
-            <BannerCarousel banners={HOME_BANNERS} />
-          </FadeSlide>
-
-          {/* Select Your Services Grid */}
-          <FadeSlide delay={120}>
-            <View style={styles.sectionContainer}>
-              <Text variant="h3" weight="bold" color="#0F172A" style={styles.sectionTitle}>
-                Select Your Services
-              </Text>
-
-              <View style={styles.servicesGrid}>
-                {SERVICES.map((service) => {
-                  return (
-                    <ScalePress
-                      key={service.id}
-                      scaleTo={0.92}
-                      onPress={handleSelectService}
-                      style={styles.serviceItem}
-                    >
-                      <View style={styles.serviceItemInner}>
-                        <View style={styles.serviceIconCard}>
-                        {!service.image ? (
-                          <LinearGradient
-                            colors={['#A855F7', '#7C3AED']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                            style={styles.othersIconCircle}
-                          >
-                            <Text style={styles.othersDots}>•••</Text>
-                          </LinearGradient>
-                        ) : (
-                          <ExpoImage
-                            source={service.image}
-                            style={styles.serviceImage}
-                            contentFit="contain"
-                          />
-                        )}
-                      </View>
-                      <Text
-                        variant="bodySm"
-                        weight="medium"
-                        align="center"
-                        color="#0F172A"
-                        numberOfLines={2}
-                        style={styles.serviceLabel}
-                      >
-                        {service.name}
-                      </Text>
-                      </View>
-                    </ScalePress>
-                  );
-                })}
-              </View>
-            </View>
-          </FadeSlide>
-
-          {/* Hiring Stat Strip */}
-          <FadeSlide delay={280}>
-            <LinearGradient
-              colors={['#0EA5E9', '#0277F4']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.statsCard}
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={() => router.push('/(employer)/post-job')}
             >
-              <View style={styles.statCol}>
-                <Text variant="h3" weight="heavy" color="#FFFFFF">
-                  3
-                </Text>
-                <Text variant="caption" weight="medium" color="#E0F2FE">
-                  Active jobs
-                </Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statCol}>
-                <Text variant="h3" weight="heavy" color="#FFFFFF">
-                  12
-                </Text>
-                <Text variant="caption" weight="medium" color="#E0F2FE">
-                  Workers hired
-                </Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statCol}>
-                <Text variant="h3" weight="heavy" color="#FFFFFF">
-                  4
-                </Text>
-                <Text variant="caption" weight="medium" color="#E0F2FE">
-                  Pending reviews
-                </Text>
-              </View>
-            </LinearGradient>
-          </FadeSlide>
-
-          {/* Quick Post CTA */}
-          <FadeSlide delay={380}>
-            <TouchableOpacity activeOpacity={0.9} onPress={() => router.push('/(employer)/post-job')}>
               <LinearGradient
                 colors={['#012169', '#0277F4']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
-                style={styles.postCta}
+                style={styles.heroCta}
               >
-                <View style={styles.postCtaIconWrap}>
-                  <Ionicons name="add" size={26} color="#FFFFFF" weight="bold" />
+                <View style={styles.heroCtaIconWrap}>
+                  <Ionicons name="add" size={28} color="#FFFFFF" weight="bold" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text variant="body" weight="bold" color="#FFFFFF">
+                  <Text variant="h3" weight="bold" color="#FFFFFF">
                     Post a New Job
                   </Text>
                   <Text variant="caption" color="#BFDBFE">
                     Get workers applied within minutes
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
+                <Ionicons name="chevron-forward" size={20} color="#FFFFFF" />
               </LinearGradient>
             </TouchableOpacity>
           </FadeSlide>
 
-          {/* Active Jobs Summary */}
-          <FadeSlide delay={440}>
+          {/* Hiring Stats */}
+          <FadeSlide delay={160}>
+            <View style={styles.statsRow}>
+              <ScalePress
+                scaleTo={0.95}
+                onPress={() => router.push('/(employer)/jobs')}
+                style={[styles.statCard, styles.statCardAccent]}
+              >
+                <Text variant="h3" weight="heavy" color="#0F172A">3</Text>
+                <Text variant="caption" weight="medium" color="#475569">Active Jobs</Text>
+              </ScalePress>
+              <ScalePress
+                scaleTo={0.95}
+                onPress={() => router.push('/(employer)/bookings')}
+                style={styles.statCard}
+              >
+                <View style={styles.statIconRow}>
+                  <Text variant="h3" weight="heavy" color="#0F172A">2</Text>
+                  <View style={styles.statNewDot} />
+                </View>
+                <Text variant="caption" weight="medium" color="#475569">New Applicants</Text>
+              </ScalePress>
+              <ScalePress
+                scaleTo={0.95}
+                onPress={() => router.push('/(employer)/jobs')}
+                style={styles.statCard}
+              >
+                <Text variant="h3" weight="heavy" color="#0F172A">12</Text>
+                <Text variant="caption" weight="medium" color="#475569">Workers Hired</Text>
+              </ScalePress>
+            </View>
+          </FadeSlide>
+
+          {/* Applicants To Review */}
+          <FadeSlide delay={240}>
             <View style={styles.sectionContainer}>
-              <View style={styles.activeSummaryHeader}>
+              <View style={styles.sectionHeader}>
+                <Text variant="body" weight="bold" color="#0F172A">
+                  Applicants to Review
+                </Text>
+                <TouchableOpacity onPress={() => router.push('/(employer)/bookings')}>
+                  <Text variant="caption" weight="bold" color="#0277F4">
+                    View All →
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {REVIEW_APPLICANTS.map((applicant) => (
+                <TouchableOpacity
+                  key={applicant.id}
+                  activeOpacity={0.85}
+                  onPress={() => router.push('/(employer)/bookings')}
+                  style={styles.applicantCard}
+                >
+                  <View style={styles.avatar}>
+                    <Text variant="body" weight="bold" color="#0277F4">
+                      {applicant.name.charAt(0)}
+                    </Text>
+                  </View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <View style={styles.applicantNameRow}>
+                      <Text variant="body" weight="bold" color="#0F172A" numberOfLines={1} style={{ flexShrink: 1 }}>
+                        {applicant.name}
+                      </Text>
+                      <Badge
+                        label={applicant.status}
+                        variant={applicant.status === 'NEW' ? 'info' : applicant.status === 'SHORTLISTED' ? 'warning' : 'success'}
+                        size="sm"
+                      />
+                    </View>
+                    <Text variant="caption" color="#64748B" numberOfLines={1}>
+                      {applicant.service} • {applicant.area}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color="#CBD5E1" />
+                </TouchableOpacity>
+              ))}
+            </View>
+          </FadeSlide>
+
+          {/* Active Jobs */}
+          <FadeSlide delay={320}>
+            <View style={styles.sectionContainer}>
+              <View style={styles.sectionHeader}>
                 <Text variant="body" weight="bold" color="#0F172A">
                   Active Jobs
                 </Text>
@@ -380,22 +285,61 @@ export default function EmployerHomeScreen() {
                 </TouchableOpacity>
               </View>
 
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={() => router.push('/(employer)/jobs')}
-                style={styles.miniJobCard}
-              >
-                <View style={styles.miniJobTop}>
-                  <Text variant="body" weight="bold" color="#0F172A">
-                    Wedding Catering Staff
-                  </Text>
-                  <Badge label="12 / 15 Hired" variant="success" size="sm" />
-                </View>
-                <Text variant="caption" color="#64748B" style={styles.miniJobDetails}>
-                  Kanchipuram • Tomorrow, 6:00 AM - 4:00 PM • ₹900/day
-                </Text>
-              </TouchableOpacity>
+              {ACTIVE_JOBS.map((job) => {
+                const pct = Math.min(100, Math.round((job.hired / job.needed) * 100));
+                return (
+                  <TouchableOpacity
+                    key={job.id}
+                    activeOpacity={0.85}
+                    onPress={() => router.push('/(employer)/jobs')}
+                    style={styles.jobCard}
+                  >
+                    <View style={styles.jobTop}>
+                      <Text variant="body" weight="bold" color="#0F172A" numberOfLines={1} style={{ flex: 1 }}>
+                        {job.title}
+                      </Text>
+                      <Badge
+                        label={job.status === 'OPEN' ? 'OPEN' : job.status === 'FILLING' ? 'FILLING' : 'CLOSED'}
+                        variant={job.status === 'OPEN' ? 'success' : job.status === 'FILLING' ? 'warning' : 'neutral'}
+                        size="sm"
+                      />
+                    </View>
+                    <Text variant="caption" color="#64748B" style={styles.jobMeta}>
+                      {job.service} • {job.date} • {job.pay}
+                    </Text>
+                    <View style={styles.progressTrack}>
+                      <View style={[styles.progressFill, { width: `${pct}%` }]} />
+                    </View>
+                    <View style={styles.progressLabels}>
+                      <Text variant="caption" weight="medium" color="#64748B">
+                        {job.hired} / {job.needed} hired
+                      </Text>
+                      <Text variant="caption" weight="bold" color="#0277F4">
+                        {pct}%
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
+          </FadeSlide>
+
+          {/* Switch to Worker Mode */}
+          <FadeSlide delay={400}>
+            <TouchableOpacity activeOpacity={0.85} onPress={handleSwitchMode} style={styles.switchCard}>
+              <View style={styles.switchIconWrap}>
+                <Ionicons name="person-outline" size={18} color="#64748B" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text variant="body" weight="bold" color="#0F172A">
+                  Switch to Worker Mode
+                </Text>
+                <Text variant="caption" color="#64748B">
+                  Find & apply for gig work near you
+                </Text>
+              </View>
+              <Ionicons name="swap-horizontal" size={18} color="#0277F4" />
+            </TouchableOpacity>
           </FadeSlide>
         </ScrollView>
 
@@ -561,181 +505,147 @@ const styles = StyleSheet.create({
     fontSize: 10,
     lineHeight: 12,
   },
-  comboCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 999,
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-    marginTop: Spacing.md,
-    borderWidth: 1,
-    borderColor: '#E8EEF6',
-    shadowColor: '#1E3A8A',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  comboLocationZone: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingRight: Spacing.sm,
-    flexShrink: 1,
-    maxWidth: '60%',
-    minWidth: 0,
-  },
-  comboLocationLabel: {
-    flexShrink: 1,
-    minWidth: 0,
-  },
-  comboDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: '#EDF2F7',
-    marginRight: Spacing.sm,
-  },
-  comboSearchZone: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flex: 1,
-    paddingRight: Spacing.sm,
-  },
-  comboSearchText: {
-    flex: 1,
-    flexShrink: 1,
-    minWidth: 0,
-  },
-  locationIconChip: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#E3F2FF',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sectionContainer: {
-    paddingHorizontal: Spacing.xl,
-    marginTop: Spacing.sm,
-  },
-  sectionTitle: {
-    fontSize: 17,
-    marginBottom: Spacing.lg,
-    letterSpacing: -0.3,
-  },
-  servicesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  serviceItem: {
-    width: '30%',
-    alignItems: 'center',
-    marginBottom: Spacing.xl,
-  },
-  serviceItemInner: {
-    alignItems: 'center',
-  },
-  serviceIconCard: {
-    width: 78,
-    height: 78,
-    borderRadius: 20,
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 6,
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
-  },
-  serviceImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 14,
-  },
-  othersIconCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#9333EA',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  othersDots: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '900',
-    letterSpacing: 2,
-    marginTop: -2,
-  },
-  serviceLabel: {
-    marginTop: Spacing.xs,
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  statsCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: Spacing.xl,
-    borderRadius: BorderRadius.lg,
-    paddingVertical: Spacing.lg,
-    paddingHorizontal: Spacing.md,
-    marginBottom: Spacing.xl,
-  },
-  statCol: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statDivider: {
-    width: 1,
-    height: 28,
-    backgroundColor: 'rgba(255,255,255,0.25)',
-  },
-  postCta: {
+  heroCta: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.md,
     marginHorizontal: Spacing.xl,
     borderRadius: BorderRadius.lg,
-    paddingVertical: Spacing.md,
+    paddingVertical: Spacing.lg,
     paddingHorizontal: Spacing.md,
-    marginBottom: Spacing.xl,
+    shadowColor: '#012169',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.22,
+    shadowRadius: 12,
+    elevation: 6,
   },
-  postCtaIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  heroCtaIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: 'rgba(255,255,255,0.18)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  activeSummaryHeader: {
+  statsRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    marginHorizontal: Spacing.xl,
+    marginTop: Spacing.md,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius.md,
+    paddingVertical: Spacing.md,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E8EEF6',
+  },
+  statCardAccent: {
+    backgroundColor: '#EAF4FF',
+    borderColor: '#BFDCFF',
+  },
+  statIconRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  statNewDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: '#EF4444',
+    marginBottom: 12,
+  },
+  sectionContainer: {
+    paddingHorizontal: Spacing.xl,
+    marginTop: Spacing.lg,
+  },
+  sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: Spacing.sm,
   },
-  miniJobCard: {
-    backgroundColor: '#F8FAFC',
-    borderRadius: 14,
-    padding: Spacing.md,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    marginBottom: Spacing.xl,
-  },
-  miniJobTop: {
+  applicantCard: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius.md,
+    padding: Spacing.sm,
+    marginBottom: Spacing.sm,
+    borderWidth: 1,
+    borderColor: '#EDF2F7',
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#EAF0FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  applicantNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  jobCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    marginBottom: Spacing.sm,
+    borderWidth: 1,
+    borderColor: '#EDF2F7',
+  },
+  jobTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     marginBottom: 4,
   },
-  miniJobDetails: {
+  jobMeta: {
     lineHeight: 16,
+    marginBottom: Spacing.sm,
+  },
+  progressTrack: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#E8EEF6',
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 3,
+    backgroundColor: '#0277F4',
+  },
+  progressLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 4,
+  },
+  switchCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginHorizontal: Spacing.xl,
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.xl,
+    backgroundColor: '#F1F5F9',
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    borderWidth: 1,
+    borderColor: '#E8EEF6',
+  },
+  switchIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#E2E8F0',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   bottomNav: {
     position: 'absolute',
