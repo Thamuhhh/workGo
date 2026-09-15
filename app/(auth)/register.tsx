@@ -29,6 +29,7 @@ export default function RegisterScreen() {
   const [phoneError, setPhoneError] = useState('');
   const [cityError, setCityError] = useState('');
   const [cityModalVisible, setCityModalVisible] = useState(false);
+  const [cityFocused, setCityFocused] = useState(false);
   const [loading, setLoading] = useState(false);
   const phoneRef = useRef<TextInput>(null);
 
@@ -71,7 +72,7 @@ export default function RegisterScreen() {
         {/* Brand */}
         <View style={styles.brand}>
           <Text variant="h1" weight="heavy" color="#0F172A">
-            Work<Text variant="h1" weight="heavy" color="#0277F4">Go</Text>
+            Gig<Text variant="h1" weight="heavy" color="#0277F4">ro</Text>
           </Text>
           <Text variant="bodySm" weight="medium" color="#64748B" style={styles.tagline}>
             Work nearby. Earn today.
@@ -100,7 +101,6 @@ export default function RegisterScreen() {
               }}
               onSubmitEditing={() => phoneRef.current?.focus()}
               error={nameError}
-              style={styles.field}
             />
 
             <Input
@@ -114,32 +114,39 @@ export default function RegisterScreen() {
                 if (phoneError) setPhoneError('');
               }}
               error={phoneError}
-              style={styles.field}
             />
 
             {/* City selector */}
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={() => {
-                Keyboard.dismiss();
-                setCityModalVisible(true);
-              }}
-              style={[styles.cityField, cityError ? styles.cityFieldError : undefined]}
-            >
-              <Icon name="location-outline" size={20} color="#94A3B8" />
-              <Text
-                variant="body"
-                style={[styles.cityText, !city && styles.cityPlaceholder]}
+            <View style={styles.fieldContainer}>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => {
+                  Keyboard.dismiss();
+                  setCityFocused(true);
+                  setCityModalVisible(true);
+                }}
+                onPressOut={() => setCityFocused(false)}
+                style={[
+                  styles.cityField,
+                  cityFocused && styles.cityFieldFocused,
+                  cityError ? styles.cityFieldError : undefined,
+                ]}
               >
-                {city || 'Select your city'}
-              </Text>
-              <Icon name="chevron-down" size={18} color="#94A3B8" />
-            </TouchableOpacity>
-            {cityError ? (
-              <Text variant="caption" color={Colors.danger} style={styles.errorText}>
-                {cityError}
-              </Text>
-            ) : null}
+                <Icon name="location-outline" size={20} color="#94A3B8" />
+                <Text
+                  variant="body"
+                  style={[styles.cityText, !city && styles.cityPlaceholder]}
+                >
+                  {city || 'Select your city'}
+                </Text>
+                <Icon name="chevron-down" size={18} color="#94A3B8" />
+              </TouchableOpacity>
+              {cityError ? (
+                <Text variant="caption" color={Colors.danger} style={styles.errorText}>
+                  {cityError}
+                </Text>
+              ) : null}
+            </View>
 
             <Button
               title="Create Account & Send OTP"
@@ -231,19 +238,20 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'space-between',
     paddingHorizontal: Spacing.xl,
     paddingVertical: Spacing.xxxl,
   },
   brand: {
     alignItems: 'center',
-    paddingTop: Spacing.lg,
+    paddingTop: Spacing.xxxl,
   },
   tagline: {
     marginTop: 4,
   },
   center: {
     width: '100%',
+    marginTop: 'auto',
+    marginBottom: 'auto',
   },
   subtitle: {
     marginTop: Spacing.xs,
@@ -251,10 +259,8 @@ const styles = StyleSheet.create({
   form: {
     marginTop: Spacing.xl,
   },
-  field: {
+  fieldContainer: {
     marginBottom: Spacing.md,
-    fontSize: 16,
-    fontWeight: '600',
   },
   cityField: {
     flexDirection: 'row',
@@ -267,12 +273,15 @@ const styles = StyleSheet.create({
     minHeight: 48,
     gap: Spacing.sm,
   },
+  cityFieldFocused: {
+    borderColor: Colors.primary,
+  },
   cityFieldError: {
     borderColor: Colors.danger,
   },
   cityText: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     color: Colors.text,
   },

@@ -32,8 +32,8 @@ export default function EntryScreen() {
       {/* Brand Hero */}
       <View style={styles.heroSection}>
         <View style={styles.logoRow}>
-          <Text variant="h1" weight="heavy" color="#0F172A" style={styles.logoText}>Work</Text>
-          <Text variant="h1" weight="heavy" color="#0277F4" style={styles.logoText}>Go</Text>
+          <Text variant="h1" weight="heavy" color="#0F172A" style={styles.logoText}>Gig</Text>
+          <Text variant="h1" weight="heavy" color="#0277F4" style={styles.logoText}>ro</Text>
         </View>
         <Text variant="h3" align="center" weight="bold" style={styles.tagline}>
           Work nearby. Earn today.

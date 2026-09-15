@@ -33,7 +33,7 @@ export default function OtpScreen() {
         {/* Brand */}
         <View style={styles.brand}>
           <Text variant="h1" weight="heavy" color="#0F172A">
-            Work<Text variant="h1" weight="heavy" color="#0277F4">Go</Text>
+            Gig<Text variant="h1" weight="heavy" color="#0277F4">ro</Text>
           </Text>
           <Text variant="bodySm" weight="medium" color="#64748B" style={styles.tagline}>
             Work nearby. Earn today.
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
   },
   brand: {
     alignItems: 'center',
-    paddingTop: Spacing.lg,
+    paddingTop: Spacing.xxxl,
   },
   tagline: {
     marginTop: 4,

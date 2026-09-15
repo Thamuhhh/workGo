@@ -1,17 +1,19 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export type ApplicationStatus = 'APPLIED' | 'SHORTLISTED' | 'ACCEPTED' | 'REJECTED';
+export type ApplicationStatus = 'APPLIED' | 'SHORTLISTED' | 'ACCEPTED' | 'REJECTED' | 'COMPLETED';
 
 export interface Application {
   jobId: string;
   appliedAt: string;
   status: ApplicationStatus;
+  completedAt?: string;
 }
 
 interface ApplicationsState {
   applications: Application[];
   apply: (jobId: string) => Promise<void>;
+  markCompleted: (jobId: string) => void;
   hasApplied: (jobId: string) => boolean;
   loadStoredApplications: () => Promise<void>;
 }
@@ -41,6 +43,20 @@ export const useApplicationsStore = create<ApplicationsState>((set, get) => ({
   },
 
   hasApplied: (jobId: string) => get().applications.some((a) => a.jobId === jobId),
+
+  markCompleted: (jobId: string) => {
+    const current = get().applications.find((a) => a.jobId === jobId);
+    if (!current || current.status === 'COMPLETED') return;
+    const applications = get().applications.map((a) =>
+      a.jobId === jobId
+        ? { ...a, status: 'COMPLETED' as const, completedAt: new Date().toISOString() }
+        : a
+    );
+    set({ applications });
+    AsyncStorage.setItem(APPLICATIONS_STORAGE_KEY, JSON.stringify(applications)).catch((e) =>
+      console.error('Failed to persist application:', e)
+    );
+  },
 
   loadStoredApplications: async () => {
     try {

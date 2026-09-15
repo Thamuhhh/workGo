@@ -1,15 +1,14 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   StyleSheet,
   Animated,
   Text as RNText,
   LayoutChangeEvent,
-  GestureResponderEvent,
+  PanResponder,
   Platform,
 } from 'react-native';
 import { Icon } from './Icon';
-import { Spacing } from '../constants/theme';
 
 interface SwipeToConfirmProps {
   onConfirm: () => void;
@@ -18,6 +17,9 @@ interface SwipeToConfirmProps {
   disabled?: boolean;
 }
 
+const THUMB_SIZE = 52;
+const TRACK_HEIGHT = 58;
+const PADDING = 4;
 const SWIPE_THRESHOLD = 0.7;
 
 export const SwipeToConfirm: React.FC<SwipeToConfirmProps> = ({
@@ -26,112 +28,115 @@ export const SwipeToConfirm: React.FC<SwipeToConfirmProps> = ({
   confirmText = 'Applied!',
   disabled = false,
 }) => {
-  const THUMB_SIZE = 52;
-  const TRACK_HEIGHT = 58;
-
   const [trackWidth, setTrackWidth] = useState(0);
-  const thumbX = useRef(new Animated.Value(0)).current;
-  const thumbXVal = useRef(0);
-  const startX = useRef(0);
-  const maxDrag = useRef(0);
   const [complete, setComplete] = useState(false);
 
-  const thumbColorVal = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const id = thumbX.addListener(({ value }) => {
-      thumbXVal.current = value;
-    });
-    return () => thumbX.removeListener(id);
-  }, [thumbX]);
+  // Native-driver value: drives only the thumb translateX (safe inside Modal).
+  const thumbX = useRef(new Animated.Value(0)).current;
+  // JS values: drive width/opacity/color, only ever set directly (no frame loops).
+  const fillX = useRef(new Animated.Value(0)).current;
+  const thumbColor = useRef(new Animated.Value(0)).current;
+  const valueRef = useRef(0);
+  const maxDrag = useRef(0);
 
   const onTrackLayout = (e: LayoutChangeEvent) => {
     const w = e.nativeEvent.layout.width;
     if (w > 0 && w !== trackWidth) {
       setTrackWidth(w);
-      maxDrag.current = Math.max(0, w - THUMB_SIZE - 8);
+      maxDrag.current = Math.max(0, w - THUMB_SIZE - PADDING * 2);
     }
   };
 
   const dragRange = [0, maxDrag.current || 1];
 
-  const fillWidth = thumbX.interpolate({
+  const fillWidth = fillX.interpolate({
     inputRange: dragRange,
     outputRange: [0, trackWidth || 1],
     extrapolate: 'clamp',
   });
 
-  const textOpacity = thumbX.interpolate({
-    inputRange: [0, (maxDrag.current || 1) * 0.6],
+  const textOpacity = fillX.interpolate({
+    inputRange: [0, (maxDrag.current || 1) * 0.55],
     outputRange: [1, 0],
     extrapolate: 'clamp',
   });
 
-  const confirmOpacity = thumbX.interpolate({
-    inputRange: [(maxDrag.current || 1) * 0.55, (maxDrag.current || 1) * 0.85],
+  const confirmOpacity = fillX.interpolate({
+    inputRange: [(maxDrag.current || 1) * 0.5, (maxDrag.current || 1) * 0.8],
     outputRange: [0, 1],
     extrapolate: 'clamp',
   });
 
-  const thumbColor = thumbColorVal.interpolate({
+  const trackColor = thumbColor.interpolate({
     inputRange: [0, 1],
     outputRange: ['#0F172A', '#16A34A'],
   });
 
-  const handleTouchStart = (e: GestureResponderEvent) => {
-    if (disabled || complete) return;
-    startX.current = e.nativeEvent.pageX;
+  const springBack = () => {
+    Animated.spring(thumbX, {
+      toValue: 0,
+      useNativeDriver: true,
+      friction: 7,
+      tension: 160,
+    }).start();
   };
 
-  const handleTouchMove = (e: GestureResponderEvent) => {
-    if (disabled || complete) return;
-    const dx = e.nativeEvent.pageX - startX.current;
-    thumbX.setValue(Math.max(0, Math.min(maxDrag.current, dx)));
+  const resetAll = () => {
+    fillX.setValue(0);
+    thumbColor.setValue(0);
+    springBack();
   };
 
-  const resetThumb = () => {
-    Animated.spring(thumbX, { toValue: 0, useNativeDriver: true, friction: 7, tension: 160 }).start();
-  };
-
-  const handleTouchEnd = () => {
+  const settle = (commit: boolean) => {
     if (disabled || complete) return;
-    const progress = thumbXVal.current / (maxDrag.current || 1);
 
-    if (progress >= SWIPE_THRESHOLD) {
+    if (commit) {
       setComplete(true);
-      Animated.parallel([
-        Animated.spring(thumbX, {
-          toValue: maxDrag.current,
-          useNativeDriver: true,
-          friction: 7,
-          tension: 180,
-        }),
-        Animated.timing(thumbColorVal, { toValue: 1, duration: 180, useNativeDriver: false }),
-      ]).start(() => {
-        setTimeout(onConfirm, 280);
-      });
+      fillX.setValue(maxDrag.current);
+      thumbColor.setValue(1);
+      Animated.spring(thumbX, {
+        toValue: maxDrag.current,
+        useNativeDriver: true,
+        friction: 7,
+        tension: 180,
+      }).start();
+      onConfirm();
     } else {
-      resetThumb();
+      resetAll();
     }
-    startX.current = 0;
   };
 
-  const webTouchAction = Platform.OS === 'web' ? { touchAction: 'none' as const } : null;
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => !disabled && !complete,
+      onMoveShouldSetPanResponder: () => !disabled && !complete,
+      onPanResponderGrant: () => {},
+      onPanResponderMove: (_evt, g) => {
+        const next = Math.max(0, Math.min(maxDrag.current, g.dx));
+        valueRef.current = next;
+        thumbX.setValue(next);
+        fillX.setValue(next);
+      },
+      onPanResponderRelease: () => {
+        settle(valueRef.current / (maxDrag.current || 1) >= SWIPE_THRESHOLD);
+      },
+      onPanResponderTerminate: () => {
+        if (!complete) resetAll();
+      },
+    })
+  ).current;
+
+  const webStyle =
+    Platform.OS === 'web'
+      ? ({ touchAction: 'none', userSelect: 'none' } as const)
+      : null;
 
   return (
     <View style={styles.wrap}>
       <View
-        style={[styles.track, { height: TRACK_HEIGHT }, webTouchAction]}
+        style={[styles.track, { height: TRACK_HEIGHT }, webStyle]}
         onLayout={onTrackLayout}
-        onStartShouldSetResponder={() => true}
-        onMoveShouldSetResponder={() => true}
-        onResponderGrant={handleTouchStart}
-        onResponderMove={handleTouchMove}
-        onResponderRelease={handleTouchEnd}
-        onResponderTerminate={() => {
-          startX.current = 0;
-          if (!complete) resetThumb();
-        }}
+        {...panResponder.panHandlers}
       >
         <Animated.View style={[styles.fill, { width: fillWidth }]} />
 
@@ -147,18 +152,16 @@ export const SwipeToConfirm: React.FC<SwipeToConfirmProps> = ({
           style={[
             styles.thumb,
             {
-              left: 4,
-              top: 4,
               width: THUMB_SIZE,
               height: THUMB_SIZE,
               borderRadius: THUMB_SIZE / 2,
-              backgroundColor: thumbColor,
+              backgroundColor: trackColor,
               transform: [{ translateX: thumbX }],
             },
           ]}
           pointerEvents="none"
         >
-          <Icon name="arrow-forward" size={22} color="#FFFFFF" weight="bold" />
+          <Icon name="arrow-right" size={20} color="#FFFFFF" weight="bold" />
         </Animated.View>
       </View>
     </View>
@@ -171,7 +174,7 @@ const styles = StyleSheet.create({
   },
   track: {
     width: '100%',
-    borderRadius: 29,
+    borderRadius: TRACK_HEIGHT / 2,
     backgroundColor: '#F1F5F9',
     justifyContent: 'center',
     overflow: 'hidden',
@@ -181,7 +184,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     height: '100%',
-    borderRadius: 29,
+    borderRadius: TRACK_HEIGHT / 2,
     backgroundColor: '#22C55E',
   },
   labelWrap: {
@@ -205,6 +208,8 @@ const styles = StyleSheet.create({
   },
   thumb: {
     position: 'absolute',
+    left: PADDING,
+    top: (TRACK_HEIGHT - THUMB_SIZE) / 2,
     backgroundColor: '#0F172A',
     justifyContent: 'center',
     alignItems: 'center',

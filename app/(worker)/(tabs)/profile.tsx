@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Icon as Ionicons } from '../../../src/components/Icon';
@@ -7,6 +7,10 @@ import { Text, Button } from '../../../src/components/ui';
 import { Colors, Spacing, BorderRadius } from '../../../src/constants/theme';
 import { useAuthStore } from '../../../src/store/authStore';
 import { useUserModeStore } from '../../../src/store/userModeStore';
+import { useApplicationsStore } from '../../../src/store/applicationsStore';
+import { useNotificationsStore } from '../../../src/store/notificationsStore';
+import { useRatingsStore } from '../../../src/store/ratingsStore';
+import { useWalletStore } from '../../../src/store/walletStore';
 
 interface MenuItem {
   icon: string;
@@ -20,10 +24,22 @@ interface MenuItem {
 export default function WorkerProfileScreen() {
   const { user, logout } = useAuthStore();
   const { toggleMode } = useUserModeStore();
+  const applications = useApplicationsStore((s) => s.applications);
+  const unreadCount = useNotificationsStore((s) => s.notifications.filter((n) => !n.read).length);
+  const received = useRatingsStore((s) => s.received);
+  const totalEarned = useWalletStore((s) => s.totalEarned);
 
   const displayName = user?.name || 'Arun Kumar';
   const displayPhone = user?.phone || '9876543210';
   const initial = displayName.trim().charAt(0).toUpperCase();
+
+  const jobsDone = applications.filter((a) => a.status === 'COMPLETED').length;
+  const receivedValues = Object.values(received);
+  const avgRating =
+    receivedValues.length > 0
+      ? (receivedValues.reduce((sum, r) => sum + r.stars, 0) / receivedValues.length).toFixed(1)
+      : 'New';
+  const earned = totalEarned.toLocaleString('en-IN', { maximumFractionDigits: 0 });
 
   const handleLogout = async () => {
     await logout();
@@ -38,23 +54,23 @@ export default function WorkerProfileScreen() {
   const menuJobs: MenuItem[] = [
     { icon: 'briefcase-outline', label: 'My Bookings', onPress: () => router.push('/(worker)/bookings') },
     { icon: 'document-text-outline', label: 'My Applications', onPress: () => router.push('/(worker)/applications') },
-    { icon: 'wallet-outline', label: 'Wallet', value: '₹2,430', onPress: () => router.push('/(worker)/(tabs)/wallet') },
+    { icon: 'wallet-outline', label: 'Wallet', value: `₹${earned}`, onPress: () => router.push('/(worker)/(tabs)/wallet') },
     { icon: 'gift', label: 'Refer & Earn', badge: '₹100', onPress: () => router.push('/(worker)/refer') },
   ];
 
   const menuAccount: MenuItem[] = [
-    { icon: 'person-outline', label: 'Personal Details' },
-    { icon: 'shield-checkmark', label: 'KYC & Documents', value: '1 of 2' },
-    { icon: 'notifications', label: 'Notifications', onPress: () => router.push('/(worker)/applications') },
-    { icon: 'location-outline', label: 'Address' },
+    { icon: 'person-outline', label: 'Personal Details', onPress: () => router.push('/(worker)/edit-profile') },
+    { icon: 'shield-checkmark', label: 'KYC & Documents', value: '2 of 5 done', onPress: () => router.push('/(worker)/kyc') },
+    { icon: 'notifications', label: 'Notifications', badge: unreadCount > 0 ? String(unreadCount) : undefined, onPress: () => router.push('/(worker)/notifications') },
+    { icon: 'location-outline', label: 'Address', onPress: () => router.push('/(worker)/address') },
   ];
 
   const menuSupport: MenuItem[] = [
-    { icon: 'help', label: 'Help & Support' },
-    { icon: 'info', label: 'About Gigro', value: 'v1.0.0' },
-    { icon: 'star', label: 'Rate Us' },
-    { icon: 'shield-checkmark', label: 'Privacy Policy' },
-    { icon: 'document-text-outline', label: 'Terms of Service' },
+    { icon: 'help', label: 'Help & Support', onPress: () => router.push('/(worker)/help') },
+    { icon: 'info', label: 'About Gigro', value: 'v1.0.0', onPress: () => router.push('/(worker)/about') },
+    { icon: 'star', label: 'Rate Us', onPress: () => Alert.alert('Rate Gigro', 'Thanks for supporting us! (Store link goes here)') },
+    { icon: 'shield-checkmark', label: 'Privacy Policy', onPress: () => router.push({ pathname: '/(worker)/legal', params: { page: 'privacy' } }) },
+    { icon: 'document-text-outline', label: 'Terms of Service', onPress: () => router.push({ pathname: '/(worker)/legal', params: { page: 'terms' } }) },
   ];
 
   return (
@@ -100,7 +116,7 @@ export default function WorkerProfileScreen() {
       <View style={styles.statsCard}>
         <View style={styles.statBlock}>
           <Text variant="h3" weight="bold" color="#0F172A">
-            24
+            {jobsDone}
           </Text>
           <Text variant="caption" color={Colors.textMuted}>
             Jobs Done
@@ -109,7 +125,7 @@ export default function WorkerProfileScreen() {
         <View style={styles.statDivider} />
         <View style={styles.statBlock}>
           <Text variant="h3" weight="bold" color="#0F172A">
-            4.8★
+            {avgRating === 'New' ? 'New' : `${avgRating}★`}
           </Text>
           <Text variant="caption" color={Colors.textMuted}>
             Rating
@@ -118,7 +134,7 @@ export default function WorkerProfileScreen() {
         <View style={styles.statDivider} />
         <View style={styles.statBlock}>
           <Text variant="h3" weight="bold" color="#0F172A">
-            ₹9.6k
+            ₹{earned}
           </Text>
           <Text variant="caption" color={Colors.textMuted}>
             Earned

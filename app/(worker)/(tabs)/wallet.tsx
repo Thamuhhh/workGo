@@ -1,41 +1,49 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon as Ionicons } from '../../../src/components/Icon';
 import { Text, Button } from '../../../src/components/ui';
 import { Colors, Spacing, BorderRadius } from '../../../src/constants/theme';
+import { useWalletStore, WalletTxn, formatINR } from '../../../src/store/walletStore';
 
-interface Txn {
-  id: string;
-  title: string;
-  meta: string;
-  amount: string;
-  type: 'credit' | 'debit';
-  group: 'Today' | 'Yesterday' | 'Earlier';
+const GROUPS = ['Today', 'Yesterday', 'Earlier'] as const;
+
+function groupOf(timestamp: string): (typeof GROUPS)[number] {
+  const d = new Date(timestamp);
+  const now = new Date();
+  const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const startYesterday = startToday - 86400000;
+  if (d.getTime() >= startToday) return 'Today';
+  if (d.getTime() >= startYesterday) return 'Yesterday';
+  return 'Earlier';
 }
 
-const GROUPS: Array<'Today' | 'Yesterday' | 'Earlier'> = ['Today', 'Yesterday', 'Earlier'];
-
-const TRANSACTIONS: Txn[] = [
-  { id: '1', title: 'Catering Helper — Day job', meta: 'Sharon Catering • 10:42 AM', amount: '+₹800', type: 'credit', group: 'Today' },
-  { id: '2', title: 'Retail Promoter — Store', meta: 'BigMart • 08:15 AM', amount: '+₹750', type: 'credit', group: 'Today' },
-  { id: '3', title: 'Event Support — Weekend', meta: 'RPS Events • 09:30 PM', amount: '+₹1,200', type: 'credit', group: 'Yesterday' },
-  { id: '4', title: 'Instant withdrawal to UPI', meta: 'arun*****@okhdfc • 06:12 PM', amount: '-₹500', type: 'debit', group: 'Yesterday' },
-  { id: '5', title: 'Event Support — Stage', meta: 'RPS Events • Fri', amount: '+₹600', type: 'credit', group: 'Earlier' },
-  { id: '6', title: 'Instant withdrawal to UPI', meta: 'arun*****@okhdfc • Wed', amount: '-₹800', type: 'debit', group: 'Earlier' },
-  { id: '7', title: 'Service fee', meta: 'Gigro • Wed', amount: '-₹20', type: 'debit', group: 'Earlier' },
-];
-
 export default function WorkerWalletScreen() {
+  const balance = useWalletStore((s) => s.balance);
+  const upiId = useWalletStore((s) => s.upiId);
+  const transactions = useWalletStore((s) => s.transactions);
+  const addMoney = useWalletStore((s) => s.addMoney);
+  const withdraw = useWalletStore((s) => s.withdraw);
+
   const [hidden, setHidden] = useState(false);
   const [filter, setFilter] = useState<'all' | 'credit' | 'debit'>('all');
 
   const rowsInGroup = (g: (typeof GROUPS)[number]) =>
-    TRANSACTIONS.filter(
-      (t) => t.group === g && (filter === 'all' ? true : t.type === filter)
-    ).length > 0;
+    transactions.some((t) => groupOf(t.timestamp) === g && (filter === 'all' ? true : (t.amount > 0) === (filter === 'credit')));
 
   const mask = (s: string) => (hidden ? '••••••' : s);
+
+  const handleAddMoney = () => {
+    addMoney(500);
+    Alert.alert('Added', '₹500 added to your wallet.');
+  };
+
+  const handleWithdraw = () => {
+    if (balance <= 0) return;
+    if (withdraw()) {
+      Alert.alert('Withdrawal initiated', `${formatINR(balance)} sent to ${upiId}.`);
+    }
+  };
 
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
@@ -61,7 +69,7 @@ export default function WorkerWalletScreen() {
             ₹
           </Text>
           <Text variant="h1" weight="heavy" color="#0F172A" style={styles.balance}>
-            {mask('2,430.00')}
+            {mask(balance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}
           </Text>
         </View>
 
@@ -76,13 +84,14 @@ export default function WorkerWalletScreen() {
           title="Add Money"
           variant="outline"
           icon={<Ionicons name="wallet-outline" size={16} color="#0277F4" weight="bold" />}
-          onPress={() => {}}
+          onPress={handleAddMoney}
           style={styles.actionBtn}
         />
         <Button
           title="Withdraw"
           icon={<Ionicons name="arrow-up-right" size={16} color="#FFFFFF" weight="bold" />}
-          onPress={() => {}}
+          onPress={handleWithdraw}
+          disabled={balance <= 0}
           style={styles.actionBtn}
         />
       </View>
@@ -91,7 +100,7 @@ export default function WorkerWalletScreen() {
       <View style={styles.upiRow}>
         <Ionicons name="phone" size={13} color={Colors.textMuted} />
         <Text variant="caption" color={Colors.textSecondary} style={styles.upiText}>
-          arun*****@okhdfc
+          {upiId}
         </Text>
         <Text variant="caption" weight="bold" color={Colors.primary}>
           Change
@@ -130,40 +139,10 @@ export default function WorkerWalletScreen() {
               <Text variant="caption" weight="bold" color={Colors.textMuted} style={styles.groupLabel}>
                 {group.toUpperCase()}
               </Text>
-              {TRANSACTIONS.filter(
-                (t) => t.group === group && (filter === 'all' ? true : t.type === filter)
-              ).map((txn) => (
-                <View key={txn.id} style={styles.txnRow}>
-                  <View
-                    style={[
-                      styles.txnIcon,
-                      txn.type === 'credit' ? styles.txnIconCredit : styles.txnIconDebit,
-                    ]}
-                  >
-                    <Ionicons
-                      name={txn.type === 'credit' ? 'arrow-down-left' : 'arrow-up-right'}
-                      size={15}
-                      color={txn.type === 'credit' ? '#16A34A' : Colors.textSecondary}
-                      weight="bold"
-                    />
-                  </View>
-                  <View style={styles.txnMiddle}>
-                    <Text variant="body" weight="medium" color="#0F172A" numberOfLines={1}>
-                      {txn.title}
-                    </Text>
-                    <Text variant="caption" color={Colors.textMuted}>
-                      {txn.meta}
-                    </Text>
-                  </View>
-                  <Text
-                    variant="body"
-                    weight="bold"
-                    color={txn.type === 'credit' ? '#16A34A' : '#0F172A'}
-                    style={styles.txnAmount}
-                  >
-                    {txn.amount}
-                  </Text>
-                </View>
+              {transactions
+                .filter((t) => groupOf(t.timestamp) === group && (filter === 'all' ? true : (t.amount > 0) === (filter === 'credit')))
+                .map((txn) => (
+                <TxnRow key={txn.id} txn={txn} />
               ))}
             </View>
           )
@@ -176,6 +155,43 @@ export default function WorkerWalletScreen() {
       </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function TxnRow({ txn }: { txn: WalletTxn }) {
+  const credit = txn.amount > 0;
+  return (
+    <View style={styles.txnRow}>
+      <View
+        style={[
+          styles.txnIcon,
+          credit ? styles.txnIconCredit : styles.txnIconDebit,
+        ]}
+      >
+        <Ionicons
+          name={credit ? 'arrow-down-left' : 'arrow-up-right'}
+          size={15}
+          color={credit ? '#16A34A' : Colors.textSecondary}
+          weight="bold"
+        />
+      </View>
+      <View style={styles.txnMiddle}>
+        <Text variant="body" weight="medium" color="#0F172A" numberOfLines={1}>
+          {txn.title}
+        </Text>
+        <Text variant="caption" color={Colors.textMuted}>
+          {txn.meta}
+        </Text>
+      </View>
+      <Text
+        variant="body"
+        weight="bold"
+        color={credit ? '#16A34A' : '#0F172A'}
+        style={styles.txnAmount}
+      >
+        {credit ? '+' : ''}{formatINR(Math.abs(txn.amount))}
+      </Text>
+    </View>
   );
 }
 

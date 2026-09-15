@@ -1,7 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, Text, Image, Dimensions, Animated } from 'react-native';
-
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, Text } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
@@ -18,11 +16,13 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '../src/store/authStore';
 import { useUserModeStore } from '../src/store/userModeStore';
 import { useApplicationsStore } from '../src/store/applicationsStore';
+import { useRatingsStore } from '../src/store/ratingsStore';
+import { useWalletStore } from '../src/store/walletStore';
+import { useNotificationsStore } from '../src/store/notificationsStore';
+import OfflineBanner from '../src/components/OfflineBanner';
 import { Colors } from '../src/constants/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
-
-const MIN_SPLASH_MS = 1500;
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -61,6 +61,9 @@ export default function RootLayout() {
   const loadStoredAuth = useAuthStore((state) => state.loadStoredAuth);
   const loadStoredMode = useUserModeStore((state) => state.loadStoredMode);
   const loadStoredApplications = useApplicationsStore((state) => state.loadStoredApplications);
+  const loadStoredRatings = useRatingsStore((state) => state.loadStoredRatings);
+  const loadStoredWallet = useWalletStore((state) => state.loadStoredWallet);
+  const loadStoredNotifications = useNotificationsStore((state) => state.loadStoredNotifications);
 
   const [fontsLoaded, fontError] = useFonts({
     Poppins_400Regular,
@@ -70,21 +73,20 @@ export default function RootLayout() {
     Poppins_800ExtraBold,
   });
   const [appReady, setAppReady] = useState(false);
-  const [splashElapsed, setSplashElapsed] = useState(false);
   const [splashForced, setSplashForced] = useState(false);
-  const [splashVisible, setSplashVisible] = useState(true);
-  const wipeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Promise.all([loadStoredAuth(), loadStoredMode(), loadStoredApplications()])
+    Promise.all([
+      loadStoredAuth(),
+      loadStoredMode(),
+      loadStoredApplications(),
+      loadStoredRatings(),
+      loadStoredWallet(),
+      loadStoredNotifications(),
+    ])
       .catch(() => {})
       .finally(() => setAppReady(true));
-  }, [loadStoredAuth, loadStoredMode, loadStoredApplications]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setSplashElapsed(true), MIN_SPLASH_MS);
-    return () => clearTimeout(timer);
-  }, []);
+  }, [loadStoredAuth, loadStoredMode, loadStoredApplications, loadStoredRatings, loadStoredWallet, loadStoredNotifications]);
 
   useEffect(() => {
     const timer = setTimeout(() => setSplashForced(true), 6000);
@@ -94,21 +96,16 @@ export default function RootLayout() {
   const ready = splashForced || (appReady && (fontsLoaded || fontError));
 
   useEffect(() => {
-    if (ready && splashElapsed) {
+    if (ready) {
       SplashScreen.hideAsync().catch(() => {});
-      // Wipe transition: slide splash screen upward off screen
-      Animated.timing(wipeAnim, {
-        toValue: -SCREEN_HEIGHT,
-        duration: 600,
-        useNativeDriver: true,
-      }).start(() => setSplashVisible(false));
     }
-  }, [ready, splashElapsed]);
+  }, [ready]);
 
   return (
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
         <StatusBar style="dark" backgroundColor={Colors.background} />
+        <OfflineBanner />
         <ErrorBoundary>
           <Stack
             screenOptions={{
@@ -131,46 +128,12 @@ export default function RootLayout() {
             <Stack.Screen name="(employer)" options={{ headerShown: false }} />
           </Stack>
         </ErrorBoundary>
-
-        {/* Wipe splash overlay — sits on top of everything, slides up when ready */}
-        {splashVisible && (
-          <Animated.View
-            style={[styles.wipeOverlay, { transform: [{ translateY: wipeAnim }] }]}
-            pointerEvents="none"
-          >
-            <Image
-              source={require('../assets/splash.png')}
-              style={styles.splashImage}
-              resizeMode="cover"
-            />
-          </Animated.View>
-        )}
       </SafeAreaProvider>
     </QueryClientProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  splashScreen: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  wipeOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT,
-    backgroundColor: '#FFFFFF',
-    zIndex: 999,
-  },
-  splashImage: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT,
-  },
   errorScreen: {
     flex: 1,
     backgroundColor: '#FFFFFF',
