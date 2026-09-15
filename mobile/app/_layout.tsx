@@ -120,7 +120,7 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <StatusBar
           style={splashDone ? 'dark' : 'light'}
-          backgroundColor={splashDone ? Colors.background : SPLASH_BG}
+          backgroundColor={splashDone ? Colors.background : 'transparent'}
         />
         <OfflineBanner />
         <ErrorBoundary>
