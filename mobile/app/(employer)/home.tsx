@@ -16,7 +16,6 @@ import { ScreenSkeleton, usePageLoading } from '../../src/components/ui/PageSkel
 import { ScalePress, FadeSlide } from '../../src/components/AppHeader';
 import { Spacing, BorderRadius } from '../../src/constants/theme';
 import { useAuthStore } from '../../src/store/authStore';
-import { useUserModeStore } from '../../src/store/userModeStore';
 import { useApplicationsStore } from '../../src/store/applicationsStore';
 import { useMessagesStore } from '../../src/store/messagesStore';
 
@@ -112,7 +111,6 @@ const AnimatedIcon = React.memo(
 
 export default function EmployerHomeScreen() {
   const user = useAuthStore((state) => state.user);
-  const { toggleMode } = useUserModeStore();
   const [activeTab, setActiveTab] = useState<NavTab>('home');
   const applications = useApplicationsStore((s) => s.applications);
   const readThreadIds = useMessagesStore((s) => s.readThreadIds);
@@ -124,11 +122,6 @@ export default function EmployerHomeScreen() {
   const headerPadTop = scrollY.interpolate({ inputRange: [0, 64], outputRange: [16, 9], extrapolate: 'clamp' });
   const headerPadBottom = scrollY.interpolate({ inputRange: [0, 64], outputRange: [16, 8], extrapolate: 'clamp' });
   const brandScale = scrollY.interpolate({ inputRange: [0, 64], outputRange: [1, 0.93], extrapolate: 'clamp' });
-
-  const handleSwitchMode = async () => {
-    await toggleMode();
-    router.replace('/(worker)/(tabs)/home');
-  };
 
   if (usePageLoading()) return <ScreenSkeleton variant="home" />;
 
@@ -358,24 +351,7 @@ export default function EmployerHomeScreen() {
             </View>
           </FadeSlide>
 
-          {/* Switch to Worker Mode */}
-          <FadeSlide delay={400}>
-            <TouchableOpacity activeOpacity={0.85} onPress={handleSwitchMode} style={styles.switchCard}>
-              <View style={styles.switchIconWrap}>
-                <Ionicons name="person-outline" size={18} color="#64748B" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text variant="body" weight="bold" color="#0F172A">
-                  Switch to Worker Mode
-                </Text>
-                <Text variant="caption" color="#64748B">
-                  Find & apply for gig work near you
-                </Text>
-              </View>
-              <Ionicons name="swap-horizontal" size={18} color="#0277F4" />
-            </TouchableOpacity>
-          </FadeSlide>
-        </ScrollView>
+          </ScrollView>
 
         {/* Bottom Navigation Bar */}
         <View style={styles.bottomNav}>
@@ -613,27 +589,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 4,
   },
-  switchCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    marginHorizontal: Spacing.xl,
-    marginTop: Spacing.lg,
-    marginBottom: Spacing.xl,
-    backgroundColor: '#F1F5F9',
-    borderRadius: BorderRadius.md,
-    padding: Spacing.md,
-    borderWidth: 1,
-    borderColor: '#E8EEF6',
-  },
-  switchIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#E2E8F0',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+
   bottomNav: {
     position: 'absolute',
     bottom: 0,
