@@ -18,7 +18,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/app.png",
+        "foregroundImage": "./assets/app-icon-adaptive.png",
         "backgroundColor": "#FFFFFF"
       },
       "package": "com.anonymous.workgo",
