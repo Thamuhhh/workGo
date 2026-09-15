@@ -1,53 +1,25 @@
 {
-  "name": "workgo-mobile",
-  "main": "expo-router/entry",
+  "name": "workgo",
   "version": "1.0.0",
+  "private": true,
+  "description": "WorkGo - Work nearby. Earn today. Mobile Marketplace for Temporary Workers",
   "scripts": {
-    "start": "expo start",
-    "reset-project": "node ./scripts/reset-project.js",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
-    "web": "expo start --web",
-    "typecheck": "tsc --noEmit"
+    "dev:server": "npm --prefix server run dev",
+    "dev:mobile": "npm --prefix mobile run dev",
+    "build:server": "npm --prefix server run build",
+    "typecheck:server": "npm --prefix server run typecheck",
+    "typecheck:mobile": "npm --prefix mobile run typecheck"
   },
-  "dependencies": {
-    "@expo-google-fonts/poppins": "^0.4.1",
-    "@maplibre/maplibre-react-native": "^10.4.2",
-    "@react-native-async-storage/async-storage": "1.23.1",
-    "@react-native-community/netinfo": "11.4.1",
-    "@tanstack/react-query": "^5.67.1",
-    "axios": "^1.8.1",
-    "expo": "~52.0.37",
-    "expo-asset": "~11.0.5",
-    "expo-build-properties": "~0.13.3",
-    "expo-constants": "~17.0.7",
-    "expo-font": "~13.0.4",
-    "expo-image": "~2.0.7",
-    "expo-linear-gradient": "~14.0.2",
-    "expo-linking": "~7.0.5",
-    "expo-location": "~18.0.10",
-    "expo-router": "~4.0.17",
-    "expo-splash-screen": "~0.29.24",
-    "expo-status-bar": "~2.0.1",
-    "phosphor-react-native": "^3.0.6",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
-    "react-hook-form": "^7.54.2",
-    "react-native": "0.76.7",
-    "react-native-safe-area-context": "4.12.0",
-    "react-native-screens": "~4.4.0",
-    "react-native-svg": "15.8.0",
-    "react-native-web": "~0.19.13",
-    "zod": "^3.24.2",
-    "zustand": "^5.0.3"
-  },
-  "devDependencies": {
-    "@babel/core": "^7.25.2",
-    "@types/geojson": "^7946.0.16",
-    "@types/react": "~18.3.12",
-    "@types/react-native": "^0.72.8",
-    "eas-cli": "^24.3.0",
-    "typescript": "^5.3.3"
-  },
-  "private": true
+  "keywords": [
+    "workgo",
+    "temporary-jobs",
+    "gig-economy",
+    "react-native",
+    "expo",
+    "nodejs",
+    "express",
+    "mongodb"
+  ],
+  "author": "WorkGo Team",
+  "license": "ISC"
 }
