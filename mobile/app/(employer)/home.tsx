@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -14,7 +14,7 @@ import { Icon as Ionicons } from '../../src/components/Icon';
 import { Text, Badge } from '../../src/components/ui';
 import { ScreenSkeleton, usePageLoading } from '../../src/components/ui/PageSkeleton';
 import { ScalePress, FadeSlide } from '../../src/components/AppHeader';
-import { Colors, Spacing, BorderRadius } from '../../src/constants/theme';
+import { Spacing, BorderRadius } from '../../src/constants/theme';
 import { useAuthStore } from '../../src/store/authStore';
 import { useUserModeStore } from '../../src/store/userModeStore';
 import { useApplicationsStore } from '../../src/store/applicationsStore';
@@ -76,10 +76,44 @@ const ACTIVE_JOBS: PostedJob[] = [
   },
 ];
 
+type NavTab = 'home' | 'activity' | 'messages';
+
+const NAV_TABS: { key: NavTab; label: string; activeIcon: string; inactiveIcon: string }[] = [
+  { key: 'home', label: 'Home', activeIcon: 'home', inactiveIcon: 'home-outline' },
+  { key: 'activity', label: 'Activity', activeIcon: 'document-text', inactiveIcon: 'document-text-outline' },
+  { key: 'messages', label: 'Messages', activeIcon: 'chatbubble', inactiveIcon: 'chatbubble-outline' },
+];
+
+const AnimatedIcon = React.memo(
+  ({ active, activeIcon, inactiveIcon }: { active: boolean; activeIcon: string; inactiveIcon: string }) => {
+    const scale = useRef(new Animated.Value(active ? 1 : 0.9)).current;
+
+    useEffect(() => {
+      Animated.spring(scale, {
+        toValue: active ? 1 : 0.9,
+        friction: 6,
+        tension: 160,
+        useNativeDriver: true,
+      }).start();
+    }, [active, scale]);
+
+    return (
+      <Animated.View style={{ transform: [{ scale }] }}>
+        <Ionicons
+          name={active ? activeIcon : inactiveIcon}
+          size={22}
+          color={active ? '#0277F4' : '#94A3B8'}
+          weight={active ? 'fill' : 'regular'}
+        />
+      </Animated.View>
+    );
+  }
+);
+
 export default function EmployerHomeScreen() {
   const user = useAuthStore((state) => state.user);
   const { toggleMode } = useUserModeStore();
-  const [activeTab, setActiveTab] = useState<'home' | 'activity' | 'messages'>('home');
+  const [activeTab, setActiveTab] = useState<NavTab>('home');
   const applications = useApplicationsStore((s) => s.applications);
   const readThreadIds = useMessagesStore((s) => s.readThreadIds);
   const unreadCount = applications.filter((a) => !readThreadIds.includes(a.jobId)).length;
@@ -345,86 +379,39 @@ export default function EmployerHomeScreen() {
 
         {/* Bottom Navigation Bar */}
         <View style={styles.bottomNav}>
-          <ScalePress
-            style={styles.navTab}
-            scaleTo={0.9}
-            activeOpacity={0.7}
-            onPress={() => setActiveTab('home')}
-          >
-            <View style={styles.navTabInner}>
-              <View style={[styles.navIconPill, activeTab === 'home' && styles.navIconPillActive]}>
-                <Ionicons
-                  name={activeTab === 'home' ? 'home' : 'home-outline'}
-                  size={20}
-                  color={activeTab === 'home' ? '#FFFFFF' : '#94A3B8'}
-                />
-              </View>
-              <Text
-                variant="caption"
-                weight={activeTab === 'home' ? 'bold' : 'regular'}
-                color={activeTab === 'home' ? Colors.primaryDark : '#94A3B8'}
-                style={styles.navLabel}
+          {NAV_TABS.map((tab) => {
+            const active = activeTab === tab.key;
+            return (
+              <ScalePress
+                key={tab.key}
+                style={styles.navTab}
+                scaleTo={0.92}
+                activeOpacity={0.7}
+                onPress={() => {
+                  setActiveTab(tab.key);
+                  if (tab.key === 'activity') {
+                    router.push('/(employer)/jobs');
+                  } else if (tab.key === 'messages') {
+                    router.push('/(employer)/bookings');
+                  } else {
+                    setActiveTab('home');
+                  }
+                }}
               >
-                Home
-              </Text>
-            </View>
-          </ScalePress>
-
-          <ScalePress
-            style={styles.navTab}
-            scaleTo={0.9}
-            activeOpacity={0.7}
-            onPress={() => {
-              setActiveTab('activity');
-              router.push('/(employer)/jobs');
-            }}
-          >
-            <View style={styles.navTabInner}>
-              <View style={[styles.navIconPill, activeTab === 'activity' && styles.navIconPillActive]}>
-                <Ionicons
-                  name={activeTab === 'activity' ? 'document-text' : 'document-text-outline'}
-                  size={20}
-                  color={activeTab === 'activity' ? '#FFFFFF' : '#94A3B8'}
-                />
-              </View>
-              <Text
-                variant="caption"
-                weight={activeTab === 'activity' ? 'bold' : 'regular'}
-                color={activeTab === 'activity' ? Colors.primaryDark : '#94A3B8'}
-                style={styles.navLabel}
-              >
-                Activity
-              </Text>
-            </View>
-          </ScalePress>
-
-          <ScalePress
-            style={styles.navTab}
-            scaleTo={0.9}
-            activeOpacity={0.7}
-            onPress={() => {
-              setActiveTab('messages');
-              router.push('/(employer)/bookings');
-            }}
-          >
-            <View style={styles.navTabInner}>
-              <View style={[styles.navIconPill, activeTab === 'messages' && styles.navIconPillActive]}>
-                <Ionicons
-                  name={activeTab === 'messages' ? 'chatbubble' : 'chatbubble-outline'}
-                  size={20}
-                  color={activeTab === 'messages' ? '#FFFFFF' : '#94A3B8'}
-                />
-              </View>
-              <Text
-                variant="caption"
-                weight={activeTab === 'messages' ? 'bold' : 'regular'}
-                color={activeTab === 'messages' ? Colors.primaryDark : '#94A3B8'}
-                style={styles.navLabel}
-              >
-                Messages
-              </Text>
-            </View>
-          </ScalePress>
+                <View style={styles.navTabInner}>
+                  <AnimatedIcon active={active} activeIcon={tab.activeIcon} inactiveIcon={tab.inactiveIcon} />
+                  <Text
+                    variant="caption"
+                    weight={active ? 'bold' : 'medium'}
+                    color={active ? '#0277F4' : '#94A3B8'}
+                    style={styles.navLabel}
+                  >
+                    {tab.label}
+                  </Text>
+                </View>
+              </ScalePress>
+            );
+          })}
         </View>
       </View>
       </LinearGradient>
@@ -652,19 +639,19 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: 74,
+    height: 62,
     backgroundColor: '#FFFFFF',
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
     borderTopWidth: 1,
     borderTopColor: '#F1F5F9',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
     elevation: 10,
-    paddingBottom: Platform.OS === 'ios' ? 14 : 4,
+    paddingBottom: Platform.OS === 'ios' ? 4 : 0,
   },
   navTab: {
     alignItems: 'center',
@@ -674,24 +661,9 @@ const styles = StyleSheet.create({
   navTabInner: {
     alignItems: 'center',
   },
-  navIconPill: {
-    width: 40,
-    height: 30,
-    borderRadius: 15,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 1,
-  },
-  navIconPillActive: {
-    backgroundColor: '#0277F4',
-    shadowColor: '#0255C0',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.28,
-    shadowRadius: 4,
-    elevation: 3,
-  },
   navLabel: {
     fontSize: 11,
     lineHeight: 14,
+    marginTop: 3,
   },
 });
