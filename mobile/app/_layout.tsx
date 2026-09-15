@@ -1,9 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, Text, Animated, Image, Dimensions } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, Text } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
-import { Asset } from 'expo-asset';
 import { useFonts } from 'expo-font';
 import {
   Poppins_400Regular,
@@ -24,14 +23,6 @@ import OfflineBanner from '../src/components/OfflineBanner';
 import { Colors } from '../src/constants/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
-
-const SPLASH_IMAGE = require('../assets/Splash (2).png');
-
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('screen');
-const SPLASH_BG = '#1F221F';
-const SPLASH_HOLD_MS = 250;
-const SPLASH_FADE_MS = 300;
-const MAX_NATIVE_HIDE_MS = 1500;
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -82,9 +73,6 @@ export default function RootLayout() {
     Poppins_800ExtraBold,
   });
   const [appReady, setAppReady] = useState(false);
-  const [splashForced, setSplashForced] = useState(false);
-  const [splashDone, setSplashDone] = useState(false);
-  const splashOpacity = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     Promise.all([
@@ -100,46 +88,19 @@ export default function RootLayout() {
   }, [loadStoredAuth, loadStoredMode, loadStoredApplications, loadStoredRatings, loadStoredWallet, loadStoredNotifications]);
 
   useEffect(() => {
-    const timer = setTimeout(() => setSplashForced(true), 6000);
-    return () => clearTimeout(timer);
-  }, []);
+    if (appReady && (fontsLoaded || fontError)) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [appReady, fontsLoaded, fontError]);
 
-  useEffect(() => {
-    let cancelled = false;
-    const hideNative = () => {
-      if (!cancelled) SplashScreen.hideAsync().catch(() => {});
-    };
-    Asset.fromModule(SPLASH_IMAGE)
-      .downloadAsync()
-      .then(hideNative, hideNative);
-    const t = setTimeout(hideNative, MAX_NATIVE_HIDE_MS);
-    return () => {
-      cancelled = true;
-      clearTimeout(t);
-    };
-  }, []);
-
-  const ready = splashForced || (appReady && (fontsLoaded || fontError));
-
-  useEffect(() => {
-    if (!ready) return;
-    const t = setTimeout(() => {
-      Animated.timing(splashOpacity, {
-        toValue: 0,
-        duration: SPLASH_FADE_MS,
-        useNativeDriver: true,
-      }).start(() => setSplashDone(true));
-    }, SPLASH_HOLD_MS);
-    return () => clearTimeout(t);
-  }, [ready]);
+  if (!appReady || (!fontsLoaded && !fontError)) {
+    return null;
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
-        <StatusBar
-          style={splashDone ? 'dark' : 'light'}
-          backgroundColor={splashDone ? Colors.background : 'transparent'}
-        />
+        <StatusBar style="dark" backgroundColor={Colors.background} />
         <OfflineBanner />
         <ErrorBoundary>
           <Stack
@@ -163,42 +124,12 @@ export default function RootLayout() {
             <Stack.Screen name="(employer)" options={{ headerShown: false }} />
           </Stack>
         </ErrorBoundary>
-
-        {/* Full-screen Gigro artwork splash overlay */}
-        {!splashDone && (
-          <Animated.View
-            style={[styles.splashOverlay, { opacity: splashOpacity }]}
-            pointerEvents="none"
-          >
-            <Image
-              source={SPLASH_IMAGE}
-              style={styles.splashImage}
-              resizeMode="cover"
-            />
-          </Animated.View>
-        )}
       </SafeAreaProvider>
     </QueryClientProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  splashOverlay: {
-    position: 'absolute',
-    top: -4,
-    left: -4,
-    right: -4,
-    bottom: -4,
-    backgroundColor: SPLASH_BG,
-    zIndex: 999,
-  },
-  splashImage: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: SCREEN_WIDTH + 8,
-    height: SCREEN_HEIGHT + 8,
-  },
   errorScreen: {
     flex: 1,
     backgroundColor: '#FFFFFF',
