@@ -76,12 +76,12 @@ const ACTIVE_JOBS: PostedJob[] = [
   },
 ];
 
-type NavTab = 'home' | 'activity' | 'messages';
+type NavTab = 'home' | 'activity' | 'profile';
 
 const NAV_TABS: { key: NavTab; label: string; activeIcon: string; inactiveIcon: string }[] = [
   { key: 'home', label: 'Home', activeIcon: 'home', inactiveIcon: 'home-outline' },
   { key: 'activity', label: 'Activity', activeIcon: 'document-text', inactiveIcon: 'document-text-outline' },
-  { key: 'messages', label: 'Messages', activeIcon: 'chatbubble', inactiveIcon: 'chatbubble-outline' },
+  { key: 'profile' as NavTab, label: 'Profile', activeIcon: 'person', inactiveIcon: 'person-outline' },
 ];
 
 const AnimatedIcon = React.memo(
@@ -391,8 +391,8 @@ export default function EmployerHomeScreen() {
                   setActiveTab(tab.key);
                   if (tab.key === 'activity') {
                     router.push('/(employer)/jobs');
-                  } else if (tab.key === 'messages') {
-                    router.push('/(employer)/bookings');
+                  } else if (tab.key === 'profile') {
+                    router.push('/(employer)/profile');
                   } else {
                     setActiveTab('home');
                   }
