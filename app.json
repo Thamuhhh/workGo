@@ -9,7 +9,7 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/Splash (2).png",
       "resizeMode": "cover",
       "backgroundColor": "#FFFFFF"
     },
@@ -36,10 +36,16 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/splash.png",
+          "image": "./assets/Splash (2).png",
+          "imageWidth": 1080,
           "resizeMode": "cover",
-          "backgroundColor": "#FFFFFF",
-          "imageWidth": 1024
+          "backgroundColor": "#FFFFFF"
+        }
+      ],
+      [
+        "./plugins/withAndroidSplashFull",
+        {
+          "image": "./assets/Splash (2).png"
         }
       ],
       [
