@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, StyleSheet, Text, Animated, Image, Dimensions } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
@@ -24,11 +24,15 @@ import { Colors } from '../src/constants/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const SPLASH_HOLD_MS = 900;
+const SPLASH_FADE_MS = 420;
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 2,
-      staleTime: 1000 * 60 * 2, // 2 minutes
+      staleTime: 1000 * 60 * 2,
     },
   },
 });
@@ -74,6 +78,8 @@ export default function RootLayout() {
   });
   const [appReady, setAppReady] = useState(false);
   const [splashForced, setSplashForced] = useState(false);
+  const [splashDone, setSplashDone] = useState(false);
+  const splashOpacity = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     Promise.all([
@@ -96,9 +102,16 @@ export default function RootLayout() {
   const ready = splashForced || (appReady && (fontsLoaded || fontError));
 
   useEffect(() => {
-    if (ready) {
-      SplashScreen.hideAsync().catch(() => {});
-    }
+    if (!ready) return;
+    SplashScreen.hideAsync().catch(() => {});
+    const t = setTimeout(() => {
+      Animated.timing(splashOpacity, {
+        toValue: 0,
+        duration: SPLASH_FADE_MS,
+        useNativeDriver: true,
+      }).start(() => setSplashDone(true));
+    }, SPLASH_HOLD_MS);
+    return () => clearTimeout(t);
   }, [ready]);
 
   return (
@@ -128,12 +141,38 @@ export default function RootLayout() {
             <Stack.Screen name="(employer)" options={{ headerShown: false }} />
           </Stack>
         </ErrorBoundary>
+
+        {/* Full-screen Gigro artwork splash overlay */}
+        {!splashDone && (
+          <Animated.View
+            style={[styles.splashOverlay, { opacity: splashOpacity }]}
+            pointerEvents="none"
+          >
+            <Image
+              source={require('../assets/Splash (2).png')}
+              style={styles.splashImage}
+              resizeMode="cover"
+            />
+          </Animated.View>
+        )}
       </SafeAreaProvider>
     </QueryClientProvider>
   );
 }
 
 const styles = StyleSheet.create({
+  splashOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
+    zIndex: 999,
+  },
+  splashImage: {
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
+  },
   errorScreen: {
     flex: 1,
     backgroundColor: '#FFFFFF',
