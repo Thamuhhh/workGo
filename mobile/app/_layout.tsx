@@ -105,10 +105,6 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    Asset.fromModule(SPLASH_IMAGE).downloadAsync().catch(() => {});
-  }, []);
-
-  useEffect(() => {
     let cancelled = false;
     const hideNative = () => {
       if (!cancelled) SplashScreen.hideAsync().catch(() => {});
