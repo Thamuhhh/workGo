@@ -1,27 +1,28 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
-  Animated,
-  Easing,
   Platform,
+  Animated,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image as ExpoImage } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Icon as Ionicons } from '../../src/components/Icon';
 import { Text, Badge } from '../../src/components/ui';
 import { ScreenSkeleton, usePageLoading } from '../../src/components/ui/PageSkeleton';
-import AppHeader, { FadeSlide, ScalePress } from '../../src/components/AppHeader';
-import SearchBar from '../../src/components/SearchBar';
+
+import { FadeSlide, ScalePress } from '../../src/components/AppHeader';
+import { BannerCarousel, Banner as HomeBanner } from '../../src/components/BannerCarousel';
 import { Colors, Spacing, BorderRadius } from '../../src/constants/theme';
 import { useAuthStore } from '../../src/store/authStore';
 import { useUserModeStore } from '../../src/store/userModeStore';
-
-const AnimatedImage = Animated.createAnimatedComponent(ExpoImage);
+import { useApplicationsStore } from '../../src/store/applicationsStore';
+import { useMessagesStore } from '../../src/store/messagesStore';
+import { useLocationStore } from '../../src/store/locationStore';
 
 interface ServiceCategory {
   id: string;
@@ -29,6 +30,14 @@ interface ServiceCategory {
   image?: any;
   isOthers?: boolean;
 }
+
+const GREETING_MSG = (() => {
+  const h = new Date().getHours();
+  if (h >= 5 && h < 12) return 'Vanakkam';
+  if (h >= 12 && h < 17) return 'Good afternoon';
+  if (h >= 17 && h < 21) return 'Good evening';
+  return 'Good night';
+})();
 
 const SERVICES: ServiceCategory[] = [
   {
@@ -63,27 +72,56 @@ const SERVICES: ServiceCategory[] = [
   },
 ];
 
+const HOME_BANNERS: HomeBanner[] = [
+  {
+    id: 'firstjob',
+    title: 'Post Your First Job',
+    subtitle: 'Tell workers what you need and get applicants in minutes.',
+    cta: 'Post a job',
+    icon: 'add-circle-outline',
+    onPress: () => router.push('/(employer)/post-job'),
+  },
+  {
+    id: 'weekend',
+    title: 'Hiring for this weekend?',
+    subtitle: 'Catering staff, cleaners and MCs are active nearby right now.',
+    cta: 'Manage jobs',
+    icon: 'calendar-outline',
+    onPress: () => router.push('/(employer)/jobs'),
+  },
+  {
+    id: 'shortlist',
+    title: 'Review applicants faster',
+    subtitle: 'Shortlist, call or message your shortlisted workers.',
+    cta: 'View bookings',
+    icon: 'people-outline',
+    onPress: () => router.push('/(employer)/bookings'),
+  },
+];
+
 export default function EmployerHomeScreen() {
   const user = useAuthStore((state) => state.user);
   const { toggleMode } = useUserModeStore();
   const [activeTab, setActiveTab] = useState<'home' | 'activity' | 'messages'>('home');
-  const [selectedService, setSelectedService] = useState<string | null>(null);
-  const heroZoom = useRef(new Animated.Value(0)).current;
+  const applications = useApplicationsStore((s) => s.applications);
+  const readThreadIds = useMessagesStore((s) => s.readThreadIds);
+  const unreadCount = applications.filter((a) => !readThreadIds.includes(a.jobId)).length;
+  const locationLabel = useLocationStore((s) => s.label);
+  const locationAddress = useLocationStore((s) => s.address);
+  const businessName = user?.businessName || user?.name || 'there';
+  const businessFirstName = businessName.split(' ')[0];
 
-  useEffect(() => {
-    Animated.timing(heroZoom, {
-      toValue: 1,
-      duration: 700,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
-    }).start();
-  }, [heroZoom]);
+  const scrollY = useRef(new Animated.Value(0)).current;
 
-  const heroScale = heroZoom.interpolate({ inputRange: [0, 1], outputRange: [1.14, 1] });
-  const heroOpacity = heroZoom.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
+  const headerPadTop = scrollY.interpolate({ inputRange: [0, 64], outputRange: [16, 9], extrapolate: 'clamp' });
+  const headerPadBottom = scrollY.interpolate({ inputRange: [0, 64], outputRange: [20, 10], extrapolate: 'clamp' });
+  const brandScale = scrollY.interpolate({ inputRange: [0, 64], outputRange: [1, 0.93], extrapolate: 'clamp' });
+  const taglineOpacity = scrollY.interpolate({ inputRange: [0, 48], outputRange: [1, 0], extrapolate: 'clamp' });
+  const taglineHeight = scrollY.interpolate({ inputRange: [0, 48], outputRange: [16, 0], extrapolate: 'clamp' });
+  const comboMargin = scrollY.interpolate({ inputRange: [0, 64], outputRange: [Spacing.md, 4], extrapolate: 'clamp' });
+  const comboScale = scrollY.interpolate({ inputRange: [0, 64], outputRange: [1, 0.97], extrapolate: 'clamp' });
 
-  const handleSelectService = (id: string) => {
-    setSelectedService(id);
+  const handleSelectService = () => {
     router.push({
       pathname: '/(employer)/post-job',
     });
@@ -106,53 +144,112 @@ export default function EmployerHomeScreen() {
         style={styles.gradient}
       >
       <View style={styles.mainContainer}>
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-          {/* Hero Illustrated Banner with overlaid top nav */}
-          <View style={styles.heroContainer}>
-            <View style={styles.heroImageWrap}>
-              <AnimatedImage
-                source={require('../../assets/hero_banner.jpg')}
-                style={[styles.heroImage, { opacity: heroOpacity, transform: [{ scale: heroScale }] }]}
-                contentFit="cover"
-                transition={150}
-              />
-            </View>
-
-            {/* Top scrim so the overlaid logo stays readable */}
+          {/* Sticky animated header — stays on top while scrolling */}
+          <Animated.View
+            style={[
+              styles.headerShell,
+              { paddingTop: headerPadTop, paddingBottom: headerPadBottom },
+            ]}
+          >
             <LinearGradient
-              colors={['rgba(255,247,237,0.95)', 'rgba(255,247,237,0.0)']}
-              style={styles.heroTopScrim}
-            />
+              colors={['#FFFFFF', '#FFFFFF', '#F5F9FF']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.headerGradient}
+            >
+              <Animated.View style={[styles.headerTopRow, { transform: [{ scale: brandScale }] }]}>
+                <View style={styles.brandCol}>
+                  <Text variant="h2" weight="heavy" color="#0F172A" style={styles.brandTitle}>
+                    Gig<Text variant="h2" weight="heavy" color="#0277F4">ro</Text>
+                  </Text>
+                  <Animated.View style={{ height: taglineHeight, opacity: taglineOpacity }}>
+                    <Text variant="caption" weight="medium" color="#64748B" style={styles.brandTagline}>
+                      {GREETING_MSG}, <Text variant="caption" weight="bold" color="#0277F4">{businessFirstName}</Text>!
+                    </Text>
+                  </Animated.View>
+                </View>
 
-            {/* Overlaid Top Nav */}
-            <View style={styles.headerOverlay}>
-              <AppHeader
-                onProfilePress={() => router.push('/(employer)/profile')}
-                userInitial={(user?.businessName || user?.name || 'U').charAt(0).toUpperCase()}
-              />
-            </View>
+                <View style={styles.headerActions}>
+                  <View>
+                    <ScalePress
+                      onPress={() => router.push('/(employer)/bookings')}
+                      style={styles.iconBtnDark}
+                      scaleTo={0.9}
+                    >
+                      <Ionicons name="chatbubble" size={21} color="#64748B" weight="fill" />
+                    </ScalePress>
+                    {unreadCount > 0 && (
+                      <View style={styles.unreadBadge}>
+                        <Text variant="caption" weight="bold" color="#FFFFFF" style={styles.unreadBadgeText}>
+                          {unreadCount > 9 ? '9+' : unreadCount}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              </Animated.View>
 
-            {/* Soft bottom fade overlay — blends hero into the background */}
-            <LinearGradient
-              colors={['rgba(255,255,255,0)', 'rgba(255,255,255,0.6)', '#FFFFFF']}
-              locations={[0, 0.6, 1]}
-              style={styles.heroGradientOverlay}
-            />
+              {/* Combined Location + Search */}
+              <Animated.View
+                style={[
+                  styles.comboCard,
+                  { marginTop: comboMargin, transform: [{ scale: comboScale }] },
+                ]}
+              >
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  style={[
+                    styles.comboLocationZone,
+                    Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null,
+                  ]}
+                  onPress={() => router.push('/(worker)/location-picker')}
+                >
+                  <View style={styles.locationIconChip}>
+                    <Ionicons name="location-outline" size={16} color="#0277F4" />
+                  </View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text variant="body" weight="bold" color="#0F172A" numberOfLines={1} style={styles.comboLocationLabel}>
+                      {locationLabel}
+                    </Text>
+                    {locationAddress && locationLabel !== locationAddress && (
+                      <Text variant="caption" color="#64748B" numberOfLines={1}>
+                        {locationAddress}
+                      </Text>
+                    )}
+                  </View>
+                  <Ionicons name="chevron-down" size={14} color="#94A3B8" />
+                </TouchableOpacity>
 
-            {/* Floating Search Bar */}
-            <View style={styles.floatingSearchWrapper}>
-              <SearchBar
-                placeholder="Find Services, Promoter, Catering..."
-                onPress={() => router.push('/search')}
-              />
-            </View>
-          </View>
+                <View style={styles.comboDivider} />
 
-          {/* Spacer to account for floating search bar overlap */}
-          <View style={styles.searchSpacer} />
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  style={styles.comboSearchZone}
+                  onPress={() => router.push('/search')}
+                >
+                  <Ionicons name="search-outline" size={16} color="#0277F4" />
+                  <Text variant="body" color={Colors.textMuted} numberOfLines={1} style={styles.comboSearchText}>
+                    Search for services...
+                  </Text>
+                </TouchableOpacity>
+              </Animated.View>
+            </LinearGradient>
+          </Animated.View>
+
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
+            onScroll={Animated.event(
+              [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+              { useNativeDriver: false }
+            )}
+            scrollEventThrottle={16}
+          >
+
+          {/* Promo Banner Carousel */}
+          <FadeSlide delay={80}>
+            <BannerCarousel banners={HOME_BANNERS} />
+          </FadeSlide>
 
           {/* Select Your Services Grid */}
           <FadeSlide delay={120}>
@@ -163,53 +260,42 @@ export default function EmployerHomeScreen() {
 
               <View style={styles.servicesGrid}>
                 {SERVICES.map((service) => {
-                  const isSelected = selectedService === service.id;
                   return (
                     <ScalePress
                       key={service.id}
                       scaleTo={0.92}
-                      onPress={() => handleSelectService(service.id)}
+                      onPress={handleSelectService}
                       style={styles.serviceItem}
                     >
                       <View style={styles.serviceItemInner}>
-                        <View
-                          style={[
-                            styles.serviceIconCard,
-                            isSelected && styles.serviceIconCardSelected,
-                          ]}
-                        >
-                          {!service.image ? (
-                            <LinearGradient
-                              colors={['#A855F7', '#7C3AED']}
-                              start={{ x: 0, y: 0 }}
-                              end={{ x: 1, y: 1 }}
-                              style={styles.othersIconCircle}
-                            >
-                              <Text style={styles.othersDots}>•••</Text>
-                            </LinearGradient>
-                          ) : (
-                            <ExpoImage
-                              source={service.image}
-                              style={styles.serviceImage}
-                              contentFit="contain"
-                            />
-                          )}
-                          {isSelected ? (
-                            <View style={styles.checkBadge}>
-                              <Ionicons name="checkmark" size={10} color="#FFFFFF" />
-                            </View>
-                          ) : null}
-                        </View>
-                        <Text
-                          variant="bodySm"
-                          weight="medium"
-                          align="center"
-                          color="#0F172A"
-                          numberOfLines={2}
-                          style={styles.serviceLabel}
-                        >
-                          {service.name}
-                        </Text>
+                        <View style={styles.serviceIconCard}>
+                        {!service.image ? (
+                          <LinearGradient
+                            colors={['#A855F7', '#7C3AED']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.othersIconCircle}
+                          >
+                            <Text style={styles.othersDots}>•••</Text>
+                          </LinearGradient>
+                        ) : (
+                          <ExpoImage
+                            source={service.image}
+                            style={styles.serviceImage}
+                            contentFit="contain"
+                          />
+                        )}
+                      </View>
+                      <Text
+                        variant="bodySm"
+                        weight="medium"
+                        align="center"
+                        color="#0F172A"
+                        numberOfLines={2}
+                        style={styles.serviceLabel}
+                      >
+                        {service.name}
+                      </Text>
                       </View>
                     </ScalePress>
                   );
@@ -218,15 +304,77 @@ export default function EmployerHomeScreen() {
             </View>
           </FadeSlide>
 
-          {/* Quick Active Bookings / Posted Jobs Summary */}
+          {/* Hiring Stat Strip */}
           <FadeSlide delay={280}>
-            <View style={styles.activeSummarySection}>
+            <LinearGradient
+              colors={['#0EA5E9', '#0277F4']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.statsCard}
+            >
+              <View style={styles.statCol}>
+                <Text variant="h3" weight="heavy" color="#FFFFFF">
+                  3
+                </Text>
+                <Text variant="caption" weight="medium" color="#E0F2FE">
+                  Active jobs
+                </Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statCol}>
+                <Text variant="h3" weight="heavy" color="#FFFFFF">
+                  12
+                </Text>
+                <Text variant="caption" weight="medium" color="#E0F2FE">
+                  Workers hired
+                </Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statCol}>
+                <Text variant="h3" weight="heavy" color="#FFFFFF">
+                  4
+                </Text>
+                <Text variant="caption" weight="medium" color="#E0F2FE">
+                  Pending reviews
+                </Text>
+              </View>
+            </LinearGradient>
+          </FadeSlide>
+
+          {/* Quick Post CTA */}
+          <FadeSlide delay={380}>
+            <TouchableOpacity activeOpacity={0.9} onPress={() => router.push('/(employer)/post-job')}>
+              <LinearGradient
+                colors={['#012169', '#0277F4']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.postCta}
+              >
+                <View style={styles.postCtaIconWrap}>
+                  <Ionicons name="add" size={26} color="#FFFFFF" weight="bold" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text variant="body" weight="bold" color="#FFFFFF">
+                    Post a New Job
+                  </Text>
+                  <Text variant="caption" color="#BFDBFE">
+                    Get workers applied within minutes
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
+              </LinearGradient>
+            </TouchableOpacity>
+          </FadeSlide>
+
+          {/* Active Jobs Summary */}
+          <FadeSlide delay={440}>
+            <View style={styles.sectionContainer}>
               <View style={styles.activeSummaryHeader}>
                 <Text variant="body" weight="bold" color="#0F172A">
-                  Active Job Status
+                  Active Jobs
                 </Text>
                 <TouchableOpacity onPress={() => router.push('/(employer)/jobs')}>
-                  <Text variant="caption" weight="bold" color="#0F172A">
+                  <Text variant="caption" weight="bold" color="#0277F4">
                     View All →
                   </Text>
                 </TouchableOpacity>
@@ -353,56 +501,120 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   scrollContent: {
+    paddingTop: Spacing.md,
     paddingBottom: 90,
   },
-  heroContainer: {
-    width: '100%',
-    height: 250,
-    position: 'relative',
-    overflow: 'visible',
-  },
-  heroImageWrap: {
-    width: '100%',
-    height: '100%',
-    overflow: 'hidden',
-  },
-  heroTopScrim: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 130,
+  headerShell: {
+    backgroundColor: '#FFFFFF',
     zIndex: 10,
   },
-  headerOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 20,
+  headerGradient: {
+    paddingHorizontal: Spacing.xl,
   },
-  heroImage: {
-    width: '100%',
-    height: '100%',
-  },
-  heroGradientOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 130,
-  },
-  floatingSearchWrapper: {
-    position: 'absolute',
-    bottom: -26,
-    left: 0,
-    right: 0,
+  headerTopRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
-    zIndex: 10,
+    justifyContent: 'space-between',
   },
-  searchSpacer: {
-    height: 38,
+  brandCol: {
+    flex: 1,
+  },
+  brandTitle: {
+    fontSize: 24,
+    letterSpacing: -0.5,
+  },
+  brandTagline: {
+    marginTop: 2,
+    fontSize: 11,
+    letterSpacing: 0.4,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  iconBtnDark: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#F1F5F9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E8EEF6',
+  },
+  unreadBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -6,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    paddingHorizontal: 4,
+    backgroundColor: '#EF4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+  },
+  unreadBadgeText: {
+    fontSize: 10,
+    lineHeight: 12,
+  },
+  comboCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 999,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    marginTop: Spacing.md,
+    borderWidth: 1,
+    borderColor: '#E8EEF6',
+    shadowColor: '#1E3A8A',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  comboLocationZone: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingRight: Spacing.sm,
+    flexShrink: 1,
+    maxWidth: '60%',
+    minWidth: 0,
+  },
+  comboLocationLabel: {
+    flexShrink: 1,
+    minWidth: 0,
+  },
+  comboDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: '#EDF2F7',
+    marginRight: Spacing.sm,
+  },
+  comboSearchZone: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+    paddingRight: Spacing.sm,
+  },
+  comboSearchText: {
+    flex: 1,
+    flexShrink: 1,
+    minWidth: 0,
+  },
+  locationIconChip: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#E3F2FF',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   sectionContainer: {
     paddingHorizontal: Spacing.xl,
@@ -430,36 +642,17 @@ const styles = StyleSheet.create({
     width: 78,
     height: 78,
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 6,
-    shadowColor: '#64748B',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  serviceIconCardSelected: {
-    backgroundColor: '#EFF6FF',
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
   },
   serviceImage: {
     width: '100%',
     height: '100%',
     borderRadius: 14,
-  },
-  checkBadge: {
-    position: 'absolute',
-    top: -5,
-    right: -5,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#3B82F6',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
   },
   othersIconCircle: {
     width: 52,
@@ -485,9 +678,41 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
   },
-  activeSummarySection: {
-    paddingHorizontal: Spacing.xl,
+  statsCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: Spacing.xl,
+    borderRadius: BorderRadius.lg,
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.md,
     marginBottom: Spacing.xl,
+  },
+  statCol: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+  },
+  postCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    marginHorizontal: Spacing.xl,
+    borderRadius: BorderRadius.lg,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    marginBottom: Spacing.xl,
+  },
+  postCtaIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   activeSummaryHeader: {
     flexDirection: 'row',
@@ -501,6 +726,7 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
     borderWidth: 1,
     borderColor: '#E2E8F0',
+    marginBottom: Spacing.xl,
   },
   miniJobTop: {
     flexDirection: 'row',
