@@ -26,8 +26,8 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('screen');
 const SPLASH_BG = '#1F221F';
-const SPLASH_HOLD_MS = 900;
-const SPLASH_FADE_MS = 420;
+const SPLASH_HOLD_MS = 500;
+const SPLASH_FADE_MS = 300;
 
 const queryClient = new QueryClient({
   defaultOptions: {

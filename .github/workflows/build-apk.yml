@@ -35,6 +35,9 @@ jobs:
       - name: Generate native project
         run: npx expo prebuild --platform android --clean --no-install
 
+      - name: Patch splash theme (no grey / no black flash)
+        run: node scripts/fix-splash-theme.mjs
+
       - name: Tune Gradle memory
         working-directory: mobile/android
         run: |
