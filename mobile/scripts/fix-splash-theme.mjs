@@ -14,6 +14,7 @@ const SPLASH_EXTRA = [
   ['android:windowLightStatusBar', 'false'],
   ['android:windowLightNavigationBar', 'false'],
   ['android:windowSplashScreenIconBackgroundColor', '@android:color/transparent'],
+  ['android:windowSplashScreenAnimationDuration', '0'],
 ];
 
 const APP_EXTRA = [['android:windowBackground', SPLASH_COLOR]];
