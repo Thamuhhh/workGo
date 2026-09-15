@@ -3,6 +3,7 @@ import { View, StyleSheet, Text, Animated, Image, Dimensions } from 'react-nativ
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
+import { Asset } from 'expo-asset';
 import { useFonts } from 'expo-font';
 import {
   Poppins_400Regular,
@@ -24,10 +25,13 @@ import { Colors } from '../src/constants/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
+const SPLASH_IMAGE = require('../assets/Splash (2).png');
+
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('screen');
 const SPLASH_BG = '#1F221F';
-const SPLASH_HOLD_MS = 500;
+const SPLASH_HOLD_MS = 250;
 const SPLASH_FADE_MS = 300;
+const MAX_NATIVE_HIDE_MS = 1500;
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -100,11 +104,29 @@ export default function RootLayout() {
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    Asset.fromModule(SPLASH_IMAGE).downloadAsync().catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const hideNative = () => {
+      if (!cancelled) SplashScreen.hideAsync().catch(() => {});
+    };
+    Asset.fromModule(SPLASH_IMAGE)
+      .downloadAsync()
+      .then(hideNative, hideNative);
+    const t = setTimeout(hideNative, MAX_NATIVE_HIDE_MS);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, []);
+
   const ready = splashForced || (appReady && (fontsLoaded || fontError));
 
   useEffect(() => {
     if (!ready) return;
-    SplashScreen.hideAsync().catch(() => {});
     const t = setTimeout(() => {
       Animated.timing(splashOpacity, {
         toValue: 0,
@@ -153,7 +175,7 @@ export default function RootLayout() {
             pointerEvents="none"
           >
             <Image
-              source={require('../assets/Splash (2).png')}
+              source={SPLASH_IMAGE}
               style={styles.splashImage}
               resizeMode="cover"
             />
