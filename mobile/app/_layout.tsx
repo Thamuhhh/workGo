@@ -24,7 +24,8 @@ import { Colors } from '../src/constants/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('screen');
+const SPLASH_BG = '#1F221F';
 const SPLASH_HOLD_MS = 900;
 const SPLASH_FADE_MS = 420;
 
@@ -117,7 +118,10 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
-        <StatusBar style="dark" backgroundColor={Colors.background} />
+        <StatusBar
+          style={splashDone ? 'dark' : 'light'}
+          backgroundColor={splashDone ? Colors.background : SPLASH_BG}
+        />
         <OfflineBanner />
         <ErrorBoundary>
           <Stack
@@ -163,15 +167,19 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   splashOverlay: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT,
+    top: -4,
+    left: -4,
+    right: -4,
+    bottom: -4,
+    backgroundColor: SPLASH_BG,
     zIndex: 999,
   },
   splashImage: {
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: SCREEN_WIDTH + 8,
+    height: SCREEN_HEIGHT + 8,
   },
   errorScreen: {
     flex: 1,

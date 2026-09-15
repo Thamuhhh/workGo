@@ -24,6 +24,7 @@ export default function Root({ children }: PropsWithChildren) {
               html, body {
                 overscroll-behavior: none !important;
                 overscroll-behavior-y: none !important;
+                background-color: #1f221f !important;
               }
               *:focus,
               *:focus-visible,
