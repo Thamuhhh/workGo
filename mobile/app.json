@@ -4,7 +4,7 @@
     "slug": "workgo",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/app.png",
+    "icon": "./assets/Applogo.png",
     "scheme": "workgo",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
