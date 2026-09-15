@@ -43,6 +43,12 @@
         }
       ],
       [
+        "./plugins/withAndroidSplashFull",
+        {
+          "image": "./assets/Splash (2).png"
+        }
+      ],
+      [
         "expo-font",
         {
           "fonts": [
