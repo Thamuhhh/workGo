@@ -28,6 +28,7 @@ export default function WorkerLayout() {
         options={{ headerShown: false }}
       />
       <Stack.Screen name="bookings" options={{ title: 'My Bookings' }} />
+      <Stack.Screen name="payment" options={{ title: 'Payment' }} />
       <Stack.Screen name="edit-profile" options={{ title: 'Edit Profile' }} />
       <Stack.Screen name="applications" options={{ title: 'Chats' }} />
       <Stack.Screen name="notifications" options={{ title: 'Notifications' }} />

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+﻿import React, { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { Icon } from './Icon';
 
@@ -55,7 +55,7 @@ const pinHtml = `
   <div style="position:relative;width:26px;height:26px;">
     <div id="wgo-pulse" style="position:absolute;inset:-10px;border-radius:50%;background:rgba(39,174,96,0.35);opacity:0;"></div>
     <div style="position:absolute;width:26px;height:26px;border-radius:50%;
-      background:#0277F4;border:3px solid #fff;
+      background:#0F172A;border:3px solid #fff;
       box-shadow:0 2px 6px rgba(15,23,42,0.35);
       display:flex;align-items:center;justify-content:center;">
       <div style="width:7px;height:7px;border-radius:50%;background:#fff;"></div>

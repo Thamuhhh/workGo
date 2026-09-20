@@ -18,7 +18,9 @@ import { useUserModeStore } from '../src/store/userModeStore';
 import { useApplicationsStore } from '../src/store/applicationsStore';
 import { useRatingsStore } from '../src/store/ratingsStore';
 import { useWalletStore } from '../src/store/walletStore';
+import { usePaymentsStore } from '../src/store/paymentsStore';
 import { useNotificationsStore } from '../src/store/notificationsStore';
+import { useEmployerJobsStore } from '../src/store/employerJobsStore';
 import OfflineBanner from '../src/components/OfflineBanner';
 import { Colors } from '../src/constants/theme';
 
@@ -63,7 +65,9 @@ export default function RootLayout() {
   const loadStoredApplications = useApplicationsStore((state) => state.loadStoredApplications);
   const loadStoredRatings = useRatingsStore((state) => state.loadStoredRatings);
   const loadStoredWallet = useWalletStore((state) => state.loadStoredWallet);
+  const loadStoredPayments = usePaymentsStore((state) => state.loadStoredPayments);
   const loadStoredNotifications = useNotificationsStore((state) => state.loadStoredNotifications);
+  const loadStoredEmployerJobs = useEmployerJobsStore((state) => state.loadStoredJobs);
 
   const [fontsLoaded, fontError] = useFonts({
     Poppins_400Regular,
@@ -81,11 +85,13 @@ export default function RootLayout() {
       loadStoredApplications(),
       loadStoredRatings(),
       loadStoredWallet(),
+      loadStoredPayments(),
       loadStoredNotifications(),
+      loadStoredEmployerJobs(),
     ])
       .catch(() => {})
       .finally(() => setAppReady(true));
-  }, [loadStoredAuth, loadStoredMode, loadStoredApplications, loadStoredRatings, loadStoredWallet, loadStoredNotifications]);
+  }, [loadStoredAuth, loadStoredMode, loadStoredApplications, loadStoredRatings, loadStoredWallet, loadStoredPayments, loadStoredNotifications, loadStoredEmployerJobs]);
 
   useEffect(() => {
     if (appReady && (fontsLoaded || fontError)) {

@@ -22,7 +22,7 @@ interface MessagesState {
   threads: Record<string, ChatMessage[]>;
   readThreadIds: string[];
   seedThread: (jobId: string) => void;
-  sendMessage: (jobId: string, text: string) => void;
+  sendMessage: (jobId: string, text: string, sender?: 'worker' | 'employer') => void;
   markThreadRead: (jobId: string) => void;
   markAllRead: (jobIds: string[]) => void;
 }
@@ -38,10 +38,10 @@ export const useMessagesStore = create<MessagesState>((set, get) => ({
     }));
   },
 
-  sendMessage: (jobId: string, text: string) => {
+  sendMessage: (jobId: string, text: string, sender: 'worker' | 'employer' = 'worker') => {
     const message: ChatMessage = {
       id: `m${Date.now()}`,
-      sender: 'worker',
+      sender,
       text,
       timestamp: new Date().toISOString(),
     };

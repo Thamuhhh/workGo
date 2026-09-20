@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Platform, RefreshControl } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -136,8 +136,8 @@ export default function WorkerJobsScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#0277F4"
-            colors={['#0277F4']}
+            tintColor="#0F172A"
+            colors={['#0F172A']}
           />
         }
       >
@@ -231,10 +231,10 @@ export default function WorkerJobsScreen() {
                 >
                   <Card padding="lg" variant="outlined" style={styles.jobCard}>
                     <View style={styles.jobCardTop}>
-                      <Text variant="h3" weight="bold" color="#0F172A" numberOfLines={1} style={styles.jobTitle}>
+                      <Text variant="body" weight="bold" color="#0F172A" numberOfLines={1} style={styles.jobTitle}>
                         {job.title}
                       </Text>
-                      <Text variant="body" weight="bold" color="#0277F4" style={styles.salary}>
+                      <Text variant="body" weight="bold" color="#0F172A" style={styles.salary}>
                         {job.salary}
                       </Text>
                     </View>
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#0277F4',
+    backgroundColor: '#0F172A',
   },
   mapMarker: {
     position: 'absolute',

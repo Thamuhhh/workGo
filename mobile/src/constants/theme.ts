@@ -1,22 +1,22 @@
 export const Colors = {
   // Brand colors
-  primary: '#0277F4',       // Brand Blue
-  primaryLight: '#E6F3FF',  // Soft light blue background
-  primaryDark: '#0255C0',   // Deep blue for active states
+  primary: '#0F172A',       // Brand Black
+  primaryLight: '#F1F5F9',  // Soft light neutral background
+  primaryDark: '#020617',   // Deep black for active states
 
   // Secondary & Accents
-  secondary: '#0277F4',     // Brand Blue
-  secondaryLight: '#4DA3FF',
+  secondary: '#0F172A',     // Brand Black
+  secondaryLight: '#334155',
 
   // Semantic status colors
   success: '#10B981',       // Emerald (Earnings / Verified / Confirmed)
   successLight: '#D1FAE5',
-  warning: '#0277F4',       // Pending / In Progress
-  warningLight: '#E6F3FF',
+  warning: '#D97706',       // Pending / In Progress (amber)
+  warningLight: '#FEF3C7',
   danger: '#EF4444',        // Rejected / Cancelled / Error
   dangerLight: '#FEE2E2',
-  info: '#3B82F6',          // Information / Updates
-  infoLight: '#DBEAFE',
+  info: '#334155',          // Information / Updates
+  infoLight: '#F1F5F9',
 
   // Grayscale & Surfaces
   background: '#F8FAFC',    // Soft off-white app background

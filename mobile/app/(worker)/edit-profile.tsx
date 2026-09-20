@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import { router } from 'expo-router';
 import { Text, Input, Button } from '../../src/components/ui';
@@ -50,7 +50,7 @@ export default function EditProfileScreen() {
         <TouchableOpacity activeOpacity={0.7} style={styles.avatarWrap}>
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
-              <Text variant="h1" weight="heavy" color="#0277F4">
+              <Text variant="h1" weight="heavy" color="#0F172A">
                 {initial}
               </Text>
             </View>
@@ -145,17 +145,17 @@ export default function EditProfileScreen() {
                 <Icon
                   name="location-outline"
                   size={18}
-                  color={selected ? '#0277F4' : '#94A3B8'}
+                  color={selected ? '#0F172A' : '#94A3B8'}
                 />
                 <Text
                   variant="body"
                   weight={selected ? 'bold' : 'regular'}
-                  color={selected ? '#0277F4' : '#0F172A'}
+                  color={selected ? '#0F172A' : '#0F172A'}
                   style={styles.cityRowName}
                 >
                   {c}
                 </Text>
-                {selected && <Icon name="checkmark" size={18} color="#0277F4" />}
+                {selected && <Icon name="checkmark" size={18} color="#0F172A" />}
               </TouchableOpacity>
             );
           })}
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#0277F4',
+    backgroundColor: '#0F172A',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,

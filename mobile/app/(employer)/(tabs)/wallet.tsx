@@ -18,7 +18,7 @@ function groupOf(timestamp: string): (typeof GROUPS)[number] {
   return 'Earlier';
 }
 
-export default function WorkerWalletScreen() {
+export default function EmployerWalletScreen() {
   const balance = useWalletStore((s) => s.balance);
   const upiId = useWalletStore((s) => s.upiId);
   const transactions = useWalletStore((s) => s.transactions);
@@ -74,7 +74,7 @@ export default function WorkerWalletScreen() {
         </View>
 
         <Text variant="caption" weight="medium" color="#16A34A">
-          +₹3,420 earned this month
+          Ready for worker payouts & hiring
         </Text>
       </View>
 
@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: Spacing.xl,
     paddingTop: Spacing.xs,
-    paddingBottom: Spacing.xxxl,
+    paddingBottom: 92,
     backgroundColor: Colors.surface,
   },
   balanceCard: {

@@ -40,7 +40,7 @@ const AnimatedIcon = React.memo(
 // Custom tab button removed — default PlatformPressable handles web
 // link navigation (preventDefault + SPA) correctly without reloads.
 
-export default function WorkerTabsLayout() {
+export default function EmployerTabsLayout() {
   return (
     <Tabs
       screenOptions={({ route }) => {

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+﻿import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, Easing, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon as Ionicons } from './Icon';
@@ -68,7 +68,7 @@ export default function SearchBar({ placeholder, onPress }: SearchBarProps) {
         >
           <View style={[styles.bar, Shadows.md]}>
             <LinearGradient
-              colors={['#0277F4', '#0255C0']}
+              colors={['#0F172A', '#020617']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.iconChip}

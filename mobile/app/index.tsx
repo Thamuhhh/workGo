@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+﻿import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { router, useRootNavigationState } from 'expo-router';
 import { useAuthStore } from '../src/store/authStore';
@@ -16,7 +16,7 @@ export default function EntryScreen() {
     if (isLoading) return;
     if (isAuthenticated) {
       if (mode === 'employer') {
-        router.replace('/(employer)/home');
+        router.replace('/(employer)/(tabs)/home');
       } else {
         router.replace('/(worker)/(tabs)/home');
       }
@@ -33,7 +33,7 @@ export default function EntryScreen() {
       <View style={styles.heroSection}>
         <View style={styles.logoRow}>
           <Text variant="h1" weight="heavy" color="#0F172A" style={styles.logoText}>Gig</Text>
-          <Text variant="h1" weight="heavy" color="#0277F4" style={styles.logoText}>ro</Text>
+          <Text variant="h1" weight="heavy" color="#0F172A" style={styles.logoText}>ro</Text>
         </View>
         <Text variant="h3" align="center" weight="bold" style={styles.tagline}>
           Work nearby. Earn today.

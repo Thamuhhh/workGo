@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 
 export interface LocationPickerMapProps {
@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: '#0277F4',
+    backgroundColor: '#0F172A',
     borderWidth: 3,
     borderColor: '#FFFFFF',
     alignItems: 'center',

@@ -73,7 +73,7 @@ export default function CategoryJobsScreen() {
           <View style={[styles.summaryCard, webReset]}>
             <View style={styles.summaryRow}>
               <View style={styles.summaryCol}>
-                <Text variant="h3" weight="bold" color="#0F172A">
+                <Text variant="body" weight="bold" color="#0F172A">
                   {category || 'All Jobs'}
                 </Text>
                 <Text variant="bodySm" color={Colors.textSecondary}>
@@ -161,7 +161,7 @@ export default function CategoryJobsScreen() {
                   <Card padding="lg" variant="outlined" style={styles.jobCard}>
                     <View style={styles.jobCardTop}>
                       <View style={styles.jobTitleCol}>
-                        <Text variant="h3" weight="bold" color="#0F172A" numberOfLines={1}>
+                        <Text variant="body" weight="bold" color="#0F172A" numberOfLines={1}>
                           {job.title}
                         </Text>
                         <Text variant="bodySm" color={Colors.textSecondary} numberOfLines={1} style={styles.subTag}>

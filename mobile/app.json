@@ -4,12 +4,12 @@
     "slug": "workgo",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/Applogo.png",
+    "icon": "./assets/App W.png",
     "scheme": "workgo",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splaash.png",
+      "image": "./assets/Spalsh.png",
       "resizeMode": "contain",
       "backgroundColor": "#FFFFFF"
     },
@@ -36,7 +36,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/splaash.png",
+          "image": "./assets/Spalsh.png",
           "backgroundColor": "#FFFFFF"
         }
       ],

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+﻿import React, { useRef, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -52,7 +52,7 @@ const CATEGORIES: ServiceCategory[] = [
   {
     id: 'catering',
     name: 'Catering',
-    image: require('../../../assets/Catter.png'),
+    image: require('../../../assets/Catering.png'),
   },
   {
     id: 'mc_anchor',
@@ -109,6 +109,17 @@ const HOME_BANNERS: HomeBanner[] = [
   },
 ];
 
+function SectionHead({ children }: { children: string }) {
+  return (
+    <View style={styles.sectionHead}>
+      <Text variant="caption" weight="bold" color="#94A3B8" style={styles.kicker}>
+        {children.toUpperCase()}
+      </Text>
+      <View style={styles.headRule} />
+    </View>
+  );
+}
+
 export default function WorkerHomeScreen() {
   const { toggleMode } = useUserModeStore();
   const userName = useAuthStore((s) => s.user?.name);
@@ -139,7 +150,7 @@ export default function WorkerHomeScreen() {
 
   const handleSwitchMode = async () => {
     await toggleMode();
-    router.replace('/(employer)/home');
+    router.replace('/(employer)/(tabs)/home');
   };
 
   if (usePageLoading()) return <ScreenSkeleton variant="home" />;
@@ -162,7 +173,7 @@ export default function WorkerHomeScreen() {
             ]}
           >
             <LinearGradient
-              colors={['#FFFFFF', '#FFFFFF', '#F5F9FF']}
+              colors={['#FFFFFF', '#FFFFFF', '#F8FAFC']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.headerGradient}
@@ -170,11 +181,11 @@ export default function WorkerHomeScreen() {
               <Animated.View style={[styles.headerTopRow, { transform: [{ scale: brandScale }] }]}>
                 <View style={styles.brandCol}>
                   <Text variant="h2" weight="heavy" color="#0F172A" style={styles.brandTitle}>
-                    Gig<Text variant="h2" weight="heavy" color="#0277F4">ro</Text>
+                    Gig<Text variant="h2" weight="heavy" color="#0F172A">ro</Text>
                   </Text>
                   <Animated.View style={{ height: taglineHeight, opacity: taglineOpacity }}>
                     <Text variant="caption" weight="medium" color="#64748B" style={styles.brandTagline}>
-                      {GREETING_MSG}, <Text variant="caption" weight="bold" color="#0277F4">{firstName}</Text>!
+                      {GREETING_MSG}, <Text variant="caption" weight="bold" color="#0F172A">{firstName}</Text>!
                     </Text>
                   </Animated.View>
                 </View>
@@ -215,7 +226,7 @@ export default function WorkerHomeScreen() {
                   onPress={() => router.push('/(worker)/location-picker')}
                 >
                   <View style={styles.locationIconChip}>
-                    <Ionicons name="location-outline" size={16} color="#0277F4" />
+                    <Ionicons name="location-outline" size={16} color="#0F172A" />
                   </View>
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text variant="body" weight="bold" color="#0F172A" numberOfLines={1} style={styles.comboLocationLabel}>
@@ -237,7 +248,7 @@ export default function WorkerHomeScreen() {
                   style={styles.comboSearchZone}
                   onPress={() => router.push('/search')}
                 >
-                  <Ionicons name="search-outline" size={16} color="#0277F4" />
+                  <Ionicons name="search-outline" size={16} color="#0F172A" />
                   <Text variant="body" color={Colors.textMuted} numberOfLines={1} style={styles.comboSearchText}>
                     Search for jobs...
                   </Text>
@@ -264,9 +275,7 @@ export default function WorkerHomeScreen() {
           {/* Select Your Services Category Grid */}
           <FadeSlide delay={120}>
             <View style={styles.sectionContainer}>
-              <Text variant="h3" weight="bold" color="#0F172A" style={styles.sectionTitle}>
-                Select Your Category
-              </Text>
+              <SectionHead>Categories</SectionHead>
 
               <View style={styles.servicesGrid}>
 {CATEGORIES.map((cat) => {
@@ -281,7 +290,7 @@ export default function WorkerHomeScreen() {
                         <View style={styles.serviceIconCard}>
                         {!cat.image ? (
                           <LinearGradient
-                            colors={['#A855F7', '#7C3AED']}
+                            colors={['#334155', '#0F172A']}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 1 }}
                             style={styles.othersIconCircle}
@@ -317,16 +326,24 @@ export default function WorkerHomeScreen() {
           {/* Earnings Stat Strip */}
           <FadeSlide delay={280}>
             <LinearGradient
-              colors={['#0EA5E9', '#0277F4']}
+              colors={['#334155', '#0F172A', '#020617']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
+              locations={[0, 0.55, 1]}
               style={styles.statsCard}
             >
+              <LinearGradient
+                colors={['rgba(255,255,255,0.12)', 'rgba(255,255,255,0)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                pointerEvents="none"
+                style={styles.statsSheen}
+              />
               <View style={styles.statCol}>
                 <Text variant="h3" weight="heavy" color="#FFFFFF">
                   {jobsNearby}
                 </Text>
-                <Text variant="caption" weight="medium" color="#E0F2FE">
+                <Text variant="caption" weight="medium" color="#94A3B8">
                   Jobs nearby you
                 </Text>
               </View>
@@ -335,7 +352,7 @@ export default function WorkerHomeScreen() {
                 <Text variant="h3" weight="heavy" color="#FFFFFF">
                   ₹1,200
                 </Text>
-                <Text variant="caption" weight="medium" color="#E0F2FE">
+                <Text variant="caption" weight="medium" color="#94A3B8">
                   Highest pay today
                 </Text>
               </View>
@@ -344,7 +361,7 @@ export default function WorkerHomeScreen() {
                 <Text variant="h3" weight="heavy" color="#FFFFFF">
                   ₹550
                 </Text>
-                <Text variant="caption" weight="medium" color="#E0F2FE">
+                <Text variant="caption" weight="medium" color="#94A3B8">
                   Avg. daily earning
                 </Text>
               </View>
@@ -354,14 +371,12 @@ export default function WorkerHomeScreen() {
           {/* How It Works */}
           <FadeSlide delay={380}>
             <View style={styles.sectionContainer}>
-              <Text variant="h3" weight="bold" color="#0F172A" style={styles.sectionTitle}>
-                How it works
-              </Text>
+              <SectionHead>How it works</SectionHead>
               <View style={styles.stepsRow}>
                 {WORK_STEPS.map((step, i) => (
                   <View key={step.title} style={styles.stepItem}>
                     <View style={styles.stepIconWrap}>
-                      <Ionicons name={step.icon} size={18} color="#0277F4" />
+                      <Ionicons name={step.icon} size={18} color="#0F172A" />
                       <View style={styles.stepBadge}>
                         <Text style={styles.stepBadgeText}>{i + 1}</Text>
                       </View>
@@ -500,7 +515,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
     borderWidth: 1,
     borderColor: '#E8EEF6',
-    shadowColor: '#1E3A8A',
+    shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
@@ -541,13 +556,28 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#E3F2FF',
+    backgroundColor: '#F1F5F9',
     justifyContent: 'center',
     alignItems: 'center',
   },
   sectionContainer: {
     paddingHorizontal: Spacing.xl,
     marginTop: Spacing.sm,
+  },
+  sectionHead: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+  },
+  kicker: {
+    letterSpacing: 1.4,
+  },
+  headRule: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#EDF2F7',
+    marginLeft: Spacing.md,
   },
   sectionTitle: {
     fontSize: 17,
@@ -589,7 +619,7 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#9333EA',
+    shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
@@ -615,6 +645,15 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.lg,
     paddingHorizontal: Spacing.md,
     marginBottom: Spacing.xl,
+    overflow: 'hidden',
+    shadowColor: '#020617',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  statsSheen: {
+    ...StyleSheet.absoluteFillObject,
   },
   statCol: {
     flex: 1,
@@ -639,7 +678,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#F1F5F9',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.sm,
@@ -651,7 +690,7 @@ const styles = StyleSheet.create({
     minWidth: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: '#0277F4',
+    backgroundColor: '#0F172A',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 4,

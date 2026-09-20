@@ -15,6 +15,7 @@ interface WalletState {
   upiId: string;
   transactions: WalletTxn[];
   credit: (title: string, meta: string, amount: number) => void;
+  debit: (title: string, meta: string, amount: number) => void;
   addMoney: (amount: number) => void;
   withdraw: () => boolean;
   setUpiId: (id: string) => void;
@@ -54,6 +55,19 @@ export const useWalletStore = create<WalletState>((set, get) => ({
       balance: s.balance + amount,
       totalEarned: s.totalEarned + amount,
     });
+    AsyncStorage.setItem(WALLET_STORAGE_KEY, JSON.stringify(get())).catch(() => {});
+  },
+
+  debit: (title, meta, amount) => {
+    const txn: WalletTxn = {
+      id: `t${Date.now()}`,
+      title,
+      meta,
+      amount: -Math.abs(amount),
+      timestamp: new Date().toISOString(),
+    };
+    const s = get();
+    set({ transactions: [txn, ...s.transactions], balance: s.balance - Math.abs(amount) });
     AsyncStorage.setItem(WALLET_STORAGE_KEY, JSON.stringify(get())).catch(() => {});
   },
 

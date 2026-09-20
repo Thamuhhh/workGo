@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Share, Platform } from 'react-native';
 import { Icon as Ionicons } from '../../src/components/Icon';
 import { Text, Card } from '../../src/components/ui';
@@ -62,7 +62,7 @@ export default function ReferScreen() {
       {/* Refer hero */}
         <View style={styles.hero}>
           <View style={styles.giftIcon}>
-            <Ionicons name="gift" size={18} color="#0277F4" />
+            <Ionicons name="gift" size={18} color="#0F172A" />
           </View>
           <Text variant="h2" weight="bold" color="#0F172A" style={styles.heroTitle}>
             Earn ₹100

@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
 import { Text } from './Text';
 import { Colors, BorderRadius, Spacing } from '../../constants/theme';
@@ -21,7 +21,7 @@ export const Badge: React.FC<BadgeProps> = ({
   const getBadgeColors = () => {
     switch (variant) {
       case 'primary':
-        return { bg: '#E6F3FF', text: '#0F172A' };
+        return { bg: '#F1F5F9', text: '#0F172A' };
       case 'success':
         return { bg: Colors.successLight, text: Colors.success };
       case 'warning':

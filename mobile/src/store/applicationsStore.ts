@@ -14,14 +14,23 @@ interface ApplicationsState {
   applications: Application[];
   apply: (jobId: string) => Promise<void>;
   markCompleted: (jobId: string) => void;
+  setApplicationStatus: (jobId: string, status: ApplicationStatus) => void;
   hasApplied: (jobId: string) => boolean;
   loadStoredApplications: () => Promise<void>;
 }
 
 const APPLICATIONS_STORAGE_KEY = '@workgo_applications';
 
+const SEED_APPLICATIONS: Application[] = [
+  {
+    jobId: 'job_1',
+    appliedAt: new Date(Date.now() - 2 * 3600000).toISOString(),
+    status: 'ACCEPTED',
+  },
+];
+
 export const useApplicationsStore = create<ApplicationsState>((set, get) => ({
-  applications: [],
+  applications: SEED_APPLICATIONS,
 
   apply: async (jobId: string) => {
     const existing = get().applications.some((a) => a.jobId === jobId);
@@ -51,6 +60,18 @@ export const useApplicationsStore = create<ApplicationsState>((set, get) => ({
       a.jobId === jobId
         ? { ...a, status: 'COMPLETED' as const, completedAt: new Date().toISOString() }
         : a
+    );
+    set({ applications });
+    AsyncStorage.setItem(APPLICATIONS_STORAGE_KEY, JSON.stringify(applications)).catch((e) =>
+      console.error('Failed to persist application:', e)
+    );
+  },
+
+  setApplicationStatus: (jobId: string, status: ApplicationStatus) => {
+    const target = get().applications.find((a) => a.jobId === jobId);
+    if (!target || target.status === status) return;
+    const applications = get().applications.map((a) =>
+      a.jobId === jobId ? { ...a, status } : a
     );
     set({ applications });
     AsyncStorage.setItem(APPLICATIONS_STORAGE_KEY, JSON.stringify(applications)).catch((e) =>

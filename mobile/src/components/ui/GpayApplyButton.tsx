@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+﻿import React, { useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Text } from './Text';
@@ -73,7 +73,7 @@ export default function GpayApplyButton({ onDone }: GpayApplyButtonProps) {
     >
       <Animated.View style={[styles.wrapInner, { transform: [{ scale: press }] }]}>
         <LinearGradient
-          colors={['#0277F4', '#0255C0']}
+          colors={['#0F172A', '#020617']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.background}

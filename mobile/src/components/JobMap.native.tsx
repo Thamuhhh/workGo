@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { View, StyleSheet, Text as RNText } from 'react-native';
 import { router } from 'expo-router';
 import { SampleJob } from '../data/sampleJobs';
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 7,
-    backgroundColor: '#0277F4',
+    backgroundColor: '#0F172A',
     borderWidth: 2.5,
     borderColor: '#FFFFFF',
     shadowColor: '#0F172A',

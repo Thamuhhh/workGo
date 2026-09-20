@@ -20,6 +20,7 @@ import { Colors, Spacing, BorderRadius } from '../../src/constants/theme';
 import { useMessagesStore, ChatMessage } from '../../src/store/messagesStore';
 
 const QUICK_REPLIES = ['I\'m available', 'Need more details', 'Confirmed!'];
+const EMPLOYER_QUICK_REPLIES = ['You\'re hired!', 'Report at 9 AM', 'Share your UPI ID'];
 
 function formatTime(iso: string) {
   const d = new Date(iso);
@@ -46,9 +47,12 @@ function dateLabel(iso: string) {
 }
 
 export default function WorkerChatScreen() {
-  const params = useLocalSearchParams<{ jobId?: string; employerName?: string; jobTitle?: string }>();
-  const employerName = params.employerName || 'Employer';
+  const params = useLocalSearchParams<{ jobId?: string; employerName?: string; workerName?: string; jobTitle?: string; mode?: string }>();
+  const isEmployer = params.mode === 'employer';
+  const threadName = isEmployer && params.workerName ? params.workerName : params.employerName;
+  const displayName = threadName || (isEmployer ? 'Worker' : 'Employer');
   const jobTitle = params.jobTitle || '';
+
   const threadId = params.jobId ?? 'default';
 
   const thread = useMessagesStore((s) => s.threads[threadId]);
@@ -73,11 +77,11 @@ export default function WorkerChatScreen() {
   const handleSend = () => {
     const text = input.trim();
     if (!text) return;
-    sendMessage(threadId, text);
+    sendMessage(threadId, text, isEmployer ? 'employer' : 'worker');
     setInput('');
   };
 
-  const employerInitial = employerName.trim().charAt(0).toUpperCase() || 'E';
+  const headerInitial = displayName.trim().charAt(0).toUpperCase() || 'E';
 
   if (usePageLoading()) return <ScreenSkeleton variant="chat" />;
 
@@ -98,14 +102,14 @@ export default function WorkerChatScreen() {
 
           <View style={styles.headerAvatar}>
             <Text variant="h3" weight="bold" color={Colors.primary}>
-              {employerInitial}
+              {headerInitial}
             </Text>
             <View style={styles.headerOnlineDot} />
           </View>
 
           <View style={styles.headerInfo}>
             <Text variant="body" weight="bold" color="#0F172A" numberOfLines={1}>
-              {employerName}
+              {displayName}
             </Text>
             <View style={styles.activeRow}>
               <View style={styles.activeDot} />
@@ -120,7 +124,7 @@ export default function WorkerChatScreen() {
               activeOpacity={0.75}
               style={styles.headerActionBtn}
               onPress={() =>
-                Alert.alert('Call employer', `Calling ${employerName}… (demo mode)`)
+                Alert.alert('Call', `Calling ${displayName}… (demo mode)`)
               }
             >
               <Ionicons name="call-outline" size={18} color="#0F172A" />
@@ -179,7 +183,7 @@ export default function WorkerChatScreen() {
                   {!isWorker && (
                     <View style={styles.msgAvatar}>
                       <Text variant="caption" weight="bold" color={Colors.primary}>
-                        {employerInitial}
+                        {headerInitial}
                       </Text>
                     </View>
                   )}
@@ -217,7 +221,7 @@ export default function WorkerChatScreen() {
 
         {/* Quick replies */}
         <View style={styles.quickRow}>
-          {QUICK_REPLIES.map((reply) => (
+          {(isEmployer ? EMPLOYER_QUICK_REPLIES : QUICK_REPLIES).map((reply) => (
             <TouchableOpacity
               key={reply}
               activeOpacity={0.8}

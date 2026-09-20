@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Text, Input, Button } from '../../src/components/ui';
@@ -33,7 +33,7 @@ export default function OtpScreen() {
         {/* Brand */}
         <View style={styles.brand}>
           <Text variant="h1" weight="heavy" color="#0F172A">
-            Gig<Text variant="h1" weight="heavy" color="#0277F4">ro</Text>
+            Gig<Text variant="h1" weight="heavy" color="#0F172A">ro</Text>
           </Text>
           <Text variant="bodySm" weight="medium" color="#64748B" style={styles.tagline}>
             Work nearby. Earn today.

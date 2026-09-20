@@ -1,12 +1,13 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+﻿import React from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Icon as Ionicons } from '../../src/components/Icon';
-import { Text, Button } from '../../src/components/ui';
-import { Colors, Spacing, BorderRadius } from '../../src/constants/theme';
-import { useAuthStore } from '../../src/store/authStore';
-import { useUserModeStore } from '../../src/store/userModeStore';
+import { Icon as Ionicons } from '../../../src/components/Icon';
+import { Text, Button } from '../../../src/components/ui';
+import { Colors, Spacing, BorderRadius } from '../../../src/constants/theme';
+import { useAuthStore } from '../../../src/store/authStore';
+import { useUserModeStore } from '../../../src/store/userModeStore';
+import { useEmployerJobsStore } from '../../../src/store/employerJobsStore';
 
 interface MenuItem {
   icon: string;
@@ -20,6 +21,9 @@ interface MenuItem {
 export default function EmployerProfileScreen() {
   const { user, logout } = useAuthStore();
   const { toggleMode } = useUserModeStore();
+  const jobs = useEmployerJobsStore((s) => s.jobs);
+  const activeJobs = jobs.length;
+  const hiredCount = jobs.reduce((sum, j) => sum + j.hired, 0);
 
   const businessName = user?.businessName || user?.name || 'Sri Krishna Catering';
   const businessPhone = user?.phone || '9876543210';
@@ -37,12 +41,13 @@ export default function EmployerProfileScreen() {
 
   const menuHiring: MenuItem[] = [
     { icon: 'add-circle-outline', label: 'Post a New Job', onPress: () => router.push('/(employer)/post-job') },
-    { icon: 'briefcase-outline', label: 'Manage Jobs', value: '3', onPress: () => router.push('/(employer)/jobs') },
-    { icon: 'people-outline', label: 'Applicants & Bookings', onPress: () => router.push('/(employer)/bookings') },
+    { icon: 'briefcase-outline', label: 'Manage Jobs', value: String(activeJobs), onPress: () => router.push('/(employer)/jobs') },
+    { icon: 'people-outline', label: 'Review Applicants', onPress: () => router.push('/(employer)/review-applicants') },
+    { icon: 'file-tray-outline', label: 'Bookings', value: String(hiredCount), onPress: () => router.push('/(employer)/bookings') },
   ];
 
   const menuBusiness: MenuItem[] = [
-    { icon: 'business-outline', label: 'Business Details', onPress: () => Alert.alert('Gigro', 'Business details editing coming soon.') },
+    { icon: 'business-outline', label: 'Business Details', onPress: () => router.push('/(employer)/business-details') },
     { icon: 'shield-checkmark', label: 'Verified Business', badge: 'On', color: '#0F9D58' },
   ];
 
@@ -63,10 +68,17 @@ export default function EmployerProfileScreen() {
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.avatar}>
-          <Text variant="h1" weight="heavy" color="#0277F4">
-            {initial}
-          </Text>
+        <View style={styles.avatarWrap}>
+          <View style={styles.avatarRing}>
+            <View style={styles.avatar}>
+              <Text variant="h1" weight="heavy" color="#0F172A">
+                {initial}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.avatarBadge}>
+            <Ionicons name="shield-checkmark" size={11} color="#FFFFFF" weight="fill" />
+          </View>
         </View>
         <View style={styles.headerDetails}>
           <Text variant="h2" weight="bold" color="#0F172A" numberOfLines={1}>
@@ -86,10 +98,10 @@ export default function EmployerProfileScreen() {
           <TouchableOpacity
             style={styles.editProfileRow}
             activeOpacity={0.6}
-            onPress={() => Alert.alert('Gigro', 'Business details editing coming soon.')}
+            onPress={() => router.push('/(employer)/business-details')}
           >
-            <Ionicons name="business-outline" size={14} color="#0277F4" />
-            <Text variant="bodySm" weight="bold" color="#0277F4">
+            <Ionicons name="business-outline" size={14} color="#0F172A" />
+            <Text variant="bodySm" weight="bold" color="#0F172A">
               Edit Business
             </Text>
           </TouchableOpacity>
@@ -100,7 +112,7 @@ export default function EmployerProfileScreen() {
       <View style={styles.statsCard}>
         <View style={styles.statBlock}>
           <Text variant="h3" weight="bold" color="#0F172A">
-            3
+            {activeJobs}
           </Text>
           <Text variant="caption" color={Colors.textMuted}>
             Active Jobs
@@ -109,7 +121,7 @@ export default function EmployerProfileScreen() {
         <View style={styles.statDivider} />
         <View style={styles.statBlock}>
           <Text variant="h3" weight="bold" color="#0F172A">
-            45
+            {hiredCount}
           </Text>
           <Text variant="caption" color={Colors.textMuted}>
             Workers Hired
@@ -168,7 +180,7 @@ function MenuCard({ title, items }: { title: string; items: MenuItem[] }) {
             onPress={item.onPress}
           >
             <View style={[styles.menuRow, index === items.length - 1 && styles.lastRow]}>
-              <View style={[styles.menuIcon, item.color ? { backgroundColor: '#EFF6FF' } : undefined]}>
+              <View style={[styles.menuIcon, item.color ? { backgroundColor: '#F1F5F9' } : undefined]}>
                 <Ionicons
                   name={item.icon}
                   size={18}
@@ -214,7 +226,7 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: Spacing.xl,
     paddingTop: Spacing.xs,
-    paddingBottom: Spacing.xxxl,
+    paddingBottom: 90,
     backgroundColor: Colors.surface,
   },
   header: {
@@ -222,14 +234,40 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: Spacing.lg,
   },
+  avatarWrap: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    marginRight: Spacing.lg,
+  },
+  avatarRing: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    padding: 3,
+    backgroundColor: '#EEF2F7',
+    borderWidth: 2,
+    borderColor: '#0F172A',
+  },
   avatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    flex: 1,
+    borderRadius: 39,
     backgroundColor: '#EFF0F6',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: Spacing.lg,
+  },
+  avatarBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#0F9D58',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
   },
   headerDetails: {
     flex: 1,
@@ -314,7 +352,7 @@ const styles = StyleSheet.create({
     marginRight: Spacing.sm,
   },
   miniBadge: {
-    backgroundColor: '#0277F4',
+    backgroundColor: '#0F172A',
     borderRadius: 999,
     paddingVertical: 3,
     paddingHorizontal: 8,

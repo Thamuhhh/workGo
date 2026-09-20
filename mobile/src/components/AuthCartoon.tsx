@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import Svg, { Circle, Rect, Path, G } from 'react-native-svg';
 
 function Star({ x, y, size, color }: { x: number; y: number; size: number; color: string }) {
@@ -25,22 +25,22 @@ export function LoginCartoon() {
       {/* Phone */}
       <G rotation="-8 100 84">
         <Rect x={72} y={30} width={56} height={108} rx={16} fill="#FFFFFF" stroke="#CBD5E1" strokeWidth={2} />
-        <Rect x={79} y={40} width={42} height={86} rx={10} fill="#EAF4FF" />
+        <Rect x={79} y={40} width={42} height={86} rx={10} fill="#F8FAFC" />
         {/* lock on screen */}
-        <Rect x={94} y={72} width={12} height={10} rx={3} fill="#0277F4" />
-        <Path d="M97 72v-3a3 3 0 0 1 6 0v3" stroke="#0277F4" strokeWidth={2} fill="none" />
+        <Rect x={94} y={72} width={12} height={10} rx={3} fill="#0F172A" />
+        <Path d="M97 72v-3a3 3 0 0 1 6 0v3" stroke="#0F172A" strokeWidth={2} fill="none" />
         <Path d="M96.5 77.5l2.5 2.5 5-5" stroke="#FFFFFF" strokeWidth={2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
         {/* OTP chips */}
         <Rect x={84} y={96} width={8} height={8} rx={2} fill="#B7D6FF" />
         <Rect x={96} y={96} width={8} height={8} rx={2} fill="#B7D6FF" />
-        <Rect x={108} y={96} width={8} height={8} rx={2} fill="#0277F4" />
+        <Rect x={108} y={96} width={8} height={8} rx={2} fill="#0F172A" />
         <Circle cx={100} cy={115} r={3} fill="#B7D6FF" />
       </G>
 
       {/* Message bubbles */}
       <Rect x={134} y={40} width={36} height={20} rx={10} fill="#FFFFFF" stroke="#E2E8F0" strokeWidth={1.5} />
       <Dot cx={146} cy={50} color="#8FB8FF" />
-      <Dot cx={154} cy={50} color="#0277F4" />
+      <Dot cx={154} cy={50} color="#0F172A" />
       <Dot cx={162} cy={50} color="#8FB8FF" />
 
       <Rect x={22} y={84} width={40} height={22} rx={11} fill="#FFFFFF" stroke="#E2E8F0" strokeWidth={1.5} />
@@ -76,7 +76,7 @@ export function OtpCartoon() {
         <Rect x={48} y={62} width={104} height={72} rx={14} fill="#FFFFFF" stroke="#E2E8F0" strokeWidth={2} />
         <Path d="M48 76 L100 108 L152 76" stroke="#E2E8F0" strokeWidth={2} fill="none" strokeLinejoin="round" />
         <Path d="M62 118 L82 98 M84 118 L78 100 Q100 118 122 100 L138 118" stroke="#E2E8F0" strokeWidth={2} fill="none" strokeLinecap="round" />
-        <Circle cx={100} cy={90} r={6} fill="#0277F4" />
+        <Circle cx={100} cy={90} r={6} fill="#0F172A" />
       </G>
 
       {/* Clock / timing */}
@@ -102,7 +102,7 @@ export function RegisterCartoon() {
       {/* Shoulders */}
       <Path
         d="M62 116 Q66 88 92 90 L108 90 Q134 88 138 116 L138 132 L62 132 Z"
-        fill="#0277F4"
+        fill="#0F172A"
       />
       {/* Collar */}
       <Path d="M88 92 L100 104 L112 92 L108 90 L100 96 L92 90 Z" fill="#FFFFFF" opacity={0.9} />

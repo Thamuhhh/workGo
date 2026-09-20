@@ -18,11 +18,15 @@ export default function EmployerLayout() {
         gestureEnabled: true,
       }}
     >
-      <Stack.Screen name="home" options={{ title: 'Gigro Employer', headerShown: false }} />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="post-job" options={{ title: '+ Post a New Job' }} />
       <Stack.Screen name="jobs" options={{ title: 'Manage Posted Jobs' }} />
+      <Stack.Screen name="job-detail" options={{ title: 'Job Details' }} />
       <Stack.Screen name="bookings" options={{ title: 'Hired Workers & Bookings' }} />
-      <Stack.Screen name="profile" options={{ title: 'Employer Profile' }} />
+      <Stack.Screen name="payment" options={{ title: 'Review & Pay' }} />
+      <Stack.Screen name="review-applicants" options={{ title: 'Review Applicants' }} />
+      <Stack.Screen name="business-details" options={{ title: 'Business Details' }} />
+      <Stack.Screen name="messages" options={{ title: 'Messages', headerShown: false }} />
     </Stack>
   );
 }

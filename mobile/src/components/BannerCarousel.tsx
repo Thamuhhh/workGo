@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+﻿import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -71,7 +71,7 @@ export const BannerCarousel: React.FC<BannerCarouselProps> = ({
             >
               <View style={styles.card}>
                 <View style={styles.cardIcon}>
-                  <Ionicons name={b.icon} size={20} color="#0277F4" />
+                  <Ionicons name={b.icon} size={20} color="#0F172A" />
                 </View>
                 <Text variant="h3" weight="bold" color="#0F172A">
                   {b.title}
@@ -80,10 +80,10 @@ export const BannerCarousel: React.FC<BannerCarouselProps> = ({
                   {b.subtitle}
                 </Text>
                 <View style={styles.ctaRow}>
-                  <Text variant="bodySm" weight="bold" color="#0277F4">
+                  <Text variant="bodySm" weight="bold" color="#0F172A">
                     {b.cta}
                   </Text>
-                  <Ionicons name="arrow-right" size={13} color="#0277F4" weight="bold" />
+                  <Ionicons name="arrow-right" size={13} color="#0F172A" weight="bold" />
                 </View>
               </View>
             </TouchableOpacity>
@@ -160,6 +160,6 @@ const styles = StyleSheet.create({
   },
   dotActive: {
     width: 18,
-    backgroundColor: '#0277F4',
+    backgroundColor: '#0F172A',
   },
 });

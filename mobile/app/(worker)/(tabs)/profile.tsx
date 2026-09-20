@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -48,7 +48,7 @@ export default function WorkerProfileScreen() {
 
   const handleSwitchMode = async () => {
     await toggleMode();
-    router.replace('/(employer)/home');
+    router.replace('/(employer)/(tabs)/home');
   };
 
   const menuJobs: MenuItem[] = [
@@ -84,7 +84,7 @@ export default function WorkerProfileScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.avatar}>
-          <Text variant="h1" weight="heavy" color="#0277F4">
+          <Text variant="h1" weight="heavy" color="#0F172A">
             {initial}
           </Text>
         </View>
@@ -104,8 +104,8 @@ export default function WorkerProfileScreen() {
             </View>
           </View>
           <TouchableOpacity style={styles.editProfileRow} activeOpacity={0.6} onPress={() => router.push('/(worker)/edit-profile')}>
-            <Ionicons name="person-outline" size={14} color="#0277F4" />
-            <Text variant="bodySm" weight="bold" color="#0277F4">
+            <Ionicons name="person-outline" size={14} color="#0F172A" />
+            <Text variant="bodySm" weight="bold" color="#0F172A">
               Edit Profile
             </Text>
           </TouchableOpacity>
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
     marginRight: Spacing.sm,
   },
   miniBadge: {
-    backgroundColor: '#0277F4',
+    backgroundColor: '#0F172A',
     borderRadius: 999,
     paddingVertical: 3,
     paddingHorizontal: 8,

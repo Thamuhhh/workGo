@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+﻿import React, { useEffect, useRef, useState } from 'react';
 import {
   Platform,
   View,
@@ -13,7 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Icon as Ionicons } from '../src/components/Icon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Text, Badge, Card, SkeletonJobCard } from '../src/components/ui';
+import { Text, SkeletonJobCard } from '../src/components/ui';
 import { FadeSlide, ScalePress } from '../src/components/AppHeader';
 import { Colors, Spacing, BorderRadius } from '../src/constants/theme';
 import { SAMPLE_JOBS } from '../src/data/sampleJobs';
@@ -23,13 +23,24 @@ const POPULAR = ['Wedding', 'Catering', 'Promoter', 'Cleaner', 'MC/Anchor', 'Coo
 const RECENT = ['Catering Staff', 'Event Setup'];
 
 const SEARCH_CATEGORIES = [
-  { label: 'Catering', icon: 'restaurant-outline', tint: '#ECFDF5', color: '#059669' },
-  { label: 'Promoter', icon: 'megaphone-outline', tint: '#FEF3C7', color: '#B45309' },
-  { label: 'Cleaning', icon: 'sparkles-outline', tint: '#E0F2FE', color: '#0284C7' },
-  { label: 'MC/Anchor', icon: 'mic-outline', tint: '#F5F3FF', color: '#7C3AED' },
-  { label: 'Coordinator', icon: 'calendar-outline', tint: '#EEF2FF', color: '#4F46E5' },
-  { label: 'Other', icon: 'grid-outline', tint: '#F1F5F9', color: '#475569' },
+  { label: 'Catering', icon: 'restaurant-outline' },
+  { label: 'Promoter', icon: 'megaphone-outline' },
+  { label: 'Cleaning', icon: 'sparkles-outline' },
+  { label: 'MC/Anchor', icon: 'mic-outline' },
+  { label: 'Coordinator', icon: 'calendar-outline' },
+  { label: 'Other', icon: 'grid-outline' },
 ];
+
+function SectionTitle({ children }: { children: string }) {
+  return (
+    <View style={styles.sectionHead}>
+      <Text variant="caption" weight="bold" color="#94A3B8" style={styles.kicker}>
+        {children.toUpperCase()}
+      </Text>
+      <View style={styles.headRule} />
+    </View>
+  );
+}
 
 export default function SearchScreen() {
   const [query, setQuery] = useState('');
@@ -50,6 +61,7 @@ export default function SearchScreen() {
 
   const trimmed = query.trim().toLowerCase();
   const [displayJobs, setDisplayJobs] = useState<(typeof SAMPLE_JOBS)[number][] | null>(null);
+  const [focused, setFocused] = useState(false);
 
   useEffect(() => {
     const q = query.trim().toLowerCase();
@@ -80,7 +92,7 @@ export default function SearchScreen() {
       style={styles.gradient}
     >
       <View style={[styles.container, { paddingTop: insets.top }]}>
-        {/* Animated Search Header */}
+        {/* Search header */}
         <Animated.View
           style={[
             styles.searchRow,
@@ -91,20 +103,17 @@ export default function SearchScreen() {
             <Ionicons name="chevron-back" size={22} color="#0F172A" />
           </ScalePress>
 
-          <View style={styles.inputWrap}>
-            <LinearGradient
-              colors={['#0277F4', '#0255C0']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.iconChip}
-            >
-              <Ionicons name="search" size={15} color="#FFFFFF" />
-            </LinearGradient>
+          <View style={[styles.inputWrap, focused && styles.inputWrapFocused]}>
+            <View style={styles.iconChip}>
+              <Ionicons name="search" size={16} color="#475569" />
+            </View>
             <TextInput
               placeholder="Search jobs, categories, location..."
               placeholderTextColor={Colors.textMuted}
               value={query}
               onChangeText={setQuery}
+              onFocus={() => setFocused(true)}
+              onBlur={() => setFocused(false)}
               autoFocus
               style={[styles.input, Platform.OS === 'web' && ({ outlineStyle: 'none' } as any)]}
               returnKeyType="search"
@@ -130,18 +139,16 @@ export default function SearchScreen() {
               {/* Popular searches */}
               <FadeSlide delay={180}>
                 <View style={styles.section}>
-                  <Text variant="h3" weight="bold" color="#0F172A" style={styles.sectionTitle}>
-                    Popular Searches
-                  </Text>
+                  <SectionTitle>Popular Searches</SectionTitle>
                   <View style={styles.chipRow}>
                     {POPULAR.map((tag) => (
                       <ScalePress
                         key={tag}
-                        scaleTo={0.9}
+                        scaleTo={0.92}
                         style={styles.chip}
                         onPress={() => setQuery(tag)}
                       >
-                        <Text variant="bodySm" weight="medium" color={Colors.textSecondary}>
+                        <Text variant="bodySm" weight="medium" color="#334155">
                           {tag}
                         </Text>
                       </ScalePress>
@@ -153,19 +160,16 @@ export default function SearchScreen() {
               {/* Recent searches */}
               <FadeSlide delay={260}>
                 <View style={styles.section}>
-                  <Text variant="h3" weight="bold" color="#0F172A" style={styles.sectionTitle}>
-                    Recent Searches
-                  </Text>
+                  <SectionTitle>Recent Searches</SectionTitle>
                   <View style={styles.chipRow}>
                     {RECENT.map((tag) => (
                       <ScalePress
                         key={tag}
-                        scaleTo={0.9}
+                        scaleTo={0.92}
                         style={styles.chip}
                         onPress={() => setQuery(tag)}
                       >
-                        <Ionicons name="time-outline" size={14} color={Colors.textMuted} style={styles.timeIcon} />
-                        <Text variant="bodySm" weight="medium" color={Colors.textSecondary}>
+                        <Text variant="bodySm" weight="medium" color="#334155">
                           {tag}
                         </Text>
                       </ScalePress>
@@ -177,21 +181,19 @@ export default function SearchScreen() {
               {/* Category tiles */}
               <FadeSlide delay={340}>
                 <View style={styles.section}>
-                  <Text variant="h3" weight="bold" color="#0F172A" style={styles.sectionTitle}>
-                    Browse Categories
-                  </Text>
+                  <SectionTitle>Browse Categories</SectionTitle>
                   <View style={styles.catGrid}>
                     {SEARCH_CATEGORIES.map((c) => (
                       <ScalePress
                         key={c.label}
-                        scaleTo={0.92}
+                        scaleTo={0.94}
                         style={styles.catTile}
                         onPress={() => setQuery(c.label)}
                       >
-                        <View style={[styles.catIconChip, { backgroundColor: c.tint }]}>
-                          <Ionicons name={c.icon as any} size={20} color={c.color} />
+                        <View style={styles.catIconChip}>
+                          <Ionicons name={c.icon as any} size={19} color="#0F172A" />
                         </View>
-                        <Text variant="bodySm" weight="medium" color={Colors.textSecondary} style={styles.catTileText}>
+                        <Text variant="bodySm" weight="semibold" color="#334155" style={styles.catTileText}>
                           {c.label}
                         </Text>
                       </ScalePress>
@@ -202,24 +204,24 @@ export default function SearchScreen() {
             </>
           ) : (
             <FadeSlide delay={80}>
-              <View style={styles.resultsHeader}>
-                {displayJobs === null ? (
-                  <Text variant="bodySm" color={Colors.textSecondary}>
-                    Searching for "{query}"...
-                  </Text>
-                ) : (
-                  <Text variant="bodySm" color={Colors.textSecondary}>
-                    {displayJobs.length} result{displayJobs.length === 1 ? '' : 's'} for "{query}"
-                  </Text>
-                )}
-              </View>
+              {displayJobs === null ? (
+                <Text variant="bodySm" color={Colors.textSecondary} style={styles.resultsHeader}>
+                  Searching for "{query}"…
+                </Text>
+              ) : (
+                <Text variant="bodySm" color={Colors.textSecondary} style={styles.resultsHeader}>
+                  {displayJobs.length} result{displayJobs.length === 1 ? '' : 's'} for "{query}"
+                </Text>
+              )}
 
               {displayJobs === null ? (
                 <SkeletonJobCard count={2} />
               ) : displayJobs.length === 0 ? (
                 <View style={styles.empty}>
-                  <Ionicons name="search-outline" size={42} color={Colors.borderDark} />
-                  <Text variant="body" weight="semibold" color={Colors.textSecondary} style={styles.emptyTitle}>
+                  <View style={styles.emptyIcon}>
+                    <Ionicons name="search-outline" size={30} color="#94A3B8" />
+                  </View>
+                  <Text variant="body" weight="semibold" color="#0F172A" style={styles.emptyTitle}>
                     No results found
                   </Text>
                   <Text variant="caption" color={Colors.textMuted}>
@@ -227,51 +229,73 @@ export default function SearchScreen() {
                   </Text>
                 </View>
               ) : (
-                displayJobs.map((job) => (
-                  <Card
-                    key={job.id}
-                    padding="lg"
-                    style={styles.jobCard}
-                    onPress={() =>
-                      router.push({ pathname: '/(worker)/job-detail', params: { jobId: job.id } })
-                    }
-                  >
-                    <View style={styles.jobCardTop}>
-                      <View style={styles.jobTitleCol}>
-                        <Text variant="h3" weight="bold" color="#0F172A">
-                          {job.title}
-                        </Text>
-                        <Text variant="bodySm" color={Colors.textSecondary} style={styles.jobLocation}>
-                          {job.category} • {job.location} ({job.distance})
-                        </Text>
-                      </View>
-                      <View style={styles.salaryBadge}>
-                        <Text variant="body" weight="heavy" color="#0F172A">
-                          {job.salary}
-                        </Text>
-                      </View>
-                    </View>
-                    <View style={styles.jobMetaRow}>
-                      <Text variant="bodySm" color={Colors.textSecondary}>
-                        {job.date} • {job.timing}
-                      </Text>
-                      <View style={styles.ratingPill}>
-                        <Ionicons name="star" size={12} color="#F59E0B" />
-                        <Text variant="bodySm" weight="bold" color="#0F172A">
-                          {job.employerRating.replace(' Rating', '')}
-                        </Text>
-                      </View>
-                    </View>
-                    <View style={styles.badgeRow}>
-                      {job.foodProvided ? (
-                        <Badge label="Food Provided" variant="success" size="sm" style={styles.amenityBadge} />
-                      ) : null}
-                      {job.transportProvided ? (
-                        <Badge label="Transport Provided" variant="info" size="sm" style={styles.amenityBadge} />
-                      ) : null}
-                    </View>
-                  </Card>
-                ))
+                <View style={styles.resultsList}>
+                  {displayJobs.map((job, index) => (
+                    <FadeSlide key={job.id} delay={90 + index * 70}>
+                      <TouchableOpacity
+                        activeOpacity={0.8}
+                        onPress={() =>
+                          router.push({ pathname: '/(worker)/job-detail', params: { jobId: job.id } })
+                        }
+                        style={styles.jobCard}
+                      >
+                        <View style={styles.jobTop}>
+                          <View style={styles.jobTitleCol}>
+                            <Text variant="body" weight="bold" color="#0F172A" numberOfLines={1}>
+                              {job.title}
+                            </Text>
+                            <Text variant="caption" color={Colors.textSecondary} style={styles.jobLocation}>
+                              {job.category} · {job.location} ({job.distance})
+                            </Text>
+                          </View>
+                          <View style={styles.salaryBadge}>
+                            <Text variant="body" weight="heavy" color="#0F172A" style={styles.salaryText}>
+                              {job.salary}
+                            </Text>
+                          </View>
+                        </View>
+
+                        <View style={styles.divider} />
+
+                        <View style={styles.jobMetaRow}>
+                          <View style={styles.metaLeft}>
+                            <Ionicons name="calendar-outline" size={13} color="#94A3B8" />
+                            <Text variant="bodySm" color={Colors.textSecondary}>
+                              {job.date} · {job.timing}
+                            </Text>
+                          </View>
+                          <View style={styles.ratingPill}>
+                            <Ionicons name="star" size={12} color="#F59E0B" />
+                            <Text variant="bodySm" weight="bold" color="#0F172A">
+                              {job.employerRating.replace(' Rating', '')}
+                            </Text>
+                          </View>
+                        </View>
+
+                        {(job.foodProvided || job.transportProvided) && (
+                          <View style={styles.amenityRow}>
+                            {job.foodProvided ? (
+                              <View style={styles.amenity}>
+                                <Ionicons name="restaurant-outline" size={12} color="#475569" />
+                                <Text variant="caption" weight="semibold" color="#475569">
+                                  Food
+                                </Text>
+                              </View>
+                            ) : null}
+                            {job.transportProvided ? (
+                              <View style={styles.amenity}>
+                                <Ionicons name="bus-outline" size={12} color="#475569" />
+                                <Text variant="caption" weight="semibold" color="#475569">
+                                  Transport
+                                </Text>
+                              </View>
+                            ) : null}
+                          </View>
+                        )}
+                      </TouchableOpacity>
+                    </FadeSlide>
+                  ))}
+                </View>
               )}
             </FadeSlide>
           )}
@@ -299,36 +323,33 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: Colors.surface,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#EDF2F7',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: Spacing.sm,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 3,
   },
   inputWrap: {
     flex: 1,
     height: 52,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: '#FFFFFF',
     borderRadius: BorderRadius.round,
-    paddingHorizontal: Spacing.sm,
-    borderWidth: 1.5,
-    borderColor: Colors.primary,
-    shadowColor: Colors.primaryDark,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.14,
-    shadowRadius: 8,
-    elevation: 4,
+    paddingHorizontal: Spacing.sm + 2,
+    borderWidth: 1,
+    borderColor: '#EDF2F7',
+  },
+  inputWrapFocused: {
+    borderColor: '#0F172A',
+    backgroundColor: '#FFFFFF',
   },
   iconChip: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F1F5F9',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: Spacing.sm,
@@ -344,35 +365,36 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   section: {
-    marginBottom: Spacing.xl,
+    marginBottom: Spacing.lg + 4,
   },
-  sectionTitle: {
-    fontSize: 17,
+  sectionHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: Spacing.md,
-    letterSpacing: -0.3,
+  },
+  kicker: {
+    letterSpacing: 1.4,
+  },
+  headRule: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#EDF2F7',
+    marginLeft: Spacing.md,
   },
   chipRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.sm,
+    gap: Spacing.xs,
   },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: '#FFFFFF',
     borderRadius: BorderRadius.round,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: 9,
+    paddingHorizontal: 14,
     borderWidth: 1,
-    borderColor: Colors.border,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  timeIcon: {
-    marginRight: 5,
+    borderColor: '#EDF2F7',
   },
   catGrid: {
     flexDirection: 'row',
@@ -380,49 +402,62 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   catTile: {
-    width: '30%',
-    backgroundColor: Colors.surface,
+    width: '31.5%',
+    backgroundColor: '#FFFFFF',
     borderRadius: BorderRadius.lg,
     alignItems: 'center',
     paddingVertical: 16,
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.sm + 4,
     borderWidth: 1,
-    borderColor: Colors.border,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 2,
+    borderColor: '#EDF2F7',
   },
   catIconChip: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#EDF2F7',
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: Spacing.sm,
   },
   catTileText: {
-    marginTop: 6,
-    textAlign: 'center',
+    marginBottom: 2,
   },
   resultsHeader: {
     marginBottom: Spacing.md,
+  },
+  resultsList: {
+    gap: Spacing.md,
   },
   empty: {
     alignItems: 'center',
     paddingVertical: 60,
   },
-  emptyTitle: {
-    marginVertical: Spacing.sm,
-  },
-  jobCard: {
+  emptyIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: Spacing.md,
   },
-  jobCardTop: {
+  emptyTitle: {
+    marginBottom: 4,
+  },
+  jobCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#EDF2F7',
+    padding: Spacing.md + 4,
+  },
+  jobTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: Spacing.xs,
   },
   jobTitleCol: {
     flex: 1,
@@ -431,35 +466,56 @@ const styles = StyleSheet.create({
   jobLocation: {
     marginTop: 2,
   },
+  salaryBadge: {
+    backgroundColor: '#F1F5F9',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: BorderRadius.sm,
+  },
+  salaryText: {
+    fontSize: 14,
+    fontVariant: ['tabular-nums'],
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginVertical: Spacing.sm,
+  },
   jobMetaRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: Spacing.xs,
     marginBottom: Spacing.xs,
+    marginTop: Spacing.xs,
+  },
+  metaLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   ratingPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
-    backgroundColor: '#F1F5F9',
+    gap: 4,
+    backgroundColor: '#FFF9EC',
     paddingVertical: 3,
     paddingHorizontal: 8,
     borderRadius: 999,
   },
-  salaryBadge: {
-    backgroundColor: '#EEF2FF',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: BorderRadius.sm,
-  },
-  badgeRow: {
+  amenityRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    gap: Spacing.xs,
     marginTop: Spacing.xs,
   },
-  amenityBadge: {
-    marginRight: Spacing.xs,
-    marginBottom: Spacing.xs,
+  amenity: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#EDF2F7',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 999,
   },
 });

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+﻿import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -222,7 +222,7 @@ export default function LocationPickerScreen() {
                     </Text>
                   </View>
                   {isPicked(p.label) && (
-                    <Ionicons name="checkmark-circle" size={20} color="#0277F4" />
+                    <Ionicons name="checkmark-circle" size={20} color="#0F172A" />
                   )}
                 </TouchableOpacity>
               ))}
@@ -245,7 +245,7 @@ export default function LocationPickerScreen() {
                     </Text>
                   </View>
                   {isPicked(a) && (
-                    <Ionicons name="checkmark-circle" size={20} color="#0277F4" />
+                    <Ionicons name="checkmark-circle" size={20} color="#0F172A" />
                   )}
                 </TouchableOpacity>
               ))}
@@ -265,9 +265,9 @@ export default function LocationPickerScreen() {
               >
                 <View style={[styles.placeIcon, { backgroundColor: '#E0F2FE' }]}>
                   {locating ? (
-                    <Ionicons name="time-outline" size={16} color="#0277F4" />
+                    <Ionicons name="time-outline" size={16} color="#0F172A" />
                   ) : (
-                    <Ionicons name="navigate-outline" size={18} color="#0277F4" />
+                    <Ionicons name="navigate-outline" size={18} color="#0F172A" />
                   )}
                 </View>
                 <View style={styles.placeCol}>
@@ -283,7 +283,7 @@ export default function LocationPickerScreen() {
                   </Text>
                 </View>
                 {isPicked('Current location') && !locating && (
-                  <Ionicons name="checkmark-circle" size={20} color="#0277F4" />
+                  <Ionicons name="checkmark-circle" size={20} color="#0F172A" />
                 )}
               </TouchableOpacity>
 
@@ -355,7 +355,7 @@ export default function LocationPickerScreen() {
                       </Text>
                     </View>
                     {isPicked(p.label) && (
-                      <Ionicons name="checkmark-circle" size={20} color="#0277F4" />
+                      <Ionicons name="checkmark-circle" size={20} color="#0F172A" />
                     )}
                   </TouchableOpacity>
                 ))}
