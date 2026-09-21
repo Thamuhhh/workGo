@@ -19,6 +19,7 @@ interface ApplicationsState {
   applications: Application[];
   apply: (jobId: string) => Promise<void>;
   markCompleted: (jobId: string) => void;
+  withdraw: (jobId: string) => Promise<void>;
   setApplicationStatus: (jobId: string, status: ApplicationStatus) => void;
   hasApplied: (jobId: string) => boolean;
   loadStoredApplications: () => Promise<void>;
@@ -66,6 +67,17 @@ export const useApplicationsStore = create<ApplicationsState>((set, get) => ({
       a.jobId === jobId
         ? { ...a, status: 'COMPLETED' as const, completedAt: new Date().toISOString() }
         : a
+    );
+    set({ applications });
+    persist(applications);
+  },
+
+  withdraw: async (jobId: string) => {
+    const target = get().applications.find((a) => a.jobId === jobId);
+    if (!target || target.status !== 'APPLIED') return;
+    if (target.id) updateApplicationStatus(target.id, 'CANCELLED');
+    const applications = get().applications.map((a) =>
+      a.jobId === jobId ? { ...a, status: 'REJECTED' as const } : a
     );
     set({ applications });
     persist(applications);

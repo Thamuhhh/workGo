@@ -14,6 +14,6 @@ router.post('/', requireAuth, requireRole(['worker']), applyToJob);
 router.get('/mine', requireAuth, myApplications);
 router.get('/hired', requireAuth, requireRole(['employer']), hiredWorkers);
 router.get('/job/:jobId', requireAuth, requireRole(['employer']), jobApplications);
-router.patch('/:id', requireAuth, requireRole(['employer']), updateApplicationStatus);
+router.patch('/:id', requireAuth, updateApplicationStatus);
 
 export default router;

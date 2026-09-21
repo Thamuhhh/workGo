@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon as Ionicons } from '../../src/components/Icon';
@@ -83,6 +83,22 @@ export default function ApplicationDetailScreen() {
       pathname: '/(worker)/chat',
       params: { jobId: app.jobId, employerName: appEmployer, jobTitle: appTitle },
     });
+  };
+
+  const withdraw = useApplicationsStore((s) => s.withdraw);
+
+  const handleWithdraw = () => {
+    Alert.alert('Withdraw application?', 'The employer will see your slot as freed up.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Withdraw',
+        style: 'destructive',
+        onPress: async () => {
+          await withdraw(app.jobId);
+          router.back();
+        },
+      },
+    ]);
   };
 
   return (
@@ -206,6 +222,15 @@ export default function ApplicationDetailScreen() {
             onPress={openChat}
             style={styles.msgBtn}
           />
+          {app.status === 'APPLIED' && (
+            <Button
+              title="Withdraw"
+              size="lg"
+              variant="danger"
+              onPress={handleWithdraw}
+              style={styles.withdrawBtn}
+            />
+          )}
           {job && (
             <Button
               title="View Job"
@@ -361,6 +386,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   viewBtn: {
+    flex: 1,
+  },
+  withdrawBtn: {
     flex: 1,
   },
 });

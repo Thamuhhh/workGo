@@ -16,11 +16,14 @@ import { Icon as Ionicons } from '../../src/components/Icon';
 import { Colors, Spacing, BorderRadius } from '../../src/constants/theme';
 import { usePaymentsStore } from '../../src/store/paymentsStore';
 import { fetchHiredWorkers, updateApplicationStatus } from '../../src/services/applications';
+import { createReview } from '../../src/services/reviews';
 
 type WorkerStatus = 'NOT_STARTED' | 'WORKING' | 'COMPLETED';
 
 interface HiredWorker {
   id: string;
+  jobId: string;
+  workerId?: string;
   name: string;
   job: string;
   area: string;
@@ -64,6 +67,8 @@ export default function EmployerBookingsScreen() {
         setWorkers(
           list.map((w) => ({
             id: w.id,
+            jobId: w.jobId,
+            workerId: w.workerId,
             name: w.workerName,
             job: w.jobTitle,
             area: w.workerArea,
@@ -198,8 +203,13 @@ export default function EmployerBookingsScreen() {
       const worker = completing;
       updateStatus(worker.id, 'COMPLETED');
       setCompleting(null);
+      setSending(false);
+      if (worker.workerId && worker.jobId) {
+        createReview({ jobId: worker.jobId, workerId: worker.workerId, rating, tags: feedbacks })
+          .catch(() => {});
+      }
       const payment = createPayment({
-        jobId: worker.id,
+        jobId: worker.jobId || worker.id,
         title: worker.job,
         workerName: worker.name,
         employerName: 'You',

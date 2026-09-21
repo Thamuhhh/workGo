@@ -231,21 +231,43 @@ export const updateApplicationStatus = async (
     return;
   }
 
-  const jobId = (application as any).jobId as any;
-  const job = await Job.findById(jobId?._id ?? jobId);
+  const workerId = (application as any).workerId?._id?.toString?.() ?? String(application.workerId);
+  const jobId = (application as any).jobId?._id ?? application.jobId;
+  const job = await Job.findById(jobId);
   if (!job) {
     res.status(404).json({ success: false, message: 'Referenced job not found.' });
     return;
   }
-  if (!job.postedBy.equals(req.user.userId)) {
+
+  const isOwner = job.postedBy.equals(req.user.userId);
+  const isApplicant = workerId === req.user.userId;
+
+  if (!isOwner && !isApplicant) {
     res.status(403).json({
       success: false,
-      message: 'You can only update applications for jobs you posted.',
+      message: 'You can only update your own applications.',
     });
     return;
   }
 
   const previous = application.status;
+
+  if (isApplicant && !isOwner) {
+    const allowedWorkerMoves: Record<string, string[]> = {
+      APPLIED: ['CANCELLED'],
+      ACCEPTED: ['COMPLETED'],
+    };
+    if (!(allowedWorkerMoves[previous] ?? []).includes(status)) {
+      res.status(403).json({
+        success: false,
+        message: `Workers can only ${previous === 'APPLIED' ? 'withdraw (' : 'self-report completion ('}${(
+          allowedWorkerMoves[previous] ?? []
+        ).join(', ')}).`,
+      });
+      return;
+    }
+  }
+
   application.status = status;
   await application.save();
 
@@ -254,7 +276,6 @@ export const updateApplicationStatus = async (
       job.workersAccepted = (job.workersAccepted ?? 0) + 1;
       await job.save();
     }
-    const workerId = application.workerId.toString();
     const employerName =
       (application.jobId as any)?.postedBy?.businessName ||
       (application.jobId as any)?.postedBy?.name ||
@@ -267,7 +288,7 @@ export const updateApplicationStatus = async (
       data: { jobId: (application.jobId as any)?._id?.toString?.() ?? id },
     });
     await Message.create({
-      jobId: (application.jobId as any)?._id ?? jobId,
+      jobId: job._id,
       sender: req.user.userId,
       recipient: workerId,
       senderRole: 'employer',
@@ -276,7 +297,7 @@ export const updateApplicationStatus = async (
     });
   } else if (status === 'REJECTED' && previous !== 'REJECTED') {
     await createNotification({
-      userId: application.workerId.toString(),
+      userId: workerId,
       title: 'Application update',
       body: `You were not selected for ${(application.jobId as any)?.title ?? 'a job'}. Keep trying — new jobs are posted daily.`,
       type: 'rejected',
@@ -284,7 +305,7 @@ export const updateApplicationStatus = async (
     });
   } else if (status === 'COMPLETED' && previous !== 'COMPLETED') {
     await createNotification({
-      userId: application.workerId.toString(),
+      userId: workerId,
       title: 'Gig completed ✅',
       body: `Great job! ${(application.jobId as any)?.title ?? 'Your gig'} is marked complete.`,
       type: 'payout',

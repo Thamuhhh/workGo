@@ -47,3 +47,7 @@ Thumbs.db
 
 # Runtime
 web-serve.pid
+
+# Server runtime artifacts
+server/server.log
+server/logs/
