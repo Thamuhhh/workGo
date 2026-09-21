@@ -2,12 +2,13 @@
 import { View, StyleSheet, Text as RNText } from 'react-native';
 import { router } from 'expo-router';
 import { SampleJob } from '../data/sampleJobs';
+import { hasMapKey, maptilerVectorStyle } from '../services/maptiler';
 
 interface JobMapProps {
   jobs: SampleJob[];
 }
 
-// Free OpenStreetMap raster tiles — no API key required.
+// Free OpenStreetMap raster tiles — fallback when no MapTiler key is set.
 const OSM_STYLE = {
   version: 8,
   sources: {
@@ -46,7 +47,7 @@ export function NativeJobMap({ jobs }: JobMapProps) {
     <View style={styles.card}>
       <MapView
         style={styles.map}
-        mapStyle={OSM_STYLE}
+        mapStyle={hasMapKey ? maptilerVectorStyle('positron') : OSM_STYLE}
         logoEnabled={false}
         attributionEnabled={true}
       >

@@ -7,7 +7,7 @@
     "icon": "./assets/App W.png",
     "scheme": "workgo",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/Spalsh.png",
       "resizeMode": "contain",

@@ -1,6 +1,7 @@
 ﻿import React, { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { Icon } from './Icon';
+import { hasMapKey, maptilerRasterTile } from '../services/maptiler';
 
 export interface LocationPickerMapProps {
   initial: [number, number]; // [lng, lat]
@@ -88,9 +89,14 @@ export function LocationPickerMap({ initial, onPick }: LocationPickerMapProps) {
       }).setView([initial[1], initial[0]], 14);
       mapRef.current = map;
 
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
-      }).addTo(map);
+      L.tileLayer(
+        hasMapKey ? maptilerRasterTile('positron') : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+        {
+          attribution: hasMapKey
+            ? '© MapTiler © OpenStreetMap contributors'
+            : '© OpenStreetMap contributors',
+        }
+      ).addTo(map);
 
       const icon = L.divIcon({
         className: 'wgo-pin',

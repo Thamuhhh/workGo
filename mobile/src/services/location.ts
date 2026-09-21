@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import * as Location from 'expo-location';
+import { placeNameFromMapTiler } from './maptiler';
 
 export interface AreaOption {
   label: string;
@@ -130,6 +131,8 @@ export const reverseGeocodeName = async (
   if (local) return local;
   const [lng, lat] = coords;
   try {
+    const maptiler = await placeNameFromMapTiler(coords);
+    if (maptiler) return maptiler;
     if (Platform.OS === 'web') {
       const res = await fetch(
         `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`

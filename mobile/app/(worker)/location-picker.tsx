@@ -27,6 +27,7 @@ import {
   nearestArea,
   reverseGeocodeName,
 } from '../../src/services/location';
+import { searchPlaces, PlaceSuggestion } from '../../src/services/maptiler';
 
 const webReset = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null;
 
@@ -41,13 +42,29 @@ export default function LocationPickerScreen() {
   const [mapMode, setMapMode] = useState(false);
   const [mapCoords, setMapCoords] = useState<[number, number]>(AREA_COORDS['Kanchipuram']);
   const [snappedArea, setSnappedArea] = useState('Kanchipuram');
+  const [liveResults, setLiveResults] = useState<PlaceSuggestion[]>([]);
   const placeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     return () => {
       if (placeTimer.current) clearTimeout(placeTimer.current);
+      if (searchTimer.current) clearTimeout(searchTimer.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    const q = query.trim();
+    if (q.length < 2) {
+      setLiveResults([]);
+      return;
+    }
+    searchTimer.current = setTimeout(async () => {
+      const res = await searchPlaces(q);
+      if (res) setLiveResults(res);
+    }, 350);
+  }, [query]);
 
   const handleUseCurrentLocation = async () => {
     if (locating) return;
@@ -249,9 +266,30 @@ export default function LocationPickerScreen() {
                   )}
                 </TouchableOpacity>
               ))}
-              {savedMatches.length === 0 && areaMatches.length === 0 && (
+              {liveResults.map((s) => (
+                <TouchableOpacity
+                  key={s.address}
+                  activeOpacity={0.8}
+                  onPress={() => selectOption({ label: s.label, address: s.address })}
+                  style={[styles.placeRow, webReset]}
+                >
+                  <View style={[styles.placeIcon, { backgroundColor: '#F1F5F9' }]}>
+                    <Ionicons name="map-pin-outline" size={16} color="#0F172A" />
+                  </View>
+                  <View style={styles.placeCol}>
+                    <Text variant="body" weight="bold" color="#0F172A">
+                      {s.label}
+                    </Text>
+                    <Text variant="caption" color="#64748B" numberOfLines={1}>
+                      {s.address}
+                    </Text>
+                  </View>
+                  <Ionicons name="arrow-forward" size={16} color="#CBD5E1" />
+                </TouchableOpacity>
+              ))}
+              {savedMatches.length === 0 && areaMatches.length === 0 && liveResults.length === 0 && (
                 <Text variant="bodySm" color="#64748B" style={styles.noResults}>
-                  No areas found for "{query.trim()}". Try a different name.
+                  No areas found for "{query.trim()}".
                 </Text>
               )}
             </View>
