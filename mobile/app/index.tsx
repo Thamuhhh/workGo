@@ -4,7 +4,6 @@ import { router, useRootNavigationState } from 'expo-router';
 import { useAuthStore } from '../src/store/authStore';
 import { useUserModeStore } from '../src/store/userModeStore';
 import { Text, Button } from '../src/components/ui';
-import BrandSplash from '../src/components/BrandSplash';
 import { Colors, Spacing } from '../src/constants/theme';
 
 export default function EntryScreen() {
@@ -25,16 +24,11 @@ export default function EntryScreen() {
   }, [rootNavigationState?.key, isAuthenticated, isLoading, mode]);
 
   if (isLoading || isAuthenticated) {
-    return (
-      <View style={styles.loadingContainer}>
-        <BrandSplash />
-      </View>
-    );
+    return <View style={styles.loadingContainer} />;
   }
 
   return (
     <View style={styles.container}>
-      <BrandSplash />
       {/* Brand Hero */}
       <View style={styles.heroSection}>
         <View style={styles.logoRow}>
