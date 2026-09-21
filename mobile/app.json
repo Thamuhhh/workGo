@@ -8,11 +8,6 @@
     "scheme": "workgo",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/App W.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0F172A"
-    },
     "ios": {
       "supportsTablet": true
     },
@@ -33,14 +28,6 @@
       "expo-router",
       "@maplibre/maplibre-react-native",
       "expo-asset",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/App W.png",
-          "imageWidth": 120,
-          "backgroundColor": "#0F172A"
-        }
-      ],
       [
         "expo-font",
         {
