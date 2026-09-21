@@ -30,7 +30,10 @@ jobs:
           java-version: '17'
 
       - name: Install dependencies
-        run: npm ci
+        # firebase declares async-storage as an optional peer (^2||^3) while
+        # Expo SDK 52 pins 1.23.1; npm 10's ci tries to auto-install 3.1.1 and
+        # fails. The peer is optional, so bypass auto-peer resolution safely.
+        run: npm ci --legacy-peer-deps
 
       - name: Generate native project
         run: npx expo prebuild --platform android --clean --no-install
