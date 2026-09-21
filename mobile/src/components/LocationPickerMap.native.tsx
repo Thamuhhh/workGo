@@ -147,6 +147,7 @@ const styles = StyleSheet.create({
     marginTop: -18,
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 10,
   },
   pin: {
     width: 36,
@@ -172,6 +173,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 12,
     top: '38%',
+    zIndex: 10,
+    elevation: 8,
   },
   ctrlBtn: {
     width: 40,

@@ -51,6 +51,8 @@ MapTrifoldIcon,
   ShieldCheckIcon,
   WalletIcon,
   MicrophoneIcon,
+  PlusIcon,
+  MinusIcon,
 } from 'phosphor-react-native';
 
 const ICON_MAP: Record<string, PhosphorIcon> = {
@@ -94,6 +96,9 @@ const ICON_MAP: Record<string, PhosphorIcon> = {
   'call-outline': PhoneIcon,
   'calendar-outline': CalendarIcon,
   'navigate-outline': NavigationArrowIcon,
+  navigate: NavigationArrowIcon,
+  add: PlusIcon,
+  remove: MinusIcon,
   'people-outline': UsersIcon,
   'bulb-outline': LightbulbIcon,
   'document-text-outline': FileTextIcon,

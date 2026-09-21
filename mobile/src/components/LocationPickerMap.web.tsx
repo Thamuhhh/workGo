@@ -213,6 +213,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 12,
     top: '38%',
+    zIndex: 1000,
   },
   ctrlBtn: {
     width: 40,
@@ -230,6 +231,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
     cursor: 'pointer' as any,
-    zIndex: 1100,
+    zIndex: 1101,
   },
 });

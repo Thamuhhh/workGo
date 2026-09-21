@@ -575,7 +575,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    zIndex: 10,
+    zIndex: 1100,
   },
   mapHelper: {
     flexDirection: 'row',
