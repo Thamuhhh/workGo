@@ -49,7 +49,7 @@ export default function EntryScreen() {
           title="Find Work (Worker)"
           size="lg"
           fullWidth
-          onPress={() => router.push('/(auth)/login')}
+          onPress={() => router.push({ pathname: '/(auth)/login', params: { mode: 'worker' } })}
           style={styles.primaryButton}
         />
         <Button
@@ -57,7 +57,7 @@ export default function EntryScreen() {
           variant="outline"
           size="lg"
           fullWidth
-          onPress={() => router.push('/(auth)/login')}
+          onPress={() => router.push({ pathname: '/(auth)/login', params: { mode: 'employer' } })}
         />
       </View>
     </View>

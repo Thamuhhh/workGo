@@ -5,7 +5,7 @@ import { Text, Input, Button } from '../../src/components/ui';
 import { Colors, Spacing } from '../../src/constants/theme';
 
 export default function OtpScreen() {
-  const { phone } = useLocalSearchParams<{ phone: string }>();
+  const { phone, mode } = useLocalSearchParams<{ phone: string; mode?: string }>();
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -20,7 +20,10 @@ export default function OtpScreen() {
 
     setTimeout(() => {
       setLoading(false);
-      router.replace('/(auth)/role-selection');
+      router.replace({
+        pathname: '/(auth)/role-selection',
+        params: { initialRole: mode ?? 'worker' },
+      });
     }, 600);
   };
 

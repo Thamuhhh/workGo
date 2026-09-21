@@ -1,10 +1,11 @@
 ﻿import React, { useState } from 'react';
 import { View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Text, Input, Button } from '../../src/components/ui';
 import { Colors, Spacing } from '../../src/constants/theme';
 
 export default function LoginScreen() {
+  const { mode } = useLocalSearchParams<{ mode?: string }>();
   const [phone, setPhone] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,7 +22,7 @@ export default function LoginScreen() {
       setLoading(false);
       router.push({
         pathname: '/(auth)/otp',
-        params: { phone },
+        params: { phone, mode: mode ?? 'worker' },
       });
     }, 600);
   };

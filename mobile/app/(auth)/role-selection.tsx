@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, ScrollView, Animated, Easing } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Icon as Ionicons } from '../../src/components/Icon';
 import { Text, Button } from '../../src/components/ui';
 import { FadeSlide } from '../../src/components/AppHeader';
@@ -27,7 +27,8 @@ const OPTIONS = [
 ];
 
 export default function RoleSelectionScreen() {
-  const [selectedRole, setSelectedRole] = useState<UserRole>('worker');
+  const { initialRole } = useLocalSearchParams<{ initialRole?: string }>();
+  const [selectedRole, setSelectedRole] = useState<UserRole>(initialRole === 'employer' ? 'employer' : 'worker');
   const login = useAuthStore((state) => state.login);
   const setMode = useUserModeStore((state) => state.setMode);
   const inline = useRef(new Animated.Value(0)).current;
