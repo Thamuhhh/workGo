@@ -28,18 +28,29 @@ export default function WorkerProfileScreen() {
   const unreadCount = useNotificationsStore((s) => s.notifications.filter((n) => !n.read).length);
   const received = useRatingsStore((s) => s.received);
   const totalEarned = useWalletStore((s) => s.totalEarned);
+  const upiId = useWalletStore((s) => s.upiId);
 
-  const displayName = user?.name || 'Arun Kumar';
-  const displayPhone = user?.phone || '9876543210';
+  const displayName = user?.name?.trim() || 'WorkGo User';
+  const displayPhone = user?.phone || '';
   const initial = displayName.trim().charAt(0).toUpperCase();
 
-  const jobsDone = applications.filter((a) => a.status === 'COMPLETED').length;
+  const jobsDone = user?.completedJobs ?? applications.filter((a) => a.status === 'COMPLETED').length;
   const receivedValues = Object.values(received);
   const avgRating =
-    receivedValues.length > 0
+    user?.rating
+      ? Number(user.rating).toFixed(1)
+      : receivedValues.length > 0
       ? (receivedValues.reduce((sum, r) => sum + r.stars, 0) / receivedValues.length).toFixed(1)
       : 'New';
   const earned = totalEarned.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+
+  const kycCount = [
+    Boolean(displayName),
+    Boolean(displayPhone),
+    Boolean(upiId),
+    Boolean(user?.location?.city || user?.location?.address),
+  ].filter(Boolean).length;
+  const kycLabel = `${kycCount} of 4 done`;
 
   const handleLogout = async () => {
     await logout();
@@ -60,7 +71,7 @@ export default function WorkerProfileScreen() {
 
   const menuAccount: MenuItem[] = [
     { icon: 'person-outline', label: 'Personal Details', onPress: () => router.push('/(worker)/edit-profile') },
-    { icon: 'shield-checkmark', label: 'KYC & Documents', value: '2 of 5 done', onPress: () => router.push('/(worker)/kyc') },
+    { icon: 'shield-checkmark', label: 'KYC & Documents', value: kycLabel, onPress: () => router.push('/(worker)/kyc') },
     { icon: 'notifications', label: 'Notifications', badge: unreadCount > 0 ? String(unreadCount) : undefined, onPress: () => router.push('/(worker)/notifications') },
     { icon: 'location-outline', label: 'Address', onPress: () => router.push('/(worker)/address') },
   ];
@@ -68,7 +79,7 @@ export default function WorkerProfileScreen() {
   const menuSupport: MenuItem[] = [
     { icon: 'help', label: 'Help & Support', onPress: () => router.push('/(worker)/help') },
     { icon: 'info', label: 'About Gigro', value: 'v1.0.0', onPress: () => router.push('/(worker)/about') },
-    { icon: 'star', label: 'Rate Us', onPress: () => Alert.alert('Rate Gigro', 'Thanks for supporting us! (Store link goes here)') },
+    { icon: 'star', label: 'Rate Us', onPress: () => Alert.alert('Rate Gigro', 'We’d love your feedback on the App Store and Play Store.') },
     { icon: 'shield-checkmark', label: 'Privacy Policy', onPress: () => router.push({ pathname: '/(worker)/legal', params: { page: 'privacy' } }) },
     { icon: 'document-text-outline', label: 'Terms of Service', onPress: () => router.push({ pathname: '/(worker)/legal', params: { page: 'terms' } }) },
   ];
@@ -94,14 +105,16 @@ export default function WorkerProfileScreen() {
           </Text>
           <View style={styles.headerMetaRow}>
             <Text variant="bodySm" color={Colors.textSecondary}>
-              +91 {displayPhone}
+              {displayPhone ? `+91 ${displayPhone}` : 'Verify your phone to get started'}
             </Text>
-            <View style={styles.verifiedChip}>
-              <Ionicons name="shield-checkmark" size={12} color="#0F9D58" />
-              <Text variant="caption" weight="semibold" color="#0F9D58">
-                Verified
-              </Text>
-            </View>
+            {user?.isVerified && (
+              <View style={styles.verifiedChip}>
+                <Ionicons name="shield-checkmark" size={12} color="#0F9D58" />
+                <Text variant="caption" weight="semibold" color="#0F9D58">
+                  Verified
+                </Text>
+              </View>
+            )}
           </View>
           <TouchableOpacity style={styles.editProfileRow} activeOpacity={0.6} onPress={() => router.push('/(worker)/edit-profile')}>
             <Ionicons name="person-outline" size={14} color="#0F172A" />

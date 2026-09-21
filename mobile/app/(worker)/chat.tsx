@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { Fragment, useState, useRef, useEffect } from 'react';
 import {
   View,
   TextInput,
@@ -8,6 +8,7 @@ import {
   Platform,
   TouchableOpacity,
   Alert,
+  Linking,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,23 +20,16 @@ import { ScreenSkeleton, usePageLoading } from '../../src/components/ui/PageSkel
 import { Colors, Spacing, BorderRadius } from '../../src/constants/theme';
 import { useMessagesStore, ChatMessage } from '../../src/store/messagesStore';
 
-const QUICK_REPLIES = ['I\'m available', 'Need more details', 'Confirmed!'];
-const EMPLOYER_QUICK_REPLIES = ['You\'re hired!', 'Report at 9 AM', 'Share your UPI ID'];
-
 function formatTime(iso: string) {
   const d = new Date(iso);
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-function isToday(iso: string) {
-  const d = new Date(iso);
-  const now = new Date();
-  return (
-    d.getDate() === now.getDate() &&
-    d.getMonth() === now.getMonth() &&
-    d.getFullYear() === now.getFullYear()
-  );
-}
+const QUICK_REPLIES =
+  Platform.OS === 'web'
+    ? ['I am available', 'Need more details', 'Please confirm']
+    : ["I'm available", 'Need more details', 'Please confirm'];
+const EMPLOYER_QUICK_REPLIES = ['Meet at 9 AM', 'Share your UPI ID', 'Confirmed'];
 
 function dateLabel(iso: string) {
   const d = new Date(iso);
@@ -50,22 +44,34 @@ export default function WorkerChatScreen() {
   const params = useLocalSearchParams<{ jobId?: string; employerName?: string; workerName?: string; jobTitle?: string; mode?: string }>();
   const isEmployer = params.mode === 'employer';
   const threadName = isEmployer && params.workerName ? params.workerName : params.employerName;
-  const displayName = threadName || (isEmployer ? 'Worker' : 'Employer');
   const jobTitle = params.jobTitle || '';
 
   const threadId = params.jobId ?? 'default';
 
   const thread = useMessagesStore((s) => s.threads[threadId]);
-  const seedThread = useMessagesStore((s) => s.seedThread);
+  const loadThread = useMessagesStore((s) => s.loadThread);
+  const loadThreads = useMessagesStore((s) => s.loadThreads);
   const markThreadRead = useMessagesStore((s) => s.markThreadRead);
   const sendMessage = useMessagesStore((s) => s.sendMessage);
+  const threadMeta = useMessagesStore((s) => s.threadMeta[threadId]);
+  const otherPhone = threadMeta?.otherPhone;
+  const displayName = threadMeta?.otherName || threadName || (isEmployer ? 'Worker' : 'Employer');
 
   const [input, setInput] = useState('');
   const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
-    seedThread(threadId);
+    loadThreads();
+    loadThread(threadId);
     markThreadRead(threadId);
+  }, [threadId, loadThread, loadThreads, markThreadRead]);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      useMessagesStore.getState().loadThread(threadId);
+      useMessagesStore.getState().loadThreads();
+    }, 4000);
+    return () => clearInterval(id);
   }, [threadId]);
 
   useEffect(() => {
@@ -79,6 +85,16 @@ export default function WorkerChatScreen() {
     if (!text) return;
     sendMessage(threadId, text, isEmployer ? 'employer' : 'worker');
     setInput('');
+  };
+
+  const handleCall = () => {
+    if (!otherPhone) {
+      Alert.alert('Call', `Call available once the thread loads.`);
+      return;
+    }
+    Linking.openURL(`tel:${otherPhone}`).catch(() => {
+      Alert.alert('Call', `Call ${displayName} at ${otherPhone}`);
+    });
   };
 
   const headerInitial = displayName.trim().charAt(0).toUpperCase() || 'E';
@@ -100,32 +116,23 @@ export default function WorkerChatScreen() {
             <Ionicons name="chevron-back" size={22} color="#0F172A" />
           </ScalePress>
 
-          <View style={styles.headerAvatar}>
-            <Text variant="h3" weight="bold" color={Colors.primary}>
-              {headerInitial}
-            </Text>
-            <View style={styles.headerOnlineDot} />
-          </View>
+<View style={styles.headerAvatar}>
+              <Text variant="h3" weight="bold" color={Colors.primary}>
+                {headerInitial}
+              </Text>
+            </View>
 
           <View style={styles.headerInfo}>
             <Text variant="body" weight="bold" color="#0F172A" numberOfLines={1}>
               {displayName}
             </Text>
-            <View style={styles.activeRow}>
-              <View style={styles.activeDot} />
-              <Text variant="caption" color={Colors.success}>
-                Active now
-              </Text>
-            </View>
           </View>
 
           <View style={styles.headerActions}>
             <TouchableOpacity
               activeOpacity={0.75}
               style={styles.headerActionBtn}
-              onPress={() =>
-                Alert.alert('Call', `Calling ${displayName}… (demo mode)`)
-              }
+              onPress={handleCall}
             >
               <Ionicons name="call-outline" size={18} color="#0F172A" />
             </TouchableOpacity>
@@ -163,77 +170,99 @@ export default function WorkerChatScreen() {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <View style={styles.dateChip}>
-              <Text variant="caption" weight="semibold" color={Colors.textSecondary}>
-                {thread && thread.length > 0 ? dateLabel(thread[thread.length - 1].timestamp) : 'Today'}
-              </Text>
-            </View>
+            {thread && thread.length === 0 && (
+              <View style={styles.emptyState}>
+                <View style={styles.emptyStateIcon}>
+                  <Ionicons name="chatbubble-ellipses-outline" size={22} color={Colors.primary} />
+                </View>
+                <Text variant="bodySm" weight="semibold" color="#0F172A" align="center">
+                  Start the conversation
+                </Text>
+                <Text variant="caption" color={Colors.textMuted} align="center">
+                  Introduce yourself and confirm you're available for this job. The employer will see your message right away.
+                </Text>
+              </View>
+            )}
 
             {messages.map((msg, index) => {
               const isWorker = msg.sender === 'worker';
-              const isLastGroup = index === messages.length - 1;
+              const isLastOwn = isWorker && index === messages.length - 1;
+              const prev = messages[index - 1];
+              const showDate = index === 0 || dateLabel(msg.timestamp) !== dateLabel(prev.timestamp);
               return (
-                <View
-                  key={msg.id}
-                  style={[
-                    styles.bubbleRow,
-                    isWorker ? styles.rowRight : styles.rowLeft,
-                  ]}
-                >
-                  {!isWorker && (
-                    <View style={styles.msgAvatar}>
-                      <Text variant="caption" weight="bold" color={Colors.primary}>
-                        {headerInitial}
+                <Fragment key={msg.id}>
+                  {showDate && (
+                    <View style={styles.dateChip}>
+                      <Text variant="caption" weight="semibold" color={Colors.textSecondary}>
+                        {dateLabel(msg.timestamp)}
                       </Text>
                     </View>
                   )}
-                  <View style={[isWorker ? styles.msgColRight : styles.msgColLeft]}>
-                    <View
-                      style={[
-                        styles.bubble,
-                        isWorker ? styles.bubbleWorker : styles.bubbleEmployer,
-                      ]}
-                    >
-                      <Text
-                        variant="bodySm"
-                        color={isWorker ? '#FFFFFF' : '#0F172A'}
+                  <View
+                    style={[
+                      styles.bubbleRow,
+                      isWorker ? styles.rowRight : styles.rowLeft,
+                    ]}
+                  >
+                    {!isWorker && (
+                      <View style={styles.msgAvatar}>
+                        <Text variant="caption" weight="bold" color={Colors.primary}>
+                          {headerInitial}
+                        </Text>
+                      </View>
+                    )}
+                    <View style={[isWorker ? styles.msgColRight : styles.msgColLeft]}>
+                      <View
+                        style={[
+                          styles.bubble,
+                          isWorker ? styles.bubbleWorker : styles.bubbleEmployer,
+                        ]}
                       >
-                        {msg.text}
-                      </Text>
-                    </View>
-                    <View style={styles.bubbleMeta}>
-                      <Text variant="caption" color={Colors.textMuted}>
-                        {formatTime(msg.timestamp)}
-                      </Text>
-                      {isWorker &&
-                        (isLastGroup ? (
-                          <Ionicons name="checkmark-circle" size={13} color={Colors.primary} />
+                        <Text
+                          variant="bodySm"
+                          color={isWorker ? '#FFFFFF' : '#0F172A'}
+                        >
+                          {msg.text}
+                        </Text>
+                      </View>
+                      <View style={styles.bubbleMeta}>
+                        {isLastOwn ? (
+                          <Text variant="caption" weight="medium" color={Colors.primary}>
+                            Sent · {formatTime(msg.timestamp)}
+                          </Text>
                         ) : (
-                          <Ionicons name="checkmark" size={13} color="#94A3B8" />
-                        ))}
+                          <Text variant="caption" color={Colors.textMuted}>
+                            {formatTime(msg.timestamp)}
+                          </Text>
+                        )}
+                      </View>
                     </View>
                   </View>
-                </View>
+                </Fragment>
               );
             })}
           </ScrollView>
         </KeyboardAvoidingView>
 
         {/* Quick replies */}
-        <View style={styles.quickRow}>
-          {(isEmployer ? EMPLOYER_QUICK_REPLIES : QUICK_REPLIES).map((reply) => (
-            <TouchableOpacity
-              key={reply}
-              activeOpacity={0.8}
-              onPress={() => setInput(reply)}
-              style={styles.quickChip}
-            >
-              <Text variant="caption" weight="semibold" color={Colors.primary}>
-                {reply}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        {messages.length <= 2 && (
+          <View style={styles.quickRow}>
+            {(isEmployer ? EMPLOYER_QUICK_REPLIES : QUICK_REPLIES).map((reply) => (
+              <TouchableOpacity
+                key={reply}
+                activeOpacity={0.8}
+                onPress={() => {
+                  setInput(reply);
+                }}
+                style={styles.quickChip}
+              >
+                <Text variant="caption" weight="semibold" color={Colors.primary}>
+                  {reply}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
         {/* Input bar */}
         <View style={styles.inputBar}>
@@ -250,7 +279,7 @@ export default function WorkerChatScreen() {
           />
           <TouchableOpacity
             activeOpacity={0.8}
-            style={[styles.sendBtn, (!input.trim() || !messages.length) && styles.sendBtnDisabled]}
+            style={[styles.sendBtn, !input.trim() && styles.sendBtnDisabled]}
             onPress={handleSend}
             disabled={!input.trim()}
           >
@@ -298,32 +327,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerOnlineDot: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: Colors.success,
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
   headerInfo: {
     flex: 1,
     marginLeft: Spacing.sm,
-  },
-  activeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 1,
-  },
-  activeDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.success,
   },
   headerActions: {
     flexDirection: 'row',
@@ -370,6 +376,21 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: BorderRadius.round,
     marginBottom: Spacing.lg,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.xl,
+    gap: 4,
+  },
+  emptyStateIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: Colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.sm,
   },
   bubbleRow: {
     flexDirection: 'row',

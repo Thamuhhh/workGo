@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { Icon as Ionicons } from '../../src/components/Icon';
 import { Text, Button } from '../../src/components/ui';
 import { ScreenSkeleton, usePageLoading } from '../../src/components/ui/PageSkeleton';
 import { FadeSlide } from '../../src/components/AppHeader';
-import { SAMPLE_JOBS } from '../../src/data/sampleJobs';
-import { useApplicationsStore, ApplicationStatus } from '../../src/store/applicationsStore';
+import { useJobsStore, findJobById, WorkerJob } from '../../src/store/jobsStore';
+import { useApplicationsStore, Application, ApplicationStatus } from '../../src/store/applicationsStore';
 import { useRatingsStore } from '../../src/store/ratingsStore';
 import { usePaymentsStore, formatINR } from '../../src/store/paymentsStore';
 import { parseSalary } from '../../src/store/walletStore';
@@ -46,7 +46,15 @@ function tabOf(status: ApplicationStatus): TabKey {
 
 export default function WorkerBookingsScreen() {
   const applications = useApplicationsStore((s) => s.applications);
+  const loadApplications = useApplicationsStore((s) => s.loadApplications);
   const markCompleted = useApplicationsStore((s) => s.markCompleted);
+  const loadJobs = useJobsStore((s) => s.loadJobs);
+  const liveJobs = useJobsStore((s) => s.jobs);
+
+  useEffect(() => {
+    loadApplications();
+    loadJobs();
+  }, [loadApplications, loadJobs]);
   const ratings = useRatingsStore((s) => s.ratings);
   const rateJob = useRatingsStore((s) => s.rateJob);
   const payments = usePaymentsStore((s) => s.payments);
@@ -55,9 +63,36 @@ export default function WorkerBookingsScreen() {
   const [tab, setTab] = useState<TabKey>('all');
   const [rateJobId, setRateJobId] = useState<string | null>(null);
 
-  const rows = applications
-    .map((app) => ({ app, job: SAMPLE_JOBS.find((j) => j.id === app.jobId) }))
-    .filter((r) => !!r.job);
+  const fallbackJob = (app: Application): WorkerJob => ({
+    id: app.jobId,
+    title: app.jobTitle ?? 'Gig',
+    category: '',
+    description: '',
+    employerName: app.employerName ?? 'WorkGo Employer',
+    location: '',
+    distance: '',
+    date: '',
+    timing: '',
+    workersRequired: 1,
+    workersAccepted: 0,
+    salary: app.salaryNum ? `₹${app.salaryNum} / day` : '',
+    employerRating: '',
+    foodProvided: false,
+    transportProvided: false,
+    requirements: '',
+    about: '',
+    latitude: 0,
+    longitude: 0,
+    salaryNum: app.salaryNum ?? 0,
+    city: '',
+    rawDate: '',
+    status: '',
+  });
+
+  const rows = applications.map((app) => ({
+    app,
+    job: (findJobById(app.jobId, liveJobs) as WorkerJob | undefined) ?? fallbackJob(app),
+  }));
 
   const visibleRows = rows.filter((r) => tab === 'all' || tabOf(r.app!.status) === tab);
 
@@ -68,7 +103,9 @@ export default function WorkerBookingsScreen() {
   const completedCount = count('completed');
   const statsLine = `${activeCount} active  ·  ${completedCount} completed`;
 
-  const rateTarget = rateJobId ? SAMPLE_JOBS.find((j) => j.id === rateJobId) : null;
+  const rateTarget = rateJobId
+    ? (rows.find((r) => r.app.jobId === rateJobId)?.job ?? null)
+    : null;
 
   const openPayment = (jobId: string) => {
     const payment = payments.find((p) => p.jobId === jobId);
@@ -76,22 +113,19 @@ export default function WorkerBookingsScreen() {
   };
 
   const handleSubmitRating = (jobId: string, stars: number, tags: string[], comment: string) => {
-    rateJob(jobId, stars, tags, comment);
+    rateJob(jobId, stars, tags, comment).catch(() => {});
   };
 
-  const handleComplete = (jobId: string) => {
-    markCompleted(jobId);
-    const job = SAMPLE_JOBS.find((j) => j.id === jobId);
-    if (job) {
-      const payment = createPayment({
-        jobId,
-        title: job.title,
-        workerName: 'You',
-        employerName: job.employerName,
-        amount: parseSalary(job.salary),
-      });
-      router.push({ pathname: '/(worker)/payment', params: { paymentId: payment.id } });
-    }
+  const handleComplete = (rowJob: WorkerJob) => {
+    markCompleted(rowJob.id);
+    const payment = createPayment({
+      jobId: rowJob.id,
+      title: rowJob.title,
+      workerName: 'You',
+      employerName: rowJob.employerName,
+      amount: parseSalary(rowJob.salary),
+    });
+    router.push({ pathname: '/(worker)/payment', params: { paymentId: payment.id } });
   };
 
   if (usePageLoading()) return <ScreenSkeleton variant="list" />;
@@ -218,7 +252,7 @@ export default function WorkerBookingsScreen() {
                   {status === 'ACCEPTED' && (
                     <TouchableOpacity
                       activeOpacity={0.85}
-                      onPress={() => handleComplete(job!.id)}
+                      onPress={() => handleComplete(job)}
                       style={styles.primaryBtn}
                     >
                       <Text variant="bodySm" weight="bold" color="#FFFFFF">

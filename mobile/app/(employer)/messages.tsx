@@ -1,4 +1,4 @@
-﻿import React from 'react';
+﻿import React, { useEffect } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, FlatList } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -7,14 +7,7 @@ import { Text, Badge } from '../../src/components/ui';
 import { ScalePress } from '../../src/components/AppHeader';
 import { Colors, Spacing, BorderRadius } from '../../src/constants/theme';
 import { useMessagesStore } from '../../src/store/messagesStore';
-import { useEmployerJobsStore } from '../../src/store/employerJobsStore';
 import EmployerBottomNav from '../../src/components/EmployerBottomNav';
-
-const COUNTERPART_NAMES: Record<string, string> = {
-  Murugan: 'Murugan S',
-  Priya: 'Priya R',
-  Karthik: 'Karthik V',
-};
 
 function formatTime(iso: string) {
   const d = new Date(iso);
@@ -31,25 +24,28 @@ function formatTime(iso: string) {
   return d.toLocaleDateString([], { day: 'numeric', month: 'short' });
 }
 
-function pickName(jobId: string): string {
-  const parts = jobId.split('_');
-  const candidate = parts[0];
-  if (candidate in COUNTERPART_NAMES) return COUNTERPART_NAMES[candidate];
-  return `Worker · ${parts[0]}`;
-}
-
 export default function EmployerMessagesScreen() {
   const threads = useMessagesStore((s) => s.threads);
+  const threadMeta = useMessagesStore((s) => s.threadMeta);
   const readThreadIds = useMessagesStore((s) => s.readThreadIds);
-  const jobs = useEmployerJobsStore((s) => s.jobs);
+  const loadThreads = useMessagesStore((s) => s.loadThreads);
 
-  const jobTitleOf = (jobId: string) => {
-    const job = jobs.find((j) => j.id === jobId);
-    return job ? job.title : 'Catering Staff';
-  };
+  const conversationIds = Object.keys(threadMeta).length > 0 ? Object.keys(threadMeta) : Object.keys(threads);
+  const unreadTotal = conversationIds.filter((id) => {
+    const meta = threadMeta[id];
+    return meta ? meta.unread > 0 : !readThreadIds.includes(id);
+  }).length;
 
-  const conversationIds = Object.keys(threads);
-  const unreadTotal = conversationIds.filter((id) => !readThreadIds.includes(id)).length;
+  const jobTitleOf = (jobId: string) => threadMeta[jobId]?.jobTitle ?? 'Gig';
+  const nameOf = (jobId: string) => threadMeta[jobId]?.otherName ?? 'Worker';
+
+  useEffect(() => {
+    loadThreads();
+    const id = setInterval(() => {
+      loadThreads();
+    }, 6000);
+    return () => clearInterval(id);
+  }, []);
 
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
@@ -99,8 +95,9 @@ export default function EmployerMessagesScreen() {
         renderItem={({ item: jobId }) => {
           const msgs = threads[jobId] ?? [];
           const last = msgs[msgs.length - 1];
-          const unread = !readThreadIds.includes(jobId);
-          const name = pickName(jobId);
+          const meta = threadMeta[jobId];
+          const unread = meta ? meta.unread > 0 : !readThreadIds.includes(jobId);
+          const name = nameOf(jobId);
           return (
             <ScalePress
               scaleTo={0.97}
@@ -130,9 +127,9 @@ export default function EmployerMessagesScreen() {
                   >
                     {name}
                   </Text>
-                  {last && (
+                  {meta && (
                     <Text variant="caption" color={unread ? Colors.primary : Colors.textMuted}>
-                      {formatTime(last.timestamp)}
+                      {formatTime(meta.lastTimestamp)}
                     </Text>
                   )}
                 </View>
@@ -145,7 +142,7 @@ export default function EmployerMessagesScreen() {
                   weight={unread ? 'semibold' : 'regular'}
                   numberOfLines={1}
                 >
-                  {last ? last.text : 'Say hello to get things moving.'}
+                  {meta ? meta.lastMessage : last ? last.text : 'Say hello to get things moving.'}
                 </Text>
               </View>
             </ScalePress>

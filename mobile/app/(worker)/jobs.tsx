@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon as Ionicons } from '../../src/components/Icon';
 import { Text, Card, SkeletonJobCard } from '../../src/components/ui';
 import { FadeSlide } from '../../src/components/AppHeader';
-import { SAMPLE_JOBS, SampleJob } from '../../src/data/sampleJobs';
+import { useJobsStore, WorkerJob } from '../../src/store/jobsStore';
 import { NativeJobMap } from '../../src/components/JobMap';
 import { Colors, Spacing, BorderRadius } from '../../src/constants/theme';
 
@@ -17,7 +17,7 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: 'nearby', label: 'Nearby' },
 ];
 
-function kmOf(job: SampleJob): number {
+function kmOf(job: WorkerJob): number {
   const match = job.distance.match(/([\d.]+)\s*km/);
   return match ? parseFloat(match[1]) : 99;
 }
@@ -26,7 +26,7 @@ const MAP_CENTER = 50;
 const MAP_RADIUS = 44;
 const MAP_SCALE = 0.9;
 
-function radarPos(job: SampleJob, index: number, total: number) {
+function radarPos(job: WorkerJob, index: number, total: number) {
   const ratio = Math.min(kmOf(job) / 6, 1);
   const angle = (index / total) * Math.PI * 2 - Math.PI / 2;
   const x = MAP_CENTER + Math.cos(angle) * MAP_RADIUS * ratio * MAP_SCALE;
@@ -34,7 +34,7 @@ function radarPos(job: SampleJob, index: number, total: number) {
   return { x, y };
 }
 
-function RadarMap({ jobs }: { jobs: SampleJob[] }) {
+function RadarMap({ jobs }: { jobs: WorkerJob[] }) {
   return (
     <View style={styles.mapCard}>
       {[100, 66, 33].map((pct) => {
@@ -92,20 +92,23 @@ export default function WorkerJobsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<Filter>('all');
   const [showMap, setShowMap] = useState(false);
+  const serverJobs = useJobsStore((s) => s.jobs);
+  const loadJobs = useJobsStore((s) => s.loadJobs);
 
   useEffect(() => {
+    loadJobs();
     const t = setTimeout(() => setLoading(false), 700);
     return () => clearTimeout(t);
-  }, []);
+  }, [loadJobs]);
 
   const onRefresh = () => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 900);
+    loadJobs(true).finally(() => setRefreshing(false));
   };
 
   const webReset = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null;
 
-  let jobs = [...SAMPLE_JOBS];
+  let jobs = [...serverJobs];
   if (filter === 'today') jobs = jobs.filter((j) => j.date.toLowerCase() === 'today');
   if (filter === 'nearby') jobs = jobs.sort((a, b) => kmOf(a) - kmOf(b));
 

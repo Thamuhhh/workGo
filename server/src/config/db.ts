@@ -37,9 +37,19 @@ export const connectDB = async (): Promise<boolean> => {
     return true;
   } catch (error: any) {
     dbStatus.isConnected = false;
-    console.warn(`Warning: Could not connect to MongoDB at ${env.MONGODB_URI} (${error.message}).`);
+    console.warn(
+      `Warning: Could not connect to MongoDB at ${redactUri(env.MONGODB_URI)} (${error.message}).`
+    );
     console.warn('Running in resilient mode. Ensure MongoDB is running locally or provide a valid MONGODB_URI in server/.env');
     return false;
+  }
+};
+
+const redactUri = (uri: string): string => {
+  try {
+    return uri.replace(/\/\/[^:@/]+:[^@/]+@/, '//***:***@');
+  } catch {
+    return 'mongodb://***';
   }
 };
 

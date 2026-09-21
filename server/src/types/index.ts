@@ -2,7 +2,7 @@ import { Request } from 'express';
 
 export type UserRole = 'worker' | 'employer' | 'admin';
 
-export type ApplicationStatus = 'APPLIED' | 'SHORTLISTED' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED';
+export type ApplicationStatus = 'APPLIED' | 'SHORTLISTED' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' | 'COMPLETED';
 
 export type BookingStatus = 'BOOKED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 

@@ -13,8 +13,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon as Ionicons } from '../../src/components/Icon';
 import { Text, Badge, Button, Card } from '../../src/components/ui';
 import { FadeSlide } from '../../src/components/AppHeader';
-import { SAMPLE_JOBS } from '../../src/data/sampleJobs';
 import { useApplicationsStore } from '../../src/store/applicationsStore';
+import { useJobsStore, WorkerJob } from '../../src/store/jobsStore';
 import { Colors, Spacing, BorderRadius, Shadows } from '../../src/constants/theme';
 import BottomSheet from '../../src/components/BottomSheet';
 import { SwipeToConfirm } from '../../src/components/SwipeToConfirm';
@@ -46,14 +46,17 @@ export default function JobDetailScreen() {
   const params = useLocalSearchParams<{ jobId?: string }>();
   const applications = useApplicationsStore((s) => s.applications);
   const apply = useApplicationsStore((s) => s.apply);
+  const getJobDetail = useJobsStore((s) => s.getJobDetail);
+  const liveJobs = useJobsStore((s) => s.jobs);
   const [showSheet, setShowSheet] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
+  const [detailJob, setDetailJob] = useState<WorkerJob | null>(null);
   const pulse = useRef(new Animated.Value(0.45)).current;
 
-  const job = SAMPLE_JOBS.find((j) => j.id === params.jobId);
+  const job = detailJob ?? liveJobs.find((j) => j.id === params.jobId) ?? undefined;
   const similarJobs = job
-    ? SAMPLE_JOBS.filter((j) => j.id !== job.id && j.category === job.category)
+    ? liveJobs.filter((j) => j.id !== job.id && j.category === job.category).slice(0, 3)
     : [];
 
   const slotsLeft = job ? job.workersRequired - job.workersAccepted : 0;
@@ -73,9 +76,14 @@ export default function JobDetailScreen() {
 
   useEffect(() => {
     setLoading(true);
+    if (params.jobId) {
+      getJobDetail(params.jobId).then((j) => {
+        if (j) setDetailJob(j);
+      });
+    }
     const t = setTimeout(() => setLoading(false), 850);
     return () => clearTimeout(t);
-  }, [params.jobId]);
+  }, [params.jobId, getJobDetail]);
 
   const handleApplyConfirm = () => {
     if (!job) return;

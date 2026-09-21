@@ -277,7 +277,6 @@ export const getMe = async (req: AuthenticatedRequest, res: Response): Promise<v
 const PROFILE_EDITABLE = [
   'name',
   'email',
-  'role',
   'businessName',
   'businessType',
   'profilePhoto',
@@ -300,13 +299,6 @@ export const updateMe = async (req: AuthenticatedRequest, res: Response): Promis
   const updates: any = {};
   for (const key of PROFILE_EDITABLE) {
     if (body[key] !== undefined) {
-      if (key === 'role' && body.role !== 'worker' && body.role !== 'employer') {
-        res.status(400).json({
-          success: false,
-          message: 'Role must be worker or employer.',
-        });
-        return;
-      }
       updates[key] = body[key];
     }
   }

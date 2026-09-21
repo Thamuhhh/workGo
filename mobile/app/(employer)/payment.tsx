@@ -206,7 +206,7 @@ export default function EmployerPaymentScreen() {
         </Text>
       ) : (
         <Text variant="caption" color={Colors.textMuted} align="center" style={styles.pinHint}>
-          Temporary Gig PIN from signup · demo: 1234
+          Temporary Gig PIN — the 4-digit code you set during signup
         </Text>
       )}
 

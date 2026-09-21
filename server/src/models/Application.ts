@@ -17,7 +17,7 @@ const ApplicationSchema = new Schema<IApplication>(
     workerId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     status: {
       type: String,
-      enum: ['APPLIED', 'SHORTLISTED', 'ACCEPTED', 'REJECTED', 'CANCELLED'],
+      enum: ['APPLIED', 'SHORTLISTED', 'ACCEPTED', 'REJECTED', 'CANCELLED', 'COMPLETED'],
       default: 'APPLIED',
       index: true,
     },

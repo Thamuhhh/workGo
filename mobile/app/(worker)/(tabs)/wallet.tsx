@@ -38,10 +38,13 @@ export default function WorkerWalletScreen() {
     Alert.alert('Added', '₹500 added to your wallet.');
   };
 
-  const handleWithdraw = () => {
+  const handleWithdraw = async () => {
     if (balance <= 0) return;
-    if (withdraw()) {
+    const ok = await withdraw();
+    if (ok) {
       Alert.alert('Withdrawal initiated', `${formatINR(balance)} sent to ${upiId}.`);
+    } else {
+      Alert.alert('Withdrawal failed', 'Could not process the withdrawal right now. Please try again.');
     }
   };
 

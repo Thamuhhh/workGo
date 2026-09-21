@@ -8,8 +8,8 @@ import { BottomSheet } from '../../src/components/BottomSheet';
 import { Icon as Ionicons } from '../../src/components/Icon';
 import { Colors, Spacing, BorderRadius } from '../../src/constants/theme';
 import { useReviewApplicantsStore, ReviewApplicant } from '../../src/store/reviewApplicantsStore';
-import { SAMPLE_JOBS } from '../../src/data/sampleJobs';
 import { useEmployerJobsStore } from '../../src/store/employerJobsStore';
+import { useJobsStore } from '../../src/store/jobsStore';
 
 const STATUS_META: Record<string, { label: string; dot: string }> = {
   APPLIED: { label: 'Applied', dot: '#94A3B8' },
@@ -30,14 +30,19 @@ const FILTERS: { key: FilterKey; label: string }[] = [
 const isPending = (status: ReviewApplicant['status']) => status === 'APPLIED' || status === 'SHORTLISTED';
 
 const jobTitleOf = (jobId: string) =>
-  SAMPLE_JOBS.find((j) => j.id === jobId)?.title ??
   useEmployerJobsStore.getState().jobs.find((j) => j.id === jobId)?.title ??
+  useJobsStore.getState().jobs.find((j) => j.id === jobId)?.title ??
   'Other jobs';
 
 export default function ReviewApplicantsScreen() {
   const { jobId } = useLocalSearchParams<{ jobId?: string }>();
   const applicants = useReviewApplicantsStore((s) => s.applicants);
   const review = useReviewApplicantsStore((s) => s.review);
+  const loadApplicants = useReviewApplicantsStore((s) => s.loadApplicants);
+
+  useEffect(() => {
+    loadApplicants();
+  }, [loadApplicants]);
 
   const scoped = jobId ? applicants.filter((a) => a.jobId === jobId) : applicants;
 
@@ -227,7 +232,7 @@ export default function ReviewApplicantsScreen() {
           </FadeSlide>
         ) : (
           grouped.map(([jobId, items], groupIndex) => {
-            const job = SAMPLE_JOBS.find((j) => j.id === jobId);
+            const job = useEmployerJobsStore.getState().jobs.find((j) => j.id === jobId);
             const pendingCount = items.filter((a) => isPending(a.status)).length;
             const reviewed = items.length - pendingCount;
             const pct = items.length ? Math.round((reviewed / items.length) * 100) : 0;

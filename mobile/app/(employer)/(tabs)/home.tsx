@@ -1,4 +1,4 @@
-﻿import React, { useRef, useState } from 'react';
+﻿import React, { useRef, useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -18,8 +18,8 @@ import { useMessagesStore } from '../../../src/store/messagesStore';
 import { Animated, Platform } from 'react-native';
 import { useEmployerJobsStore } from '../../../src/store/employerJobsStore';
 import { useLocationStore } from '../../../src/store/locationStore';
+import { useJobsStore, areaJobCount } from '../../../src/store/jobsStore';
 import { useReviewApplicantsStore } from '../../../src/store/reviewApplicantsStore';
-import { AREA_JOB_COUNT } from '../../../src/services/location';
 
 const GREETING_MSG = (() => {
   const h = new Date().getHours();
@@ -39,7 +39,6 @@ interface Applicant {
 
 export default function EmployerHomeScreen() {
   const user = useAuthStore((state) => state.user);
-  const readThreadIds = useMessagesStore((s) => s.readThreadIds);
   const businessName = user?.businessName || user?.name || 'there';
   const businessFirstName = businessName.split(' ')[0];
   const reviewApplicants = useReviewApplicantsStore((s) => s.applicants);
@@ -48,13 +47,21 @@ export default function EmployerHomeScreen() {
   const hiredCount = jobs.reduce((sum, j) => sum + j.hired, 0);
   const locationLabel = useLocationStore((s) => s.label);
   const locationAddress = useLocationStore((s) => s.address);
-  const jobsNearby = AREA_JOB_COUNT[locationLabel];
+  const liveWorkJobs = useJobsStore((s) => s.jobs);
+  const loadWorkJobs = useJobsStore((s) => s.loadJobs);
+  const jobsNearby = areaJobCount(liveWorkJobs, locationLabel, locationAddress);
   const newApplicants = reviewApplicants.filter(
     (a) => a.status === 'APPLIED' || a.status === 'SHORTLISTED'
   ).length;
-  const unreadCount = Object.keys(useMessagesStore.getState().threads).filter(
-    (id) => !readThreadIds.includes(id)
-  ).length;
+  const unreadCount = Object.values(useMessagesStore.getState().threadMeta).reduce(
+    (sum, t) => sum + (t.unread > 0 ? 1 : 0),
+    0
+  );
+
+  useEffect(() => {
+    useMessagesStore.getState().loadThreads();
+    loadWorkJobs().catch(() => {});
+  }, []);
 
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);

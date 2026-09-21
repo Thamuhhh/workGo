@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon as Ionicons } from '../../src/components/Icon';
 import { Text, Card, SkeletonJobCard, Badge } from '../../src/components/ui';
 import { FadeSlide } from '../../src/components/AppHeader';
-import { SAMPLE_JOBS } from '../../src/data/sampleJobs';
+import { useJobsStore } from '../../src/store/jobsStore';
 import { Colors, Spacing, BorderRadius } from '../../src/constants/theme';
 
 type SortKey = 'recent' | 'pay' | 'distance';
@@ -25,21 +25,24 @@ export default function CategoryJobsScreen() {
 
   const [loading, setLoading] = useState(true);
   const [sort, setSort] = useState<SortKey>('recent');
+  const allJobs = useJobsStore((s) => s.jobs);
+  const loadJobs = useJobsStore((s) => s.loadJobs);
 
   useEffect(() => {
     setLoading(true);
+    loadJobs();
     const t = setTimeout(() => setLoading(false), 700);
     return () => clearTimeout(t);
-  }, [category]);
+  }, [category, loadJobs]);
 
   const jobs = useMemo(() => {
     const list = category
-      ? SAMPLE_JOBS.filter((j) => j.category.toLowerCase() === category.toLowerCase())
-      : SAMPLE_JOBS;
+      ? allJobs.filter((j) => j.category.toLowerCase() === category.toLowerCase())
+      : allJobs;
     if (sort === 'pay') return [...list].sort((a, b) => toPay(b.salary) - toPay(a.salary));
     if (sort === 'distance') return [...list].sort((a, b) => toKm(a.distance) - toKm(b.distance));
     return list;
-  }, [category, sort]);
+  }, [allJobs, category, sort]);
 
   const avgPay = jobs.length
     ? Math.round(jobs.reduce((acc, j) => acc + toPay(j.salary), 0) / jobs.length)

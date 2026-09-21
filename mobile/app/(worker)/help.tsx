@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Linking } from 'react-native';
 import { Icon as Ionicons } from '../../src/components/Icon';
 import { Text, Card } from '../../src/components/ui';
 import { ScreenSkeleton, usePageLoading } from '../../src/components/ui/PageSkeleton';
@@ -36,10 +36,10 @@ export default function HelpScreen() {
           <TouchableOpacity
             activeOpacity={0.85}
             style={styles.callBtn}
-            onPress={() => Alert.alert('Call support', 'Calling 1800-123-4567… (demo)')}
+            onPress={() => Linking.openURL('mailto:support@gigro.in')}
           >
             <Text variant="bodySm" weight="bold" color={Colors.primaryDark}>
-              Call now
+              Email us
             </Text>
           </TouchableOpacity>
         </View>

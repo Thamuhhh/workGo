@@ -1,5 +1,6 @@
 import { createApp } from './app';
 import { connectDB, disconnectDB } from './config/db';
+import { seedDatabase } from './config/seed';
 import { env } from './config/env';
 
 const startServer = async () => {
@@ -20,9 +21,11 @@ const startServer = async () => {
   });
 
   // Attempt database connection without blocking HTTP boot
-  connectDB().catch((err) => {
-    console.warn('Initial DB connection attempt failed:', err.message);
-  });
+  connectDB()
+    .then(() => seedDatabase())
+    .catch((err) => {
+      console.warn('Initial DB connection attempt failed:', err.message);
+    });
 
   const handleShutdown = async (signal: string) => {
     console.log(`\nReceived ${signal}. Shutting down gracefully...`);

@@ -4,9 +4,9 @@ import { router } from 'expo-router';
 import { Icon as Ionicons } from '../../src/components/Icon';
 import { Text, Card, Badge, Button } from '../../src/components/ui';
 import { ScreenSkeleton, usePageLoading } from '../../src/components/ui/PageSkeleton';
-import { SAMPLE_JOBS } from '../../src/data/sampleJobs';
+import { useJobsStore, findJobById } from '../../src/store/jobsStore';
 import { useApplicationsStore, ApplicationStatus } from '../../src/store/applicationsStore';
-import { useMessagesStore, ChatMessage } from '../../src/store/messagesStore';
+import { useMessagesStore } from '../../src/store/messagesStore';
 import { Colors, Spacing, BorderRadius } from '../../src/constants/theme';
 
 const STATUS_VARIANT: Record<ApplicationStatus, { label: string; variant: 'success' | 'info' | 'warning' | 'danger' }> = {
@@ -28,33 +28,33 @@ function timeAgo(iso: string) {
   return `${days}d`;
 }
 
-function previewOf(thread: ChatMessage[] | undefined, fallback: string) {
-  if (!thread || thread.length === 0) return fallback;
-  const last = thread[thread.length - 1];
-  const prefix = last.sender === 'worker' ? 'You: ' : '';
-  return `${prefix}${last.text}`;
-}
-
 export default function WorkerMessagesScreen() {
   const applications = useApplicationsStore((s) => s.applications);
-  const readThreadIds = useMessagesStore((s) => s.readThreadIds);
-  const threads = useMessagesStore((s) => s.threads);
-  const seedThread = useMessagesStore((s) => s.seedThread);
+  const loadApplications = useApplicationsStore((s) => s.loadApplications);
+  const threadMeta = useMessagesStore((s) => s.threadMeta);
+  const loadThreads = useMessagesStore((s) => s.loadThreads);
   const markAllRead = useMessagesStore((s) => s.markAllRead);
   const [segment, setSegment] = useState<'chats' | 'apps'>('chats');
+  const liveJobs = useJobsStore((s) => s.jobs);
+
+  const threadsList = Object.values(threadMeta).sort(
+    (a, b) => new Date(b.lastTimestamp).getTime() - new Date(a.lastTimestamp).getTime()
+  );
+  const unreadCount = threadsList.filter((t) => t.unread > 0).length;
 
   const rows = applications.map((app) => {
-    const job = SAMPLE_JOBS.find((j) => j.id === app.jobId);
+    const job = findJobById(app.jobId, liveJobs);
     return { app, job };
   });
 
   useEffect(() => {
-    rows.forEach(({ app }) => seedThread(app.jobId));
-  }, []);
-
-  const unreadCount = rows.filter(
-    ({ app }) => !readThreadIds.includes(app.jobId)
-  ).length;
+    loadApplications();
+    loadThreads();
+    const id = setInterval(() => {
+      loadThreads();
+    }, 6000);
+    return () => clearInterval(id);
+  }, [loadApplications, loadThreads]);
 
   const openChat = (jobId: string, employerName: string, jobTitle: string) => {
     router.push({
@@ -75,7 +75,7 @@ export default function WorkerMessagesScreen() {
         {segment === 'chats' && unreadCount > 0 && (
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={() => markAllRead(rows.map(({ app }) => app.jobId))}
+            onPress={() => markAllRead(threadsList.filter((t) => t.unread > 0).map((t) => t.jobId))}
             hitSlop={8}
           >
             <Text variant="bodySm" weight="semibold" color={Colors.primary}>
@@ -133,7 +133,7 @@ export default function WorkerMessagesScreen() {
       </View>
 
       {segment === 'chats' ? (
-        rows.length === 0 ? (
+        threadsList.length === 0 ? (
           <View style={styles.empty}>
             <View style={styles.emptyIcon}>
               <Ionicons name="chatbubble-outline" size={40} color={Colors.primary} />
@@ -153,41 +153,41 @@ export default function WorkerMessagesScreen() {
           </View>
         ) : (
           <View style={styles.threadList}>
-            {rows.map(({ app, job }) => {
-              if (!job) return null;
-              const firstName = job.employerName.trim().split(' ')[0] || 'E';
+            {threadsList.map((t) => {
+              const firstName = (t.otherName || 'E').trim().split(' ')[0];
               const initial = firstName.charAt(0).toUpperCase();
-              const isUnread = !readThreadIds.includes(app.jobId);
-              const thread = threads[app.jobId];
+              const isUnread = t.unread > 0;
               return (
                 <TouchableOpacity
-                  key={app.jobId}
+                  key={t.jobId}
                   activeOpacity={0.7}
-                  onPress={() => openChat(app.jobId, job.employerName, job.title)}
+                  onPress={() => openChat(t.jobId, t.otherName, t.jobTitle)}
                 >
                   <View style={styles.threadRow}>
                     <View style={styles.threadAvatar}>
                       <Text variant="h3" weight="bold" color={Colors.primary}>
                         {initial}
                       </Text>
-                      <View style={styles.onlineDot} />
                     </View>
                     <View style={styles.threadMiddle}>
                       <View style={styles.threadNameRow}>
                         <Text variant="body" weight={isUnread ? 'bold' : 'semibold'} color="#0F172A" numberOfLines={1} style={styles.threadName}>
-                          {job.employerName}
+                          {t.otherName}
                         </Text>
                         <Text variant="caption" color={isUnread ? Colors.primary : Colors.textMuted}>
-                          {timeAgo(thread?.[thread.length - 1]?.timestamp ?? app.appliedAt)}
+                          {timeAgo(t.lastTimestamp)}
                         </Text>
                       </View>
+                      <Text variant="caption" color={Colors.textMuted} numberOfLines={1} style={styles.threadSubRow}>
+                        {t.jobTitle}
+                      </Text>
                       <Text
                         variant="bodySm"
                         weight={isUnread ? 'semibold' : 'regular'}
                         color={isUnread ? '#0F172A' : Colors.textSecondary}
                         numberOfLines={1}
                       >
-                        {previewOf(thread, `${job.title} • started a conversation`)}
+                        {t.lastMessage}
                       </Text>
                     </View>
                     {isUnread && <View style={styles.unreadDot} />}
@@ -220,34 +220,60 @@ export default function WorkerMessagesScreen() {
           ) : (
             rows.map(({ app, job }) => {
               const status = STATUS_VARIANT[app.status];
+              const appTitle = app.jobTitle || job?.title || 'Unknown job';
+              const appEmployer = app.employerName || job?.employerName || 'Employer';
+              const appSalary = app.salaryNum
+                ? `₹${app.salaryNum.toLocaleString('en-IN')} / day`
+                : job?.salary;
               return (
-                <Card key={app.jobId} padding="lg" style={styles.appCard}>
-                  <View style={styles.row}>
-                    <Text variant="h3" weight="bold" style={styles.jobTitle}>
-                      {job?.title ?? 'Unknown job'}
+                <TouchableOpacity
+                  key={app.jobId}
+                  activeOpacity={0.85}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/(worker)/application-detail',
+                      params: { jobId: app.jobId },
+                    })
+                  }
+                >
+                  <Card padding="lg" style={styles.appCard}>
+                    <View style={styles.row}>
+                      <Text variant="h3" weight="bold" style={styles.jobTitle}>
+                        {appTitle}
+                      </Text>
+                      <Badge label={status.label} variant={status.variant} size="sm" />
+                    </View>
+                    <Text variant="bodySm" color={Colors.textSecondary}>
+                      {appEmployer}
+                      {appSalary ? ` • ${appSalary}` : ''}
                     </Text>
-                    <Badge label={status.label} variant={status.variant} size="sm" />
-                  </View>
-                  <Text variant="bodySm" color={Colors.textSecondary}>
-                    {job ? `${job.employerName} • ${job.salary}` : '—'}
-                  </Text>
-                  <View style={styles.dateRow}>
-                    <Text variant="caption" color={Colors.textMuted}>
-                      Applied {timeAgo(app.appliedAt)}
-                    </Text>
-                    {job && (
-                      <TouchableOpacity
-                        onPress={() =>
-                          router.push({ pathname: '/(worker)/job-detail', params: { jobId: job.id } })
-                        }
-                      >
-                        <Text variant="bodySm" weight="bold" color={Colors.primary}>
-                          View job
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                </Card>
+                    <View style={styles.dateRow}>
+                      <Text variant="caption" color={Colors.textMuted}>
+                        Applied {timeAgo(app.appliedAt)}
+                      </Text>
+                      <View style={styles.linkRow}>
+                        <TouchableOpacity
+                          onPress={() => openChat(app.jobId, appEmployer, appTitle)}
+                        >
+                          <Text variant="bodySm" weight="bold" color={Colors.primary}>
+                            Message
+                          </Text>
+                        </TouchableOpacity>
+                        {job && (
+                          <TouchableOpacity
+                            onPress={() =>
+                              router.push({ pathname: '/(worker)/job-detail', params: { jobId: job.id } })
+                            }
+                          >
+                            <Text variant="bodySm" weight="bold" color={Colors.primary}>
+                              View job
+                            </Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    </View>
+                  </Card>
+                </TouchableOpacity>
               );
             })
           )}
@@ -326,17 +352,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: Spacing.md,
   },
-  onlineDot: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: Colors.success,
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
   threadMiddle: {
     flex: 1,
   },
@@ -349,6 +364,9 @@ const styles = StyleSheet.create({
   threadName: {
     flex: 1,
     marginRight: Spacing.sm,
+  },
+  threadSubRow: {
+    marginBottom: 1,
   },
   unreadDot: {
     width: 9,
@@ -398,5 +416,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: Spacing.sm,
+  },
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
   },
 });

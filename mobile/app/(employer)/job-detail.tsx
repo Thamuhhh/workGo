@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Text, Button } from '../../src/components/ui';
 import { ScreenSkeleton, usePageLoading } from '../../src/components/ui/PageSkeleton';
@@ -29,6 +29,7 @@ export default function EmployerJobDetailScreen() {
   const jobs = useEmployerJobsStore((s) => s.jobs);
   const updateJob = useEmployerJobsStore((s) => s.updateJob);
   const duplicateJob = useEmployerJobsStore((s) => s.duplicateJob);
+  const removeJob = useEmployerJobsStore((s) => s.removeJob);
   const applicants = useReviewApplicantsStore((s) => s.applicants);
   const review = useReviewApplicantsStore((s) => s.review);
 
@@ -62,6 +63,23 @@ export default function EmployerJobDetailScreen() {
 
   const handleReview = (applicant: ReviewApplicant, action: 'accept' | 'reject') => {
     review(applicant.id, action);
+  };
+
+  const handleDelete = () => {
+    Alert.alert('Delete this job?', 'This removes the job. Jobs with applications will just be closed.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          const message = await removeJob(job.id);
+          Alert.alert('Job removed', message);
+          if (!message.toLowerCase().includes('closed')) {
+            router.back();
+          }
+        },
+      },
+    ]);
   };
 
   return (
@@ -252,6 +270,11 @@ export default function EmployerJobDetailScreen() {
           icon="copy"
           label="Duplicate"
           onPress={handleDuplicate}
+        />
+        <ActionTile
+          icon="trash"
+          label="Delete"
+          onPress={handleDelete}
         />
       </View>
 

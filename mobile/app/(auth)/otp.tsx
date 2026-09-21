@@ -40,10 +40,26 @@ export default function OtpScreen() {
       await login(res.user, res.token);
       await setMode(res.user.role);
 
-      router.replace({
-        pathname: '/(auth)/role-selection',
-        params: { initialRole: res.user.role },
-      });
+      if (res.isNewUser && !name && !city) {
+        // Number didn't exist -> complete the account (name + city) next.
+        router.replace({
+          pathname: '/(auth)/register',
+          params: { complete: '1', phone, mode: res.user.role },
+        });
+      } else if (res.isNewUser) {
+        // Register flow already captured the profile -> pick a role next.
+        router.replace({
+          pathname: '/(auth)/role-selection',
+          params: { initialRole: res.user.role },
+        });
+      } else {
+        // Existing user -> straight to their home.
+        router.replace(
+          res.user.role === 'employer'
+            ? '/(employer)/(tabs)/home'
+            : '/(worker)/(tabs)/home'
+        );
+      }
     } catch (e: any) {
       setLoading(false);
       setError(e?.message || 'Could not verify OTP. Please try again.');

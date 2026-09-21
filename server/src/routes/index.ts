@@ -1,6 +1,12 @@
 import { Router } from 'express';
 import healthRoutes from './healthRoutes';
 import authRoutes from './authRoutes';
+import jobRoutes from './jobRoutes';
+import walletRoutes from './walletRoutes';
+import applicationRoutes from './applicationRoutes';
+import messageRoutes from './messageRoutes';
+import notificationRoutes from './notificationRoutes';
+import reviewRoutes from './reviewRoutes';
 
 const router = Router();
 
@@ -9,6 +15,24 @@ router.use('/health', healthRoutes);
 
 // Auth
 router.use('/auth', authRoutes);
+
+// Jobs
+router.use('/jobs', jobRoutes);
+
+// Wallet
+router.use('/wallet', walletRoutes);
+
+// Applications
+router.use('/applications', applicationRoutes);
+
+// Messages
+router.use('/messages', messageRoutes);
+
+// Notifications
+router.use('/notifications', notificationRoutes);
+
+// Reviews
+router.use('/reviews', reviewRoutes);
 
 // Root API ping
 router.get('/', (req, res) => {

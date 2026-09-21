@@ -186,7 +186,16 @@ export default function PostJobScreen() {
     };
     setLoading(true);
     if (isEdit && editingJob) {
-      await updateJob(editingJob.id, payload);
+      await updateJob(editingJob.id, {
+        title: title.trim(),
+        category: category.trim(),
+        salaryPerDay: Number(salary),
+        workersRequired: Number(workersRequired),
+        foodProvided: true,
+        transportProvided: true,
+        date: fullDate,
+        location: location.trim(),
+      });
       setLoading(false);
       Alert.alert('Job Updated', 'Your job details have been saved.');
       router.back();

@@ -1,11 +1,14 @@
 ﻿import React, { useState, useRef } from 'react';
 import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, TextInput, Keyboard, TouchableOpacity } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Text, Input, Button } from '../../src/components/ui';
 import { Icon } from '../../src/components/Icon';
 import { BottomSheet } from '../../src/components/BottomSheet';
 import { Colors, Spacing, BorderRadius } from '../../src/constants/theme';
 import { sendPhoneOtp } from '../../src/services/phoneAuth';
+import { updateMe } from '../../src/services/auth';
+import { useAuthStore } from '../../src/store/authStore';
+import { useUserModeStore } from '../../src/store/userModeStore';
 
 const CITIES = [
   'Chennai',
@@ -20,11 +23,20 @@ const CITIES = [
   'Kanyakumari',
   'Dindigul',
   'Karur',
+  'Kanchipuram',
 ];
 
 export default function RegisterScreen() {
+  const { complete, phone: verifiedPhone, mode } = useLocalSearchParams<{
+    complete?: string;
+    phone?: string;
+    mode?: string;
+  }>();
+
+  const isCompleteOnly = complete === '1';
+
   const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
+  const [phone, setPhone] = useState(verifiedPhone ?? '');
   const [city, setCity] = useState('');
   const [nameError, setNameError] = useState('');
   const [phoneError, setPhoneError] = useState('');
@@ -34,6 +46,45 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const phoneRef = useRef<TextInput>(null);
+
+  const setMode = useUserModeStore((state) => state.setMode);
+
+  const goAfterProfile = async (role: 'worker' | 'employer') => {
+    router.replace({
+      pathname: '/(auth)/role-selection',
+      params: { initialRole: role },
+    });
+  };
+
+  const handleCompleteProfile = async () => {
+    let hasError = false;
+    if (!name.trim()) {
+      setNameError('Please enter your full name');
+      hasError = true;
+    }
+    if (!city) {
+      setCityError('Please select your city');
+      hasError = true;
+    }
+    if (hasError) return;
+
+    setLoading(true);
+    setError('');
+    try {
+      const updated = await updateMe({ name: name.trim(), city });
+      const token = useAuthStore.getState().token;
+      if (token) {
+        await useAuthStore.getState().login(updated, token);
+      }
+      const role = updated.role;
+      await setMode(role);
+      setLoading(false);
+      await goAfterProfile(role);
+    } catch (e: any) {
+      setLoading(false);
+      setError(e?.message || 'Could not save your profile. Please try again.');
+    }
+  };
 
   const handleRegister = async () => {
     let hasError = false;
@@ -71,6 +122,9 @@ export default function RegisterScreen() {
     }
   };
 
+  const submit = isCompleteOnly ? handleCompleteProfile : handleRegister;
+  const role = isCompleteOnly ? (mode === 'employer' ? 'employer' : 'worker') : 'worker';
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -94,10 +148,12 @@ export default function RegisterScreen() {
         {/* Center form */}
         <View style={styles.center}>
           <Text variant="h2" weight="bold" align="center" color="#0F172A">
-            Create your account
+            {isCompleteOnly ? 'Complete your profile' : 'Create your account'}
           </Text>
           <Text variant="body" color={Colors.textSecondary} align="center" style={styles.subtitle}>
-            Join Gigro and start earning from jobs nearby today
+            {isCompleteOnly
+              ? 'We found a new number. Finish your profile to get started'
+              : 'Join Gigro and start earning from jobs nearby today'}
           </Text>
 
           <View style={styles.form}>
@@ -111,22 +167,33 @@ export default function RegisterScreen() {
                 setName(text);
                 if (nameError) setNameError('');
               }}
-              onSubmitEditing={() => phoneRef.current?.focus()}
+              onSubmitEditing={() => (isCompleteOnly ? Keyboard.dismiss() : phoneRef.current?.focus())}
               error={nameError}
             />
 
-            <Input
-              inputRef={phoneRef}
-              placeholder="Mobile number"
-              keyboardType="phone-pad"
-              maxLength={10}
-              value={phone}
-              onChangeText={(text) => {
-                setPhone(text.replace(/[^0-9]/g, ''));
-                if (phoneError) setPhoneError('');
-              }}
-              error={phoneError}
-            />
+            {!isCompleteOnly && (
+              <Input
+                inputRef={phoneRef}
+                placeholder="Mobile number"
+                keyboardType="phone-pad"
+                maxLength={10}
+                value={phone}
+                onChangeText={(text) => {
+                  setPhone(text.replace(/[^0-9]/g, ''));
+                  if (phoneError) setPhoneError('');
+                }}
+                error={phoneError}
+              />
+            )}
+
+            {isCompleteOnly && verifiedPhone ? (
+              <View style={styles.verifiedPhone}>
+                <Icon name="checkmark-circle" size={18} color="#059669" />
+                <Text variant="bodySm" color="#0F172A">
+                  +91 {verifiedPhone}
+                </Text>
+              </View>
+            ) : null}
 
             {/* City selector */}
             <View style={styles.fieldContainer}>
@@ -160,12 +227,18 @@ export default function RegisterScreen() {
               ) : null}
             </View>
 
+            {error ? (
+              <Text variant="caption" color={Colors.danger} style={styles.errorText}>
+                {error}
+              </Text>
+            ) : null}
+
             <Button
-              title="Create Account & Send OTP"
+              title={isCompleteOnly ? 'Create Profile' : 'Create Account & Send OTP'}
               size="lg"
               fullWidth
               loading={loading}
-              onPress={handleRegister}
+              onPress={submit}
               style={styles.button}
             />
           </View>
@@ -299,6 +372,13 @@ const styles = StyleSheet.create({
   },
   cityPlaceholder: {
     color: Colors.textMuted,
+  },
+  verifiedPhone: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: Spacing.xs,
+    paddingBottom: Spacing.md,
   },
   errorText: {
     marginTop: Spacing.xs,

@@ -1,4 +1,4 @@
-﻿import React, { useRef, useState } from 'react';
+﻿import React, { useRef, useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -20,10 +20,11 @@ import { BannerCarousel, Banner as HomeBanner } from '../../../src/components/Ba
 import { Colors, Spacing, BorderRadius, Shadows } from '../../../src/constants/theme';
 import { useApplicationsStore } from '../../../src/store/applicationsStore';
 import { useAuthStore } from '../../../src/store/authStore';
+import { useWalletStore } from '../../../src/store/walletStore';
 import { useMessagesStore } from '../../../src/store/messagesStore';
 import { useUserModeStore } from '../../../src/store/userModeStore';
 import { useLocationStore } from '../../../src/store/locationStore';
-import { AREA_JOB_COUNT } from '../../../src/services/location';
+import { useJobsStore, areaJobCount, WorkerJob } from '../../../src/store/jobsStore';
 
 interface ServiceCategory {
   id: string;
@@ -125,11 +126,40 @@ export default function WorkerHomeScreen() {
   const userName = useAuthStore((s) => s.user?.name);
   const firstName = userName?.split(' ')[0] || 'there';
   const applications = useApplicationsStore((s) => s.applications);
-  const readThreadIds = useMessagesStore((s) => s.readThreadIds);
-  const unreadCount = applications.filter((a) => !readThreadIds.includes(a.jobId)).length;
+  const unreadCount = useMessagesStore((s) =>
+    Object.values(s.threadMeta).reduce((n, t) => n + (t.unread > 0 ? 1 : 0), 0)
+  );
   const locationLabel = useLocationStore((s) => s.label);
   const locationAddress = useLocationStore((s) => s.address);
-  const jobsNearby = AREA_JOB_COUNT[locationLabel] ?? 24;
+  const liveJobs = useJobsStore((s) => s.jobs);
+  const loadJobs = useJobsStore((s) => s.loadJobs);
+  const jobsNearby =
+    locationLabel.toLowerCase() === 'current location'
+      ? liveJobs.length
+      : areaJobCount(liveJobs, locationLabel, locationAddress);
+  const highestPay = liveJobs.length ? Math.max(...liveJobs.map((j) => j.salaryNum)) : 0;
+  const totalEarned = useWalletStore((s) => s.totalEarned);
+  const completedGigs = applications.filter((a) => a.status === 'COMPLETED').length;
+  const avgDaily = completedGigs > 0 ? Math.round(totalEarned / completedGigs) : 0;
+
+  useEffect(() => {
+    loadJobs().catch(() => {});
+  }, [loadJobs]);
+
+  const topJob = liveJobs.reduce<WorkerJob | null>(
+    (best, j) => (!best || j.salaryNum > best.salaryNum ? j : best),
+    null
+  );
+  const homeBanners: HomeBanner[] = HOME_BANNERS.map((b) =>
+    b.id === 'highpay'
+      ? {
+          ...b,
+          subtitle: topJob
+            ? `${topJob.category} roles paying up to ₹${topJob.salaryNum.toLocaleString('en-IN')}/day right now`
+            : 'High-paying gigs land here daily',
+        }
+      : b
+  );
 
   const scrollY = useRef(new Animated.Value(0)).current;
 
@@ -269,7 +299,7 @@ export default function WorkerHomeScreen() {
 
           {/* Promo Banner Carousel */}
           <FadeSlide delay={80}>
-            <BannerCarousel banners={HOME_BANNERS} />
+            <BannerCarousel banners={homeBanners} />
           </FadeSlide>
 
           {/* Select Your Services Category Grid */}
@@ -350,7 +380,7 @@ export default function WorkerHomeScreen() {
               <View style={styles.statDivider} />
               <View style={styles.statCol}>
                 <Text variant="h3" weight="heavy" color="#FFFFFF">
-                  ₹1,200
+                  {highestPay > 0 ? `₹${highestPay.toLocaleString('en-IN')}` : '—'}
                 </Text>
                 <Text variant="caption" weight="medium" color="#94A3B8">
                   Highest pay today
@@ -359,7 +389,7 @@ export default function WorkerHomeScreen() {
               <View style={styles.statDivider} />
               <View style={styles.statCol}>
                 <Text variant="h3" weight="heavy" color="#FFFFFF">
-                  ₹550
+                  {avgDaily > 0 ? `₹${avgDaily.toLocaleString('en-IN')}` : '—'}
                 </Text>
                 <Text variant="caption" weight="medium" color="#94A3B8">
                   Avg. daily earning

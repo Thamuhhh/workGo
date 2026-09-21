@@ -4,16 +4,24 @@ import { Icon as Ionicons } from '../../src/components/Icon';
 import { Text, Card, Button } from '../../src/components/ui';
 import { ScreenSkeleton, usePageLoading } from '../../src/components/ui/PageSkeleton';
 import { Colors, Spacing, BorderRadius } from '../../src/constants/theme';
-
-const DOCS = [
-  { icon: 'business-outline', title: 'Aadhaar Card', meta: '**** 4821', status: 'Verified', verified: true },
-  { icon: 'car-outline', title: 'Driving Licence', meta: 'Not required for freelancing jobs', status: 'Optional', verified: false },
-  { icon: 'bank', title: 'Bank Account', meta: 'HDFC • •••• 2214', status: 'Verified', verified: true },
-  { icon: 'phone', title: 'Mobile Number', meta: '+91 98765 43210', status: 'Verified', verified: true },
-  { icon: 'person-outline', title: 'PAN Card', meta: 'Not submitted', status: 'Pending', verified: false },
-];
+import { useAuthStore } from '../../src/store/authStore';
+import { useWalletStore } from '../../src/store/walletStore';
 
 export default function KycScreen() {
+  const user = useAuthStore((s) => s.user);
+  const upiId = useWalletStore((s) => s.upiId);
+
+  const docs = [
+    { icon: 'business-outline', title: 'Aadhaar Card', meta: 'Not required for gig jobs', status: 'Optional', verified: false },
+    { icon: 'bank', title: 'Bank Account (UPI)', meta: upiId ? upiId : 'Not linked yet', status: upiId ? 'Verified' : 'Pending', verified: Boolean(upiId) },
+    { icon: 'phone', title: 'Mobile Number', meta: user?.phone ? `+91 ${user.phone}` : 'Not set', status: user?.phone ? 'Verified' : 'Pending', verified: Boolean(user?.phone) },
+    { icon: 'location-outline', title: 'Address', meta: user?.location?.city || user?.location?.address || 'Not added', status: user?.location?.city || user?.location?.address ? 'Verified' : 'Pending', verified: Boolean(user?.location?.city || user?.location?.address) },
+    { icon: 'person-outline', title: 'PAN Card', meta: 'Not submitted', status: 'Pending', verified: false },
+  ];
+
+  const done = docs.filter((d) => d.verified).length;
+  const pct = Math.round((done / docs.length) * 100);
+
   if (usePageLoading()) return <ScreenSkeleton variant="form" />;
 
   return (
@@ -25,10 +33,12 @@ export default function KycScreen() {
           </View>
           <View style={styles.heroCol}>
             <Text variant="h3" weight="bold" color="#0F172A">
-              Identity verified
+              {done === docs.length ? 'All set!' : 'Identity verified'}
             </Text>
             <Text variant="bodySm" color={Colors.textSecondary}>
-              Your profile is 70% complete. Complete KYC to unlock more jobs.
+              {done === docs.length
+                ? 'Your profile is complete. You are ready for work.'
+                : `${done} of ${docs.length} documents verified · ${pct}% complete.`}
             </Text>
           </View>
         </View>
@@ -38,9 +48,9 @@ export default function KycScreen() {
         DOCUMENTS
       </Text>
       <Card padding="sm" variant="flat" style={styles.docCard}>
-        {DOCS.map((doc, index) => (
+        {docs.map((doc, index) => (
           <TouchableOpacity key={doc.title} activeOpacity={0.7}>
-            <View style={[styles.docRow, index === DOCS.length - 1 && styles.docRowLast]}>
+            <View style={[styles.docRow, index === docs.length - 1 && styles.docRowLast]}>
               <View style={[styles.docIcon, doc.verified && styles.docIconDone]}>
                 <Ionicons
                   name={doc.icon}
@@ -76,7 +86,7 @@ export default function KycScreen() {
         variant="outline"
       />
       <Text variant="caption" color={Colors.textMuted} align="center" style={styles.note}>
-        Verification is instant in demo mode. Real KYC needs UIDAI + bank APIs.
+        Your verification status is matched against the details on your registered profile.
       </Text>
     </ScrollView>
   );

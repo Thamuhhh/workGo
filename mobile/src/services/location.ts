@@ -23,20 +23,6 @@ export const QUICK_AREAS = [
   'Tambaram',
 ];
 
-export const AREA_JOB_COUNT: Record<string, number> = {
-  Home: 34,
-  Work: 27,
-  Kanchipuram: 12,
-  Chengalpattu: 9,
-  Madurantakam: 6,
-  Sriperumbudur: 14,
-  Uthiramerur: 4,
-  Oragadam: 11,
-  'Maraimalai Nagar': 8,
-  Tambaram: 21,
-  'Current location': 18,
-};
-
 export const AREA_COORDS: Record<string, [number, number]> = {
   Home: [79.7, 12.8352],
   Work: [80.211, 13.0827],

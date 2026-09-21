@@ -10,8 +10,6 @@ export const getHealth = (req: Request, res: Response): void => {
     environment: env.NODE_ENV,
     database: {
       connected: dbStatus.isConnected,
-      host: dbStatus.host || null,
-      name: dbStatus.name || null,
     },
     service: 'workgo-server',
     version: '1.0.0',

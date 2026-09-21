@@ -42,7 +42,11 @@ export const getMe = async (): Promise<UserProfile> => {
   return res.data.user as UserProfile;
 };
 
-export const updateMe = async (patch: Partial<UserProfile>): Promise<UserProfile> => {
+export interface UpdateMePayload extends Partial<UserProfile> {
+  city?: string;
+}
+
+export const updateMe = async (patch: UpdateMePayload): Promise<UserProfile> => {
   const res = await apiClient.patch('/auth/me', patch);
   return res.data.user as UserProfile;
 };

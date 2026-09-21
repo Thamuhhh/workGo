@@ -20,4 +20,15 @@ if (!parsedEnv.success) {
   process.exit(1);
 }
 
+if (
+  parsedEnv.data.NODE_ENV === 'production' &&
+  (!process.env.JWT_SECRET ||
+    process.env.JWT_SECRET === 'workgo_super_secret_jwt_key_2026_change_in_production')
+) {
+  console.error(
+    'FATAL: JWT_SECRET must be set to a strong, unique secret in production (set JWT_SECRET env var).'
+  );
+  process.exit(1);
+}
+
 export const env = parsedEnv.data;

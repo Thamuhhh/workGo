@@ -4,5 +4,7 @@ export * from './Application';
 export * from './Booking';
 export * from './Review';
 export * from './Notification';
+export * from './Message';
 export * from './Report';
 export * from './Category';
+export * from './Wallet';

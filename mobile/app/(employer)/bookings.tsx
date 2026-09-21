@@ -14,8 +14,8 @@ import { ScreenSkeleton, usePageLoading } from '../../src/components/ui/PageSkel
 import { FadeSlide } from '../../src/components/AppHeader';
 import { Icon as Ionicons } from '../../src/components/Icon';
 import { Colors, Spacing, BorderRadius } from '../../src/constants/theme';
-import { useApplicationsStore } from '../../src/store/applicationsStore';
 import { usePaymentsStore } from '../../src/store/paymentsStore';
+import { fetchHiredWorkers, updateApplicationStatus } from '../../src/services/applications';
 
 type WorkerStatus = 'NOT_STARTED' | 'WORKING' | 'COMPLETED';
 
@@ -29,11 +29,7 @@ interface HiredWorker {
   paid: boolean;
 }
 
-const INITIAL_WORKERS: HiredWorker[] = [
-  { id: 'w1', name: 'Arun Kumar', job: 'Wedding Catering Staff', area: 'Kanchipuram', pay: 900, status: 'NOT_STARTED', paid: false },
-  { id: 'w2', name: 'Priya R', job: 'Event Coordinator', area: 'Chengalpattu', pay: 1100, status: 'NOT_STARTED', paid: false },
-  { id: 'w3', name: 'Murugan S', job: 'Wedding Catering Staff', area: 'Kanchipuram', pay: 900, status: 'WORKING', paid: false },
-];
+const INITIAL_WORKERS: HiredWorker[] = [];
 
 const FEEDBACK_OPTIONS = ['Punctual', 'Hardworking', 'Great attitude', 'Follows instructions'];
 const UPI_APPS = [
@@ -57,8 +53,33 @@ const STATUS_LABEL: Record<WorkerStatus, string> = {
 
 export default function EmployerBookingsScreen() {
   const [workers, setWorkers] = useState<HiredWorker[]>(INITIAL_WORKERS);
-  const markCompleted = useApplicationsStore((s) => s.markCompleted);
+  const [loading, setLoading] = useState(true);
   const createPayment = usePaymentsStore((s) => s.createPayment);
+
+  useEffect(() => {
+    let alive = true;
+    fetchHiredWorkers()
+      .then((list) => {
+        if (!alive) return;
+        setWorkers(
+          list.map((w) => ({
+            id: w.id,
+            name: w.workerName,
+            job: w.jobTitle,
+            area: w.workerArea,
+            pay: w.salaryNum,
+            status: w.status === 'COMPLETED' ? 'COMPLETED' : 'NOT_STARTED',
+            paid: false,
+          }))
+        );
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const [completing, setCompleting] = useState<HiredWorker | null>(null);
   const [payingAll, setPayingAll] = useState(false);
@@ -120,7 +141,7 @@ export default function EmployerBookingsScreen() {
 
   const updateStatus = (id: string, status: WorkerStatus) => {
     setWorkers((prev) => prev.map((w) => (w.id === id ? { ...w, status } : w)));
-    if (status === 'COMPLETED') markCompleted(id);
+    if (status === 'COMPLETED') updateApplicationStatus(id, 'COMPLETED');
   };
 
   const handlePayAll = () => {
@@ -213,6 +234,7 @@ export default function EmployerBookingsScreen() {
   };
 
   if (usePageLoading()) return <ScreenSkeleton variant="list" />;
+  if (loading) return <ScreenSkeleton variant="list" />;
 
   const completedCount = workers.filter((w) => w.status === 'COMPLETED' && !w.paid).length;
   const workingCount = workers.filter((w) => w.status === 'WORKING').length;

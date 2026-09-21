@@ -16,7 +16,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, SkeletonJobCard } from '../src/components/ui';
 import { FadeSlide, ScalePress } from '../src/components/AppHeader';
 import { Colors, Spacing, BorderRadius } from '../src/constants/theme';
-import { SAMPLE_JOBS } from '../src/data/sampleJobs';
+import { useJobsStore, toWorkerJob, WorkerJob } from '../src/store/jobsStore';
+import { getJobs } from '../src/services/jobs';
 
 const POPULAR = ['Wedding', 'Catering', 'Promoter', 'Cleaner', 'MC/Anchor', 'Coordinator'];
 
@@ -44,44 +45,56 @@ function SectionTitle({ children }: { children: string }) {
 
 export default function SearchScreen() {
   const [query, setQuery] = useState('');
+  const allJobs = useJobsStore((s) => s.jobs);
+  const loadJobs = useJobsStore((s) => s.loadJobs);
   const headerAnim = useRef(new Animated.Value(0)).current;
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
+    loadJobs();
     Animated.timing(headerAnim, {
       toValue: 1,
       duration: 380,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
     }).start();
-  }, [headerAnim]);
+  }, [headerAnim, loadJobs]);
 
   const headerOpacity = headerAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
   const headerY = headerAnim.interpolate({ inputRange: [0, 1], outputRange: [-16, 0] });
 
   const trimmed = query.trim().toLowerCase();
-  const [displayJobs, setDisplayJobs] = useState<(typeof SAMPLE_JOBS)[number][] | null>(null);
+  const [displayJobs, setDisplayJobs] = useState<WorkerJob[] | null>(null);
   const [focused, setFocused] = useState(false);
 
   useEffect(() => {
-    const q = query.trim().toLowerCase();
+    const q = query.trim();
     if (!q) {
       setDisplayJobs(null);
       return;
     }
+    let alive = true;
     setDisplayJobs(null);
-    const t = setTimeout(() => {
-      const next = SAMPLE_JOBS.filter(
+    const t = setTimeout(async () => {
+      const fallback = allJobs.filter(
         (j) =>
-          j.title.toLowerCase().includes(q) ||
-          j.category.toLowerCase().includes(q) ||
-          j.location.toLowerCase().includes(q) ||
-          j.employerName.toLowerCase().includes(q)
+          j.title.toLowerCase().includes(q.toLowerCase()) ||
+          j.category.toLowerCase().includes(q.toLowerCase()) ||
+          j.location.toLowerCase().includes(q.toLowerCase()) ||
+          j.employerName.toLowerCase().includes(q.toLowerCase())
       );
-      setDisplayJobs(next);
-    }, 650);
-    return () => clearTimeout(t);
-  }, [query]);
+      try {
+        const results = await getJobs({ q });
+        if (alive) setDisplayJobs(results.length ? results.map(toWorkerJob) : []);
+      } catch {
+        if (alive) setDisplayJobs(fallback);
+      }
+    }, 400);
+    return () => {
+      alive = false;
+      clearTimeout(t);
+    };
+  }, [query, allJobs]);
 
   return (
     <LinearGradient

@@ -4,8 +4,7 @@ import { Icon as Ionicons } from '../../src/components/Icon';
 import { Text, Card } from '../../src/components/ui';
 import { ScreenSkeleton, usePageLoading } from '../../src/components/ui/PageSkeleton';
 import { Colors, Spacing, BorderRadius } from '../../src/constants/theme';
-
-const REFERRAL_CODE = 'KG72H4';
+import { useAuthStore } from '../../src/store/authStore';
 
 const STEPS = [
   { icon: 'share', title: 'Share your code', sub: 'WhatsApp, SMS or any chat app' },
@@ -13,18 +12,13 @@ const STEPS = [
   { icon: 'wallet-outline', title: 'Both earn ₹100', sub: 'Bonus lands in both wallets within 24 hours' },
 ];
 
-const INVITES = [
-  { name: 'Rahul S.', status: 'Earned', amount: '+₹100', time: 'Today' },
-  { name: 'Mohan K.', status: 'Earned', amount: '+₹100', time: 'Yesterday' },
-  { name: 'Priya V.', status: 'Pending', amount: '₹100', time: 'Started signup' },
-  { name: 'Suresh B.', status: 'Pending', amount: '₹100', time: 'Not yet worked' },
-] as const;
-
 export default function ReferScreen() {
   const [copied, setCopied] = useState(false);
   const [shared, setShared] = useState(false);
+  const phone = useAuthStore((s) => s.user?.phone ?? '000000');
+  const referralCode = `WF${phone.slice(-6)}`;
 
-  const text = `Work around the corner and earn daily. Use my Gigro code ${REFERRAL_CODE} when you sign up — we both get ₹100!`;
+  const text = `Work around the corner and earn daily. Use my Gigro code ${referralCode} when you sign up — we both get ₹100!`;
 
   const flash = (setter: (v: boolean) => void) => {
     setter(true);
@@ -77,7 +71,7 @@ export default function ReferScreen() {
                 YOUR REFERRAL CODE
               </Text>
               <Text variant="h2" weight="heavy" color="#0F172A" style={styles.codeText}>
-                {REFERRAL_CODE}
+                {referralCode}
               </Text>
             </View>
             <TouchableOpacity
@@ -106,7 +100,7 @@ export default function ReferScreen() {
         <View style={styles.rewardRow}>
           <View style={styles.rewardBlock}>
             <Text variant="h3" weight="bold" color="#0F172A">
-              ₹{INVITES.filter((i) => i.status === 'Earned').length * 100}
+              ₹0
             </Text>
             <Text variant="caption" color={Colors.textMuted}>
               Bonuses earned
@@ -115,7 +109,7 @@ export default function ReferScreen() {
           <View style={styles.rewardDivider} />
           <View style={styles.rewardBlock}>
             <Text variant="h3" weight="bold" color="#0F172A">
-              {INVITES.filter((i) => i.status === 'Earned').length}
+              0
             </Text>
             <Text variant="caption" color={Colors.textMuted}>
               Friends joined
@@ -164,29 +158,19 @@ export default function ReferScreen() {
           Your invites
         </Text>
         <Card padding="lg" variant="outlined" style={styles.sectionCard}>
-          {INVITES.map((inv, index) => {
-            const isEarned = inv.status === 'Earned';
-            return (
-              <View key={inv.name} style={[styles.inviteRow, index === INVITES.length - 1 && styles.stepRowLast]}>
-                <View style={[styles.inviteAvatar, isEarned && styles.inviteAvatarEarned]}>
-                  <Text variant="body" weight="heavy" color={isEarned ? '#16A34A' : '#94A3B8'}>
-                    {inv.name.charAt(0)}
-                  </Text>
-                </View>
-                <View style={styles.stepMiddle}>
-                  <Text variant="body" weight="bold" color="#0F172A">
-                    {inv.name}
-                  </Text>
-                  <Text variant="caption" color={Colors.textMuted}>
-                    {inv.time}
-                  </Text>
-                </View>
-                <Text variant="caption" weight="bold" color={isEarned ? '#16A34A' : Colors.textMuted}>
-                  {isEarned ? inv.amount : inv.status}
-                </Text>
-              </View>
-            );
-          })}
+          <View style={styles.inviteRow}>
+            <View style={styles.inviteAvatar}>
+              <Ionicons name="people-outline" size={17} color="#94A3B8" />
+            </View>
+            <View style={styles.stepMiddle}>
+              <Text variant="body" weight="bold" color="#0F172A">
+                No referrals yet
+              </Text>
+              <Text variant="caption" color={Colors.textMuted}>
+                Share your code above — every friend who joins earns you ₹100.
+              </Text>
+            </View>
+          </View>
         </Card>
 
         {/* Terms */}

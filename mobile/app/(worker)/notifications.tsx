@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Icon as Ionicons } from '../../src/components/Icon';
 import { Text } from '../../src/components/ui';
@@ -22,7 +22,12 @@ export default function NotificationsScreen() {
   const notifications = useNotificationsStore((s) => s.notifications);
   const markRead = useNotificationsStore((s) => s.markRead);
   const markAllRead = useNotificationsStore((s) => s.markAllRead);
+  const loadNotifications = useNotificationsStore((s) => s.loadNotifications);
   const [segment, setSegment] = useState<'all' | 'unread'>('all');
+
+  useEffect(() => {
+    loadNotifications();
+  }, [loadNotifications]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
   const list = segment === 'all' ? notifications : notifications.filter((n) => !n.read);

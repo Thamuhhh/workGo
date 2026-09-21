@@ -18,10 +18,10 @@ import { ScalePress } from '../../src/components/AppHeader';
 import { LocationPickerMap } from '../../src/components/LocationPickerMap';
 import { Colors, Spacing, BorderRadius } from '../../src/constants/theme';
 import { useLocationStore } from '../../src/store/locationStore';
+import { useJobsStore, areaJobCount } from '../../src/store/jobsStore';
 import {
   SAVED_PLACES,
   QUICK_AREAS,
-  AREA_JOB_COUNT,
   AREA_COORDS,
   AreaOption,
   nearestArea,
@@ -35,6 +35,12 @@ export default function LocationPickerScreen() {
   const savedLabel = useLocationStore((s) => s.label);
   const savedAddress = useLocationStore((s) => s.address);
   const setLocation = useLocationStore((s) => s.setLocation);
+  const allJobs = useJobsStore((s) => s.jobs);
+
+  const jobCountForArea = (label: string) =>
+    label.toLowerCase() === 'current location'
+      ? allJobs.length
+      : areaJobCount(allJobs, label);
 
   const [query, setQuery] = useState('');
   const [picked, setPicked] = useState<AreaOption>({ label: savedLabel, address: savedAddress });
@@ -52,6 +58,12 @@ export default function LocationPickerScreen() {
       if (searchTimer.current) clearTimeout(searchTimer.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (allJobs.length === 0) {
+      useJobsStore.getState().loadJobs().catch(() => {});
+    }
+  }, [allJobs.length]);
 
   useEffect(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current);
@@ -258,7 +270,7 @@ export default function LocationPickerScreen() {
                       {a}
                     </Text>
                     <Text variant="caption" color="#64748B">
-                      {AREA_JOB_COUNT[a] ?? 0} jobs near here
+                      {jobCountForArea(a) > 0 ? `${jobCountForArea(a)} jobs near here` : 'No jobs in this area yet'}
                     </Text>
                   </View>
                   {isPicked(a) && (
@@ -425,7 +437,7 @@ export default function LocationPickerScreen() {
                         color={isPicked(a) ? '#E0F2FE' : '#94A3B8'}
                         numberOfLines={1}
                       >
-                        {AREA_JOB_COUNT[a] ?? 0} jobs
+                        {jobCountForArea(a) > 0 ? `${jobCountForArea(a)} jobs` : 'No jobs yet'}
                       </Text>
                     </TouchableOpacity>
                   ))}

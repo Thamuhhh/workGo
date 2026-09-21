@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import apiClient from '../services/api';
 
 export interface WalletTxn {
   id: string;
@@ -14,92 +15,85 @@ interface WalletState {
   totalEarned: number;
   upiId: string;
   transactions: WalletTxn[];
-  credit: (title: string, meta: string, amount: number) => void;
-  debit: (title: string, meta: string, amount: number) => void;
-  addMoney: (amount: number) => void;
-  withdraw: () => boolean;
+  loading: boolean;
+  addMoney: (amount: number) => Promise<boolean>;
+  withdraw: () => Promise<boolean>;
   setUpiId: (id: string) => void;
   loadStoredWallet: () => Promise<void>;
 }
 
 const WALLET_STORAGE_KEY = '@workgo_wallet';
 
-const mins = (n: number) => new Date(Date.now() - n * 60000).toISOString();
-const hours = (n: number) => new Date(Date.now() - n * 3600000).toISOString();
+interface ServerWallet {
+  id: string;
+  balance: number;
+  totalEarned: number;
+  upiId: string;
+  transactions: WalletTxn[];
+}
 
-const SEED_TXNS: WalletTxn[] = [
-  { id: 't1', title: 'Catering Helper — Day job', meta: 'Sharon Catering • 10:42 AM', amount: 800, timestamp: hours(8) },
-  { id: 't2', title: 'Retail Promoter — Store', meta: 'BigMart • 08:15 AM', amount: 750, timestamp: hours(11) },
-  { id: 't3', title: 'Instant withdrawal to UPI', meta: 'arun*****@okhdfc • yesterday', amount: -500, timestamp: hours(25) },
-  { id: 't4', title: 'Event Support — Weekend', meta: 'RPS Events • Sep 12', amount: 1200, timestamp: hours(30) },
-  { id: 't5', title: 'Service fee', meta: 'Gigro • Sep 12', amount: -20, timestamp: mins(1800) },
-];
+const applyWallet = (set: (patch: Partial<WalletState>) => void, w: ServerWallet) => {
+  set({
+    balance: w.balance ?? 0,
+    totalEarned: w.totalEarned ?? 0,
+    upiId: w.upiId ?? '',
+    transactions: (w.transactions ?? [])
+      .slice()
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
+  });
+  // Merge only persisted wallet fields so loadStoredWallet cache stays in one shape.
+};
+
+const getWalletFromServer = async (): Promise<ServerWallet | null> => {
+  try {
+    const { data } = await apiClient.get('/wallet');
+    return data?.wallet ?? null;
+  } catch {
+    return null;
+  }
+};
 
 export const useWalletStore = create<WalletState>((set, get) => ({
-  balance: 2430,
-  totalEarned: 2750,
-  upiId: 'arun*****@okhdfc',
-  transactions: SEED_TXNS,
+  balance: 0,
+  totalEarned: 0,
+  upiId: '',
+  transactions: [],
+  loading: false,
 
-  credit: (title, meta, amount) => {
-    const txn: WalletTxn = {
-      id: `t${Date.now()}`,
-      title,
-      meta,
-      amount,
-      timestamp: new Date().toISOString(),
-    };
-    const s = get();
-    set({
-      transactions: [txn, ...s.transactions],
-      balance: s.balance + amount,
-      totalEarned: s.totalEarned + amount,
-    });
-    AsyncStorage.setItem(WALLET_STORAGE_KEY, JSON.stringify(get())).catch(() => {});
+  addMoney: async (amount) => {
+    try {
+      const { data } = await apiClient.post('/wallet/add', { amount });
+      if (data?.wallet) {
+        applyWallet(set, data.wallet);
+        AsyncStorage.setItem(WALLET_STORAGE_KEY, JSON.stringify(get())).catch(() => {});
+        return true;
+      }
+    } catch (e: any) {
+      console.warn('addMoney failed:', e?.message);
+    }
+    return false;
   },
 
-  debit: (title, meta, amount) => {
-    const txn: WalletTxn = {
-      id: `t${Date.now()}`,
-      title,
-      meta,
-      amount: -Math.abs(amount),
-      timestamp: new Date().toISOString(),
-    };
-    const s = get();
-    set({ transactions: [txn, ...s.transactions], balance: s.balance - Math.abs(amount) });
-    AsyncStorage.setItem(WALLET_STORAGE_KEY, JSON.stringify(get())).catch(() => {});
+  withdraw: async () => {
+    if (get().balance <= 0) return false;
+    try {
+      const { data } = await apiClient.post('/wallet/withdraw');
+      if (data?.wallet) {
+        applyWallet(set, data.wallet);
+        AsyncStorage.setItem(WALLET_STORAGE_KEY, JSON.stringify(get())).catch(() => {});
+        return true;
+      }
+    } catch (e: any) {
+      console.warn('withdraw failed:', e?.message);
+    }
+    return false;
   },
 
-  addMoney: (amount) => {
-    const txn: WalletTxn = {
-      id: `t${Date.now()}`,
-      title: 'Added to wallet',
-      meta: 'Instant UPI • Demo',
-      amount,
-      timestamp: new Date().toISOString(),
-    };
-    const s = get();
-    set({ transactions: [txn, ...s.transactions], balance: s.balance + amount });
+  setUpiId: (id) => {
+    set({ upiId: id });
+    apiClient.patch('/wallet/upi', { upiId: id }).catch(() => {});
     AsyncStorage.setItem(WALLET_STORAGE_KEY, JSON.stringify(get())).catch(() => {});
   },
-
-  withdraw: () => {
-    const s = get();
-    if (s.balance <= 0) return false;
-    const txn: WalletTxn = {
-      id: `t${Date.now()}`,
-      title: 'Instant withdrawal to UPI',
-      meta: s.upiId,
-      amount: -s.balance,
-      timestamp: new Date().toISOString(),
-    };
-    set({ transactions: [txn, ...s.transactions], balance: 0 });
-    AsyncStorage.setItem(WALLET_STORAGE_KEY, JSON.stringify(get())).catch(() => {});
-    return true;
-  },
-
-  setUpiId: (id) => set({ upiId: id }),
 
   loadStoredWallet: async () => {
     try {
@@ -107,14 +101,20 @@ export const useWalletStore = create<WalletState>((set, get) => ({
       if (raw) {
         const parsed = JSON.parse(raw);
         set({
-          balance: parsed.balance ?? 2430,
-          totalEarned: parsed.totalEarned ?? 2750,
-          upiId: parsed.upiId ?? 'arun*****@okhdfc',
-          transactions: parsed.transactions ?? SEED_TXNS,
+          balance: parsed.balance ?? 0,
+          totalEarned: parsed.totalEarned ?? 0,
+          upiId: parsed.upiId ?? '',
+          transactions: parsed.transactions ?? [],
         });
       }
     } catch (e) {
       console.error('Failed to read wallet from storage:', e);
+    }
+
+    const server = await getWalletFromServer();
+    if (server) {
+      applyWallet(set, server);
+      AsyncStorage.setItem(WALLET_STORAGE_KEY, JSON.stringify(get())).catch(() => {});
     }
   },
 }));

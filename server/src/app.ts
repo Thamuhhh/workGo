@@ -5,6 +5,16 @@ import morgan from 'morgan';
 import apiRoutes from './routes';
 import healthRoutes from './routes/healthRoutes';
 import { errorHandler } from './middleware/errorHandler';
+import { env } from './config/env';
+
+const ALLOWED_ORIGINS = Array.from(
+  new Set(
+    (env.CLIENT_URL || 'http://localhost:3000,http://localhost:8081')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+  )
+);
 
 export const createApp = (): Application => {
   const app = express();
@@ -13,7 +23,13 @@ export const createApp = (): Application => {
   app.use(helmet());
   app.use(
     cors({
-      origin: '*', // Allow all during development; configure via env in production
+      origin: (origin, callback) => {
+        if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+          callback(null, true);
+          return;
+        }
+        callback(new Error('Not allowed by CORS'));
+      },
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],
     })

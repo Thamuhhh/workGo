@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useWalletStore } from './walletStore';
 
 export type PaymentStatus = 'PENDING' | 'PAID';
 
@@ -80,18 +79,6 @@ export const usePaymentsStore = create<PaymentsState>((set, get) => ({
     );
     set({ payments });
     AsyncStorage.setItem(PAYMENTS_STORAGE_KEY, JSON.stringify(payments)).catch(() => {});
-
-    const wallet = useWalletStore.getState();
-    wallet.debit(
-      `Paid to ${target.workerName}`,
-      `${target.title} • ${method}`,
-      target.amount
-    );
-    wallet.credit(
-      `Payment received — ${target.title}`,
-      `${target.employerName} • ${method}`,
-      target.amount
-    );
   },
 
   paymentForJob: (jobId) => get().payments.find((p) => p.jobId === jobId),
