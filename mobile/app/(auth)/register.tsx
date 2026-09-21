@@ -5,7 +5,7 @@ import { Text, Input, Button } from '../../src/components/ui';
 import { Icon } from '../../src/components/Icon';
 import { BottomSheet } from '../../src/components/BottomSheet';
 import { Colors, Spacing, BorderRadius } from '../../src/constants/theme';
-import { sendOtp } from '../../src/services/auth';
+import { sendPhoneOtp } from '../../src/services/phoneAuth';
 
 const CITIES = [
   'Chennai',
@@ -53,7 +53,7 @@ export default function RegisterScreen() {
 
     setLoading(true);
     try {
-      const res = await sendOtp(phone, 'register');
+      const res = await sendPhoneOtp(phone, 'register');
       setLoading(false);
       router.push({
         pathname: '/(auth)/otp',

@@ -46,3 +46,11 @@ export const updateMe = async (patch: Partial<UserProfile>): Promise<UserProfile
   const res = await apiClient.patch('/auth/me', patch);
   return res.data.user as UserProfile;
 };
+
+export const firebaseServerVerify = async (
+  idToken: string,
+  extra: { role?: UserRole; name?: string; email?: string; city?: string } = {}
+): Promise<VerifyOtpResponse> => {
+  const res = await apiClient.post('/auth/firebase', { idToken, ...extra });
+  return res.data as VerifyOtpResponse;
+};

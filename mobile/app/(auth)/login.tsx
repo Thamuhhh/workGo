@@ -3,7 +3,7 @@ import { View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Text, Input, Button } from '../../src/components/ui';
 import { Colors, Spacing } from '../../src/constants/theme';
-import { sendOtp } from '../../src/services/auth';
+import { sendPhoneOtp } from '../../src/services/phoneAuth';
 
 export default function LoginScreen() {
   const { mode } = useLocalSearchParams<{ mode?: string }>();
@@ -20,7 +20,7 @@ export default function LoginScreen() {
     setLoading(true);
 
     try {
-      const res = await sendOtp(phone, 'login');
+      const res = await sendPhoneOtp(phone, 'login');
       setLoading(false);
       router.push({
         pathname: '/(auth)/otp',

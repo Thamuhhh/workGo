@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { validateRequest } from '../middleware/validate';
 import { requireAuth } from '../middleware/auth';
-import { sendOtp, verifyOtp, getMe, updateMe } from '../controllers/authController';
+import { sendOtp, verifyOtp, firebaseLogin, getMe, updateMe } from '../controllers/authController';
 
 const router = Router();
 
@@ -34,6 +34,20 @@ router.post(
     }),
   }),
   verifyOtp
+);
+
+router.post(
+  '/firebase',
+  validateRequest({
+    body: z.object({
+      idToken: z.string().min(10),
+      role: z.enum(['worker', 'employer']).optional(),
+      name: z.string().min(2).max(60).optional(),
+      email: z.string().email().optional(),
+      city: z.string().min(2).max(60).optional(),
+    }),
+  }),
+  firebaseLogin
 );
 
 router.get('/me', requireAuth, getMe);

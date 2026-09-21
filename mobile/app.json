@@ -21,7 +21,8 @@
         "foregroundImage": "./assets/App W.png",
         "backgroundColor": "#FFFFFF"
       },
-      "package": "com.anonymous.workgo",
+      "package": "com.gigro1.app",
+      "googleServicesFile": "./google-services.json",
       "versionCode": 2
     },
     "web": {
@@ -32,6 +33,8 @@
     "plugins": [
       "expo-router",
       "@maplibre/maplibre-react-native",
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth",
       "expo-asset",
       [
         "expo-splash-screen",

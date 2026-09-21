@@ -10,6 +10,7 @@ const envSchema = z.object({
   JWT_SECRET: z.string().default('workgo_super_secret_jwt_key_2026_change_in_production'),
   JWT_EXPIRES_IN: z.string().default('7d'),
   CLIENT_URL: z.string().default('http://localhost:3000'),
+  FIREBASE_PROJECT_ID: z.string().default('gigro-573be'),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

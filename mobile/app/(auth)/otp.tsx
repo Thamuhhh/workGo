@@ -3,7 +3,7 @@ import { View, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity } fr
 import { useLocalSearchParams, router } from 'expo-router';
 import { Text, Input, Button } from '../../src/components/ui';
 import { Colors, Spacing } from '../../src/constants/theme';
-import { verifyOtp } from '../../src/services/auth';
+import { verifyPhoneOtp } from '../../src/services/phoneAuth';
 import { useAuthStore } from '../../src/store/authStore';
 import { useUserModeStore } from '../../src/store/userModeStore';
 
@@ -31,9 +31,7 @@ export default function OtpScreen() {
     setLoading(true);
 
     try {
-      const res = await verifyOtp({
-        phone,
-        otp,
+      const res = await verifyPhoneOtp(phone, otp, {
         role: mode === 'employer' ? 'employer' : 'worker',
         name,
         city,

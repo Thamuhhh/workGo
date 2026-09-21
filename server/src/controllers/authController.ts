@@ -28,6 +28,11 @@ const isDbReady = (res: Response): boolean => {
 
 type OtpPurpose = 'login' | 'register';
 
+const normalizePhone = (phone: string): string => {
+  const digits = String(phone).replace(/[^0-9]/g, '');
+  return digits.startsWith('91') && digits.length === 12 ? digits.slice(2) : digits;
+};
+
 const serializeUser = (u: any) => ({
   _id: u._id.toString(),
   name: u.name,
@@ -61,6 +66,52 @@ const signToken = (user: any): string =>
     env.JWT_SECRET,
     { expiresIn: env.JWT_EXPIRES_IN as jwt.SignOptions['expiresIn'] }
   );
+
+interface FindOrCreateInput {
+  phone: string;
+  role?: UserRole;
+  name?: string;
+  email?: string;
+  city?: string;
+}
+
+const findOrCreateUser = async ({ phone, role, name, email, city }: FindOrCreateInput): Promise<{ user: any; isNewUser: boolean }> => {
+  const targetRole: UserRole = role === 'employer' ? 'employer' : 'worker';
+  const existing = await User.findOne({ phone });
+
+  const set: any = {
+    role: targetRole,
+    name: name?.trim() || existing?.name || 'WorkGo User',
+  };
+  if (email?.trim()) set.email = email.trim();
+  if (city?.trim()) {
+    set.location = {
+      address: city.trim(),
+      latitude: 0,
+      longitude: 0,
+      city: city.trim(),
+    };
+  }
+
+  const user = await User.findOneAndUpdate(
+    { phone },
+    { $set: set, $setOnInsert: { isActive: true, isVerified: false } },
+    { new: true, upsert: true }
+  );
+
+  return { user, isNewUser: !existing };
+};
+
+const issueAuth = (user: any, isNewUser: boolean, res: Response): void => {
+  const token = signToken(user);
+  res.status(200).json({
+    success: true,
+    message: 'Verified successfully',
+    token,
+    user: serializeUser(user),
+    isNewUser,
+  });
+};
 
 export const sendOtp = async (req: Request, res: Response): Promise<void> => {
   if (!isDbReady(res)) return;
@@ -147,41 +198,65 @@ export const verifyOtp = async (req: Request, res: Response): Promise<void> => {
 
   await OtpVerification.deleteOne({ _id: record._id });
 
-  const targetRole: UserRole =
-    role === 'employer' ? 'employer' : role === 'worker' ? 'worker' : 'worker';
+  const { user, isNewUser } = await findOrCreateUser({ phone, role, name, email, city });
+  issueAuth(user, isNewUser, res);
+};
 
-  const existing = await User.findOne({ phone });
-
-  let createFields: any = {
-    phone,
-    role: targetRole,
-    name: name?.trim() || existing?.name || 'WorkGo User',
-    email: email?.trim() || existing?.email,
-  };
-  if (city?.trim()) {
-    createFields.location = {
-      address: city?.trim(),
-      latitude: 0,
-      longitude: 0,
-      city: city?.trim(),
-    };
-  }
-
-  const user = await User.findOneAndUpdate(
-    { phone },
-    { $set: createFields, $setOnInsert: { isActive: true, isVerified: false } },
-    { new: true, upsert: true }
+// Verifies a Firebase Auth ID token and signs a user in (or creates the account).
+// Uses Google's public tokeninfo endpoint so no service-account key is required;
+// fall back to firebase-admin by setting FIREBASE_SERVICE_ACCOUNT when going to prod.
+const verifyFirebaseIdToken = async (idToken: string): Promise<{ phone: string }> => {
+  const res = await fetch(
+    `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`
   );
 
-  const token = signToken(user);
+  if (!res.ok) {
+    throw Object.assign(new Error('Invalid or expired verification token.'), { status: 401 });
+  }
 
-  res.status(200).json({
-    success: true,
-    message: 'OTP verified successfully',
-    token,
-    user: serializeUser(user),
-    isNewUser: !existing,
-  });
+  const info = (await res.json()) as any;
+
+  const expectedIss = `https://securetoken.google.com/${env.FIREBASE_PROJECT_ID}`;
+  if (info.iss !== expectedIss) {
+    throw Object.assign(
+      new Error('Token was not issued by this Firebase project.'),
+      { status: 401 }
+    );
+  }
+
+  const phone = normalizePhone(info.phone_number ?? '');
+  if (!/^[6-9]\d{9}$/.test(phone)) {
+    throw Object.assign(
+      new Error('No valid phone number attached to this Firebase account.'),
+      { status: 400 }
+    );
+  }
+
+  return { phone };
+};
+
+export const firebaseLogin = async (req: Request, res: Response): Promise<void> => {
+  if (!isDbReady(res)) return;
+
+  const { idToken, role, name, email, city } = req.body as {
+    idToken: string;
+    role?: UserRole;
+    name?: string;
+    email?: string;
+    city?: string;
+  };
+
+  try {
+    const { phone } = await verifyFirebaseIdToken(idToken);
+    const { user, isNewUser } = await findOrCreateUser({ phone, role, name, email, city });
+    issueAuth(user, isNewUser, res);
+  } catch (e: any) {
+    res.status(e?.status || 500).json({
+      success: false,
+      message: e?.message || 'Firebase verification failed.',
+    });
+    return;
+  }
 };
 
 export const getMe = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
