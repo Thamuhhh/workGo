@@ -1,31 +1,58 @@
 ﻿import React, { useState } from 'react';
-import { View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Text, Input, Button } from '../../src/components/ui';
 import { Colors, Spacing } from '../../src/constants/theme';
+import { verifyOtp } from '../../src/services/auth';
+import { useAuthStore } from '../../src/store/authStore';
+import { useUserModeStore } from '../../src/store/userModeStore';
 
 export default function OtpScreen() {
-  const { phone, mode } = useLocalSearchParams<{ phone: string; mode?: string }>();
+  const { phone, mode, devOtp, name, city } = useLocalSearchParams<{
+    phone: string;
+    mode?: string;
+    devOtp?: string;
+    name?: string;
+    city?: string;
+  }>();
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleVerify = () => {
+  const login = useAuthStore((state) => state.login);
+  const setMode = useUserModeStore((state) => state.setMode);
+
+  const handleVerify = async () => {
     if (otp.length < 4) {
-      setError('Please enter the 4-digit code (Use 1234 for MVP demo)');
+      setError('Please enter the 4-digit code');
       return;
     }
     setError('');
     setLoading(true);
 
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const res = await verifyOtp({
+        phone,
+        otp,
+        role: mode === 'employer' ? 'employer' : 'worker',
+        name,
+        city,
+      });
+
+      await login(res.user, res.token);
+      await setMode(res.user.role);
+
       router.replace({
         pathname: '/(auth)/role-selection',
-        params: { initialRole: mode ?? 'worker' },
+        params: { initialRole: res.user.role },
       });
-    }, 600);
+    } catch (e: any) {
+      setLoading(false);
+      setError(e?.message || 'Could not verify OTP. Please try again.');
+    }
   };
+
+  const devHint = devOtp ? String(devOtp) : null;
 
   return (
     <KeyboardAvoidingView
@@ -59,7 +86,7 @@ export default function OtpScreen() {
             <Input
               placeholder="····"
               keyboardType="number-pad"
-              maxLength={6}
+              maxLength={4}
               value={otp}
               onChangeText={(text) => {
                 setOtp(text.replace(/[^0-9]/g, ''));
@@ -68,6 +95,22 @@ export default function OtpScreen() {
               error={error}
               style={styles.otpInput}
             />
+
+            {devHint ? (
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => setOtp(devHint)}
+                style={styles.demoChip}
+              >
+                <Text variant="caption" color="#059669">
+                  Demo code:{' '}
+                  <Text variant="caption" weight="bold" color="#047857">
+                    {devHint}
+                  </Text>
+                  {'  ·  Tap to fill'}
+                </Text>
+              </TouchableOpacity>
+            ) : null}
 
             <Button
               title="Verify & Continue"
@@ -128,6 +171,14 @@ const styles = StyleSheet.create({
     letterSpacing: 12,
     textAlign: 'center',
     paddingVertical: Spacing.md,
+  },
+  demoChip: {
+    alignSelf: 'center',
+    marginTop: Spacing.sm,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: '#ECFDF5',
   },
   button: {
     marginTop: Spacing.md,

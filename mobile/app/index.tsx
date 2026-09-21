@@ -1,8 +1,9 @@
-﻿import React, { useEffect } from 'react';
+﻿import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { router, useRootNavigationState } from 'expo-router';
 import { useAuthStore } from '../src/store/authStore';
 import { useUserModeStore } from '../src/store/userModeStore';
+import { getMe } from '../src/services/auth';
 import { Text, Button } from '../src/components/ui';
 import { Colors, Spacing } from '../src/constants/theme';
 
@@ -10,6 +11,19 @@ export default function EntryScreen() {
   const { isAuthenticated, isLoading } = useAuthStore();
   const { mode } = useUserModeStore();
   const rootNavigationState = useRootNavigationState();
+  const sessionChecked = useRef(false);
+
+  useEffect(() => {
+    if (!rootNavigationState?.key || !isAuthenticated) return;
+    if (sessionChecked.current) return;
+    sessionChecked.current = true;
+
+    getMe()
+      .then((freshUser) => useAuthStore.getState().updateUser(freshUser))
+      .catch(() => {
+        // 401 already logs the user out via the api client interceptor.
+      });
+  }, [rootNavigationState?.key, isAuthenticated]);
 
   useEffect(() => {
     if (!rootNavigationState?.key) return;

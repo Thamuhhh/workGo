@@ -3,6 +3,7 @@ import { View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Text, Input, Button } from '../../src/components/ui';
 import { Colors, Spacing } from '../../src/constants/theme';
+import { sendOtp } from '../../src/services/auth';
 
 export default function LoginScreen() {
   const { mode } = useLocalSearchParams<{ mode?: string }>();
@@ -10,7 +11,7 @@ export default function LoginScreen() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSendOtp = () => {
+  const handleSendOtp = async () => {
     if (!phone || phone.length < 10) {
       setError('Please enter a valid 10-digit mobile number');
       return;
@@ -18,13 +19,21 @@ export default function LoginScreen() {
     setError('');
     setLoading(true);
 
-    setTimeout(() => {
+    try {
+      const res = await sendOtp(phone, 'login');
       setLoading(false);
       router.push({
         pathname: '/(auth)/otp',
-        params: { phone, mode: mode ?? 'worker' },
+        params: {
+          phone,
+          mode: mode ?? 'worker',
+          devOtp: res.devOtp ?? '',
+        },
       });
-    }, 600);
+    } catch (e: any) {
+      setLoading(false);
+      setError(e?.message || 'Could not send OTP. Check the server is running.');
+    }
   };
 
   return (

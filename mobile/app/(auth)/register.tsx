@@ -5,6 +5,7 @@ import { Text, Input, Button } from '../../src/components/ui';
 import { Icon } from '../../src/components/Icon';
 import { BottomSheet } from '../../src/components/BottomSheet';
 import { Colors, Spacing, BorderRadius } from '../../src/constants/theme';
+import { sendOtp } from '../../src/services/auth';
 
 const CITIES = [
   'Chennai',
@@ -31,9 +32,10 @@ export default function RegisterScreen() {
   const [cityModalVisible, setCityModalVisible] = useState(false);
   const [cityFocused, setCityFocused] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const phoneRef = useRef<TextInput>(null);
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     let hasError = false;
     if (!name.trim()) {
       setNameError('Please enter your full name');
@@ -50,13 +52,23 @@ export default function RegisterScreen() {
     if (hasError) return;
 
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const res = await sendOtp(phone, 'register');
       setLoading(false);
       router.push({
         pathname: '/(auth)/otp',
-        params: { phone },
+        params: {
+          phone,
+          name: name.trim(),
+          city,
+          mode: 'worker',
+          devOtp: res.devOtp ?? '',
+        },
       });
-    }, 600);
+    } catch (e: any) {
+      setLoading(false);
+      setError(e?.message || 'Could not send OTP. Check the server is running.');
+    }
   };
 
   return (

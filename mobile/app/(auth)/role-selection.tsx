@@ -7,6 +7,7 @@ import { FadeSlide } from '../../src/components/AppHeader';
 import { Colors, BorderRadius, Spacing } from '../../src/constants/theme';
 import { useAuthStore } from '../../src/store/authStore';
 import { useUserModeStore } from '../../src/store/userModeStore';
+import { updateMe } from '../../src/services/auth';
 import { UserRole } from '../../src/types';
 
 const OPTIONS = [
@@ -29,7 +30,6 @@ const OPTIONS = [
 export default function RoleSelectionScreen() {
   const { initialRole } = useLocalSearchParams<{ initialRole?: string }>();
   const [selectedRole, setSelectedRole] = useState<UserRole>(initialRole === 'employer' ? 'employer' : 'worker');
-  const login = useAuthStore((state) => state.login);
   const setMode = useUserModeStore((state) => state.setMode);
   const inline = useRef(new Animated.Value(0)).current;
 
@@ -49,31 +49,30 @@ export default function RoleSelectionScreen() {
   }, [selectedRole, bounce]);
 
   const handleContinue = async () => {
-    const mockUser = {
-      _id: 'mock_user_' + Date.now(),
-      name: selectedRole === 'worker' ? 'Arun Kumar' : 'Sri Krishna Catering',
-      phone: '9876543210',
-      role: selectedRole,
-      location: {
-        address: 'Kanchipuram, Tamil Nadu',
-        latitude: 12.8342,
-        longitude: 79.7036,
-        city: 'Kanchipuram',
-      },
-      skills: selectedRole === 'worker' ? ['Catering', 'Serving', 'Event Support'] : [],
-      rating: 4.8,
-      totalRatings: 18,
-      completedJobs: selectedRole === 'worker' ? 24 : 12,
-      isVerified: true,
-    };
+    const { token } = useAuthStore.getState();
+    if (!token) {
+      router.replace('/(auth)/login');
+      return;
+    }
 
-    await login(mockUser, 'mock_jwt_token_sample');
-    await setMode(selectedRole);
+    try {
+      const updatedUser = await updateMe({ role: selectedRole });
+      await useAuthStore.getState().login(updatedUser, token);
+      await setMode(selectedRole);
 
-    if (selectedRole === 'worker') {
-      router.replace('/(worker)/(tabs)/home');
-    } else {
-      router.replace('/(employer)/(tabs)/home');
+      if (selectedRole === 'worker') {
+        router.replace('/(worker)/(tabs)/home');
+      } else {
+        router.replace('/(employer)/(tabs)/home');
+      }
+    } catch (e: any) {
+      const store = useAuthStore.getState();
+      if (!store.token) {
+        router.replace('/(auth)/login');
+        return;
+      }
+      // Surface a lightweight error without blocking the selection screen.
+      console.error('Role update failed:', e?.message);
     }
   };
 

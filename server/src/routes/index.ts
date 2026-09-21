@@ -1,10 +1,14 @@
 import { Router } from 'express';
 import healthRoutes from './healthRoutes';
+import authRoutes from './authRoutes';
 
 const router = Router();
 
 // Health Check
 router.use('/health', healthRoutes);
+
+// Auth
+router.use('/auth', authRoutes);
 
 // Root API ping
 router.get('/', (req, res) => {
