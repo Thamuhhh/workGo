@@ -38,9 +38,6 @@ function ensurePinCss() {
   style.id = 'wgo-pin-css';
   style.innerHTML = `
     .wgo-pin { background: transparent; }
-    .wgo-pin.dragging #wgo-pulse {
-      animation: wgo-pulse 1.1s ease-out infinite;
-    }
     .wgo-pin.show-pulse #wgo-pulse {
       animation: wgo-pulse 1.1s ease-out 1;
     }
@@ -64,6 +61,7 @@ const pinHtml = `
   </div>`;
 
 // Web: Leaflet via CDN (free, no key). Maplibre is never loaded on web.
+// Swiggy-style: the pin is fixed at map centre; moving the map moves the location.
 export function LocationPickerMap({ initial, onPick }: LocationPickerMapProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const markerRef = useRef<any>(null);
@@ -106,9 +104,10 @@ export function LocationPickerMap({ initial, onPick }: LocationPickerMapProps) {
       });
 
       const mark = L.marker([initial[1], initial[0]], {
-        draggable: true,
+        draggable: false,
         icon,
         zIndexOffset: 1000,
+        keyboard: false,
       }).addTo(map);
       markerRef.current = mark;
 
@@ -123,25 +122,19 @@ export function LocationPickerMap({ initial, onPick }: LocationPickerMapProps) {
       };
 
       let lastEmit = 0;
-      mark.on('dragstart', () => {
-        mark._icon?.classList.add('dragging');
-      });
-      mark.on('dragend', () => {
-        mark._icon?.classList.remove('dragging');
-        const ll = mark.getLatLng();
-        emit(ll);
-        pulse();
-      });
-      mark.on('drag', () => {
+      map.on('move', () => {
+        const c = map.getCenter();
+        mark.setLatLng(c);
         const now = Date.now();
         if (now - lastEmit > 150) {
           lastEmit = now;
-          emit(mark.getLatLng());
+          emit(c);
         }
       });
-      map.on('click', (e: any) => {
-        mark.setLatLng(e.latlng);
-        emit(e.latlng);
+      map.on('moveend', () => {
+        const c = map.getCenter();
+        mark.setLatLng(c);
+        emit(c);
         pulse();
       });
 
@@ -175,38 +168,36 @@ export function LocationPickerMap({ initial, onPick }: LocationPickerMapProps) {
         const map = mapRef.current;
         const mark = markerRef.current;
         if (!map || !mark) return;
-        map.setView([latitude, longitude], 16);
+        map.flyTo([latitude, longitude], 16, { duration: 0.6 });
         mark.setLatLng([latitude, longitude]);
         onPick([longitude, latitude]);
-        pulse();
       },
       () => setLocating(false),
       { enableHighAccuracy: true, timeout: 8000, maximumAge: 5000 }
     );
   };
 
-  const pulse = () => {
-    const mark = markerRef.current;
-    if (mark?._icon) {
-      mark._icon.classList.add('show-pulse');
-      setTimeout(() => mark._icon?.classList.remove('show-pulse'), 1200);
-    }
+  const zoom = (delta: number) => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (delta > 0) map.zoomIn();
+    else map.zoomOut();
   };
 
   return (
     <View style={styles.host}>
       <div ref={hostRef} style={{ width: '100%', height: '100%', touchAction: 'none' }} />
-      <Pressable
-        style={styles.locBtn}
-        onPress={locate}
-        hitSlop={8}
-      >
-        <Icon
-          name={locating ? 'navigate' : 'navigate-outline'}
-          size={20}
-          color="#0F172A"
-        />
-      </Pressable>
+      <View style={styles.controls}>
+        <Pressable style={styles.ctrlBtn} onPress={() => zoom(1)} hitSlop={8}>
+          <Icon name="add" size={22} color="#0F172A" />
+        </Pressable>
+        <Pressable style={styles.ctrlBtn} onPress={() => zoom(-1)} hitSlop={8}>
+          <Icon name="remove" size={22} color="#0F172A" />
+        </Pressable>
+        <Pressable style={styles.ctrlBtn} onPress={locate} hitSlop={8}>
+          <Icon name={locating ? 'navigate' : 'navigate-outline'} size={20} color="#0F172A" />
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -218,10 +209,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     cursor: 'grab' as any,
   },
-  locBtn: {
+  controls: {
     position: 'absolute',
-    top: 50,
     right: 12,
+    top: '38%',
+  },
+  ctrlBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -230,11 +223,13 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 8,
     shadowColor: '#0F172A',
     shadowOpacity: 0.12,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
+    cursor: 'pointer' as any,
     zIndex: 1100,
   },
 });

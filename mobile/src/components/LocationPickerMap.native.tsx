@@ -28,10 +28,21 @@ const OSM_STYLE = {
 const MapLibre = require('@maplibre/maplibre-react-native');
 
 export function LocationPickerMap({ initial, onPick }: LocationPickerMapProps) {
-  const { MapView, Camera, PointAnnotation } = MapLibre;
+  const { MapView, Camera } = MapLibre;
   const [coords, setCoords] = useState<[number, number]>(initial);
   const [locating, setLocating] = useState(false);
   const cameraRef = useRef<any>(null);
+
+  const handleRegionDidChange = (feature: any) => {
+    const center =
+      feature?.geometry?.coordinates ??
+      feature?.properties?.center ??
+      feature?.features?.[0]?.center;
+    if (!Array.isArray(center) || center.length < 2) return;
+    const next: [number, number] = [center[0], center[1]];
+    setCoords(next);
+    onPick(next);
+  };
 
   const locate = async () => {
     if (locating) return;
@@ -54,10 +65,17 @@ export function LocationPickerMap({ initial, onPick }: LocationPickerMapProps) {
         animationDuration: 500,
       });
     } catch {
-      // silently ignore — user can still drag the pin
+      // silently ignore — user can still move the map
     } finally {
       setLocating(false);
     }
+  };
+
+  const zoom = (delta: number) => {
+    cameraRef.current?.setCamera({
+      zoomLevel: (cameraRef.current?.getZoom?.() ?? 14.5) + delta,
+      animationDuration: 200,
+    });
   };
 
   return (
@@ -66,41 +84,51 @@ export function LocationPickerMap({ initial, onPick }: LocationPickerMapProps) {
         style={styles.host}
         mapStyle={hasMapKey ? maptilerVectorStyle('positron') : OSM_STYLE}
         logoEnabled={false}
+        onRegionDidChange={handleRegionDidChange}
       >
         <Camera
           ref={cameraRef}
           defaultSettings={{
             centerCoordinate: coords,
-            zoomLevel: 14,
+            zoomLevel: 14.5,
             animationDuration: 0,
           }}
         />
-        <PointAnnotation
-          id="location-pin"
-          coordinate={coords}
-          draggable
-          anchor={{ x: 0.5, y: 1 }}
-          onDragEnd={(feature: any) => {
-            const [lng, lat] = feature.geometry.coordinates as [number, number];
-            setCoords([lng, lat]);
-            onPick([lng, lat]);
-          }}
-        >
-          <View style={styles.pin}>
-            <Icon name="location" size={36} color="#0F172A" />
-            <View style={styles.pinDot} />
-          </View>
-        </PointAnnotation>
       </MapView>
 
-      <TouchableOpacity
-        style={styles.locBtn}
-        onPress={locate}
-        hitSlop={8}
-        activeOpacity={0.85}
-      >
-        <Icon name={locating ? 'navigate' : 'navigate-outline'} size={20} color="#0F172A" />
-      </TouchableOpacity>
+      <View style={styles.pinAnchor} pointerEvents="none">
+        <View style={styles.pin}>
+          <Icon name="location" size={36} color="#0F172A" />
+          <View style={styles.pinDot} />
+        </View>
+      </View>
+
+      <View style={styles.controls}>
+        <TouchableOpacity
+          style={styles.ctrlBtn}
+          onPress={() => zoom(1)}
+          hitSlop={8}
+          activeOpacity={0.85}
+        >
+          <Icon name="add" size={22} color="#0F172A" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.ctrlBtn}
+          onPress={() => zoom(-1)}
+          hitSlop={8}
+          activeOpacity={0.85}
+        >
+          <Icon name="remove" size={22} color="#0F172A" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.ctrlBtn}
+          onPress={locate}
+          hitSlop={8}
+          activeOpacity={0.85}
+        >
+          <Icon name={locating ? 'navigate' : 'navigate-outline'} size={20} color="#0F172A" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -110,6 +138,15 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     overflow: 'hidden',
+  },
+  pinAnchor: {
+    position: 'absolute',
+    left: '50%',
+    top: '50%',
+    marginLeft: -18,
+    marginTop: -18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   pin: {
     width: 36,
@@ -131,10 +168,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     top: 13,
   },
-  locBtn: {
+  controls: {
     position: 'absolute',
-    top: 50,
     right: 12,
+    top: '38%',
+  },
+  ctrlBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -143,11 +182,11 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 8,
     shadowColor: '#0F172A',
     shadowOpacity: 0.12,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
-    zIndex: 10,
   },
 });

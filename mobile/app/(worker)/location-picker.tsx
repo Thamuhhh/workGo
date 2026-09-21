@@ -564,7 +564,7 @@ const styles = StyleSheet.create({
   },
   mapBadge: {
     position: 'absolute',
-    top: 10,
+    bottom: 44,
     alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
@@ -573,8 +573,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E2E8F0',
     borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     zIndex: 10,
   },
   mapHelper: {
