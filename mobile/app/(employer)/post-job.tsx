@@ -14,6 +14,7 @@ import { Text, Input, Button, Card } from '../../src/components/ui';
 import { Icon as Ionicons } from '../../src/components/Icon';
 import { Colors, Spacing, BorderRadius } from '../../src/constants/theme';
 import { useEmployerJobsStore } from '../../src/store/employerJobsStore';
+import { useLocationStore } from '../../src/store/locationStore';
 
 const DEFAULT_CATEGORY = 'Catering';
 
@@ -121,6 +122,15 @@ export default function PostJobScreen() {
     editingJob ? !CATEGORIES.some((c) => c.name === editingJob.category) : false
   );
 
+  const locLabel = useLocationStore((s) => s.label);
+  const locAddress = useLocationStore((s) => s.address);
+  const effectiveLocation = location.trim() || locLabel || locAddress || '';
+  useEffect(() => {
+    if (!location.trim() && (locLabel || locAddress)) {
+      setLocation(locLabel || locAddress);
+    }
+  }, [locLabel, locAddress]);
+
   const initialDate = useMemo(() => parseDateText(parsed.dateText) ?? tomorrow(), [parsed.dateText]);
   const parsedTime = parsed.timeText === 'Full Day' ? null : parsed.timeText.split(' - ');
   const [selectedDate, setSelectedDate] = useState<Date>(initialDate);
@@ -182,7 +192,7 @@ export default function PostJobScreen() {
       foodProvided: true,
       transportProvided: true,
       date: fullDate,
-      location: location.trim(),
+      location: effectiveLocation.trim(),
     };
     setLoading(true);
     if (isEdit && editingJob) {
@@ -194,7 +204,7 @@ export default function PostJobScreen() {
         foodProvided: true,
         transportProvided: true,
         date: fullDate,
-        location: location.trim(),
+        location: effectiveLocation.trim(),
       });
       setLoading(false);
       Alert.alert('Job Updated', 'Your job details have been saved.');
@@ -508,7 +518,7 @@ export default function PostJobScreen() {
           </Text>
           <Input
             placeholder="e.g. Kanchipuram, Tamil Nadu"
-            value={location}
+            value={effectiveLocation}
             onChangeText={(v) => {
               setLocation(v);
               clearError('location');
