@@ -1,3 +1,4 @@
+import { useLocationStore } from './locationStore';
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -101,10 +102,13 @@ const dateTextToISO = (dateText: string): string => {
 const buildPayload = (input: EmployerJobInput): CreateJobPayload => {
   const [dateText, timeText = 'Full Day'] = input.date.split(' · ') as [string, string?];
   const times = timeText === 'Full Day' ? null : timeText.split(' - ');
+  const loc = useLocationStore.getState();
   return {
     title: input.title,
     category: input.category,
     location: input.location,
+    latitude: loc.lat,
+    longitude: loc.lng,
     date: dateTextToISO(dateText),
     salary: input.salaryPerDay,
     workersRequired: input.workersRequired,

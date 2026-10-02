@@ -50,6 +50,7 @@ export interface CreateJobPayload {
 export interface GetJobsFilter {
   lat?: number;
   lng?: number;
+  radius?: number;
   q?: string;
   category?: string;
   city?: string;
@@ -63,6 +64,7 @@ export async function getJobs(filter?: GetJobsFilter): Promise<ServerJob[]> {
     params.lat = String(filter.lat);
     params.lng = String(filter.lng);
   }
+  if (filter?.radius !== undefined && filter.radius > 0) params.radius = String(filter.radius);
   if (filter?.q) params.q = filter.q;
   if (filter?.category) params.category = filter.category;
   if (filter?.city) params.city = filter.city;

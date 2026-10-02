@@ -44,6 +44,7 @@ export default function LocationPickerScreen() {
 
   const [query, setQuery] = useState('');
   const [picked, setPicked] = useState<AreaOption>({ label: savedLabel, address: savedAddress });
+  const [pickedCoords, setPickedCoords] = useState<[number, number] | null>(null);
   const [locating, setLocating] = useState(false);
   const [mapMode, setMapMode] = useState(false);
   const [mapCoords, setMapCoords] = useState<[number, number]>(AREA_COORDS['Kanchipuram']);
@@ -114,6 +115,7 @@ export default function LocationPickerScreen() {
 
       const coords: [number, number] = [lng, lat];
       setMapCoords(coords);
+      setPickedCoords(coords);
       const snap = nearestArea(coords);
       setSnappedArea(snap);
       const name = (await reverseGeocodeName(coords)) ?? 'Current location';
@@ -151,8 +153,9 @@ export default function LocationPickerScreen() {
     }, 400);
   };
 
-  const selectOption = (option: AreaOption) => {
+  const selectOption = (option: AreaOption, coords?: [number, number]) => {
     setPicked(option);
+    setPickedCoords(coords ?? null);
     setMapMode(false);
   };
 
@@ -163,7 +166,10 @@ export default function LocationPickerScreen() {
           address: snappedArea,
         }
       : picked;
-    setLocation(option.label, option.address);
+    const coords: [number, number] = mapMode
+      ? mapCoords
+      : pickedCoords ?? (AREA_COORDS[picked.label] ?? AREA_COORDS['Kanchipuram']);
+    setLocation(option.label, option.address, coords[1], coords[0]);
     router.back();
   };
 
@@ -236,7 +242,7 @@ export default function LocationPickerScreen() {
                 <TouchableOpacity
                   key={p.label}
                   activeOpacity={0.8}
-                  onPress={() => selectOption({ label: p.label, address: p.address })}
+                  onPress={() => selectOption({ label: p.label, address: p.address }, AREA_COORDS[p.label])}
                   style={[styles.placeRow, isPicked(p.label) && styles.placeRowActive, webReset]}
                 >
                   <View style={[styles.placeIcon, { backgroundColor: '#F0FDF4' }]}>
@@ -259,7 +265,7 @@ export default function LocationPickerScreen() {
                 <TouchableOpacity
                   key={a}
                   activeOpacity={0.8}
-                  onPress={() => selectOption({ label: a, address: a })}
+                  onPress={() => selectOption({ label: a, address: a }, AREA_COORDS[a])}
                   style={[styles.placeRow, isPicked(a) && styles.placeRowActive, webReset]}
                 >
                   <View style={[styles.placeIcon, { backgroundColor: '#F1F5F9' }]}>
@@ -282,7 +288,7 @@ export default function LocationPickerScreen() {
                 <TouchableOpacity
                   key={s.address}
                   activeOpacity={0.8}
-                  onPress={() => selectOption({ label: s.label, address: s.address })}
+                  onPress={() => selectOption({ label: s.label, address: s.address }, s.coords)}
                   style={[styles.placeRow, webReset]}
                 >
                   <View style={[styles.placeIcon, { backgroundColor: '#F1F5F9' }]}>
@@ -390,7 +396,7 @@ export default function LocationPickerScreen() {
                   <TouchableOpacity
                     key={p.label}
                     activeOpacity={0.8}
-                    onPress={() => selectOption({ label: p.label, address: p.address })}
+                    onPress={() => selectOption({ label: p.label, address: p.address }, AREA_COORDS[p.label])}
                     style={[styles.placeRow, isPicked(p.label) && styles.placeRowActive, webReset]}
                   >
                     <View style={[styles.placeIcon, { backgroundColor: '#F0FDF4' }]}>
@@ -421,7 +427,7 @@ export default function LocationPickerScreen() {
                     <TouchableOpacity
                       key={a}
                       activeOpacity={0.85}
-                      onPress={() => selectOption({ label: a, address: a })}
+                      onPress={() => selectOption({ label: a, address: a }, AREA_COORDS[a])}
                       style={[styles.areaTile, isPicked(a) && styles.areaTileActive, webReset]}
                     >
                       <Text

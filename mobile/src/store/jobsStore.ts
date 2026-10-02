@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { getJobs, getJob, ServerJob } from '../services/jobs';
 import { SampleJob } from '../data/sampleJobs';
+import { useLocationStore } from './locationStore';
 
 export type WorkerJob = SampleJob & {
   description: string;
@@ -51,10 +52,15 @@ export const useJobsStore = create<JobsState>((set, get) => ({
   error: null,
 
   loadJobs: async (force = false) => {
-    if (get().loading) return;
+    if (!force && get().loading) return;
     set({ loading: true, error: null });
     try {
-      const serverJobs = await getJobs();
+      const { lat, lng } = useLocationStore.getState();
+      const serverJobs = await getJobs({
+        lat,
+        lng,
+        radius: 10,
+      });
       set({ jobs: serverJobs.map(toWorkerJob), loading: false });
     } catch (e: any) {
       set({ loading: false, error: e?.message || 'Failed to load jobs.' });

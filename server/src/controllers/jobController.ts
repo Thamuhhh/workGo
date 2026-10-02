@@ -79,15 +79,16 @@ const serializeJob = (
   if (
     userLat !== undefined &&
     userLng !== undefined &&
-    job.location?.latitude &&
-    job.location?.longitude
+    Number.isFinite(job.location?.latitude) &&
+    Number.isFinite(job.location?.longitude)
   ) {
-    distance = `${haversine(
+    const d = haversine(
       userLat,
       userLng,
       job.location.latitude,
       job.location.longitude
-    ).toFixed(1)} km away`;
+    );
+    distance = `${d.toFixed(1)} km away`;
   }
 
   const rating = ratingInfo && ratingInfo.total > 0 ? ratingInfo.avg : null;
@@ -147,6 +148,7 @@ const reviewStatsByJob = async (
 export const listJobs = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const lat = toNum(req.query.lat);
   const lng = toNum(req.query.lng);
+  const radius = Math.max(1, Math.min(100, toNum(req.query.radius) ?? 10));
 
   if (!isDbReady(res)) return;
 
@@ -171,16 +173,49 @@ export const listJobs = async (req: AuthenticatedRequest, res: Response): Promis
 
   const page = Math.max(1, parseInt(String(req.query.page ?? '1'), 10) || 1);
   const limit = Math.min(50, Math.max(1, parseInt(String(req.query.limit ?? '20'), 10) || 20));
+
+  const hasGeo = lat !== undefined && lng !== undefined;
+  if (hasGeo) {
+    // Bounding box pre-filter (fast Mongo range query) — exact radius applied below.
+    const KM_PER_DEG = 111.32;
+    const dLat = radius / KM_PER_DEG;
+    const lngScale = Math.max(0.1, Math.cos((lat * Math.PI) / 180));
+    const dLng = radius / (KM_PER_DEG * lngScale);
+    filter['location.latitude'] = { $gte: lat - dLat, $lte: lat + dLat };
+    filter['location.longitude'] = { $gte: lng - dLng, $lte: lng + dLng };
+  }
+
   const skip = (page - 1) * limit;
 
-  const [total, jobs] = await Promise.all([
-    Job.countDocuments(filter),
-    Job.find(filter)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .populate(POPULATE),
-  ]);
+  let total = 0;
+  let jobs: any[] = [];
+
+  if (hasGeo) {
+    const matches = await Job.find(filter).sort({ createdAt: -1 }).populate(POPULATE);
+    const within = matches.filter((j: any) => {
+      if (
+        j.location?.latitude === undefined ||
+        j.location?.longitude === undefined ||
+        !Number.isFinite(j.location.latitude) ||
+        !Number.isFinite(j.location.longitude)
+      ) {
+        return false;
+      }
+      return haversine(lat, lng, j.location.latitude, j.location.longitude) <= radius;
+    });
+    total = within.length;
+    jobs = within.slice(skip, skip + limit);
+  } else {
+    [total, jobs] = await Promise.all([
+      Job.countDocuments(filter),
+      Job.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate(POPULATE),
+    ]);
+  }
+
   const stats = await reviewStatsByJob(jobs);
 
   res.status(200).json({
@@ -191,6 +226,7 @@ export const listJobs = async (req: AuthenticatedRequest, res: Response): Promis
     total,
     page,
     limit,
+    radius: hasGeo ? radius : null,
   });
 };
 
@@ -269,8 +305,8 @@ export const createJob = async (req: AuthenticatedRequest, res: Response): Promi
     postedBy: req.user.userId,
     location: {
       address: body.location,
-      latitude: Number(body.latitude) || 0,
-      longitude: Number(body.longitude) || 0,
+      latitude: Number.isFinite(body.latitude) ? body.latitude : 0,
+      longitude: Number.isFinite(body.longitude) ? body.longitude : 0,
       city: String(body.city || '').trim(),
     },
     date: body.date,
@@ -344,8 +380,8 @@ export const updateJob = async (req: AuthenticatedRequest, res: Response): Promi
     const current = job.location ?? { address: '', latitude: 0, longitude: 0, city: '' };
     job.location = {
       address: String(body.location).trim(),
-      latitude: Number(body.latitude) || current.latitude || 0,
-      longitude: Number(body.longitude) || current.longitude || 0,
+      latitude: Number.isFinite(body.latitude) ? body.latitude : current.latitude ?? 0,
+      longitude: Number.isFinite(body.longitude) ? body.longitude : current.longitude ?? 0,
       city: String(body.city || current.city || '').trim(),
     };
   }
