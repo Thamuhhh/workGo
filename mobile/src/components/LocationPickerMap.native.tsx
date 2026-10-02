@@ -1,47 +1,43 @@
-﻿import React, { useRef, useState } from 'react';
+﻿import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { WebView } from 'react-native-webview';
 import * as Location from 'expo-location';
 import { Icon } from './Icon';
-import { hasMapKey, maptilerVectorStyle } from '../services/maptiler';
+import { pickerMapHtml } from './webLeaflet';
 
 export interface LocationPickerMapProps {
   initial: [number, number]; // [lng, lat]
   onPick: (coords: [number, number]) => void;
 }
 
-const OSM_STYLE = {
-  version: 8,
-  sources: {
-    osm: {
-      type: 'raster' as const,
-      tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-      tileSize: 256,
-      attribution: '© OpenStreetMap contributors',
-    },
-  },
-  layers: [
-    { id: 'osm', type: 'raster' as const, source: 'osm' },
-  ],
-};
-
-// Native-only file: maplibre is never resolved on web.
-const MapLibre = require('@maplibre/maplibre-react-native');
-
 export function LocationPickerMap({ initial, onPick }: LocationPickerMapProps) {
-  const { MapView, Camera } = MapLibre;
+  const webRef = useRef<WebView>(null);
   const [coords, setCoords] = useState<[number, number]>(initial);
   const [locating, setLocating] = useState(false);
-  const cameraRef = useRef<any>(null);
+  const [ready, setReady] = useState(false);
 
-  const handleRegionDidChange = (feature: any) => {
-    const center =
-      feature?.geometry?.coordinates ??
-      feature?.properties?.center ??
-      feature?.features?.[0]?.center;
-    if (!Array.isArray(center) || center.length < 2) return;
-    const next: [number, number] = [center[0], center[1]];
-    setCoords(next);
-    onPick(next);
+  const html = useMemo(() => pickerMapHtml(initial), [initial]);
+
+  const handleMessage = useCallback(
+    (event: any) => {
+      try {
+        const data = JSON.parse(event.nativeEvent.data);
+        if (data?.type === 'pick' && typeof data.lng === 'number' && typeof data.lat === 'number') {
+          const next: [number, number] = [data.lng, data.lat];
+          setCoords(next);
+          onPick(next);
+        }
+      } catch {
+        // ignore malformed messages
+      }
+    },
+    [onPick]
+  );
+
+  const flyTo = (lat: number, lng: number, zoom = 16) => {
+    webRef.current?.injectJavaScript(
+      `window.WGO && window.WGO.flyTo(${lat}, ${lng}, ${zoom}); true;`
+    );
   };
 
   const locate = async () => {
@@ -59,11 +55,7 @@ export function LocationPickerMap({ initial, onPick }: LocationPickerMapProps) {
       const current: [number, number] = [pos.coords.longitude, pos.coords.latitude];
       setCoords(current);
       onPick(current);
-      cameraRef.current?.setCamera({
-        centerCoordinate: current,
-        zoomLevel: 16,
-        animationDuration: 500,
-      });
+      if (ready) flyTo(current[1], current[0], 16);
     } catch {
       // silently ignore — user can still move the map
     } finally {
@@ -72,29 +64,25 @@ export function LocationPickerMap({ initial, onPick }: LocationPickerMapProps) {
   };
 
   const zoom = (delta: number) => {
-    cameraRef.current?.setCamera({
-      zoomLevel: (cameraRef.current?.getZoom?.() ?? 14.5) + delta,
-      animationDuration: 200,
-    });
+    webRef.current?.injectJavaScript(
+      `window.WGO && (window.WGO.${delta > 0 ? 'zoomIn' : 'zoomOut'}()); true;`
+    );
   };
 
   return (
     <View style={styles.host}>
-      <MapView
+      <WebView
+        ref={webRef}
+        originWhitelist={['*']}
+        source={{ html }}
         style={styles.host}
-        mapStyle={hasMapKey ? maptilerVectorStyle('positron') : OSM_STYLE}
-        logoEnabled={false}
-        onRegionDidChange={handleRegionDidChange}
-      >
-        <Camera
-          ref={cameraRef}
-          defaultSettings={{
-            centerCoordinate: coords,
-            zoomLevel: 14.5,
-            animationDuration: 0,
-          }}
-        />
-      </MapView>
+        javaScriptEnabled
+        domStorageEnabled
+        onMessage={handleMessage}
+        onLoadEnd={() => setReady(true)}
+        setSupportMultipleWindows={false}
+        overScrollMode="never"
+      />
 
       <View style={styles.pinAnchor} pointerEvents="none">
         <View style={styles.pin}>

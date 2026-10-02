@@ -51,3 +51,6 @@ web-serve.pid
 # Server runtime artifacts
 server/server.log
 server/logs/
+server/server.err.log
+server/server.out.log
+

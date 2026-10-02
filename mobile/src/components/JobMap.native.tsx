@@ -1,90 +1,64 @@
-﻿import React from 'react';
+﻿import React, { useCallback, useMemo } from 'react';
 import { View, StyleSheet, Text as RNText } from 'react-native';
+import { WebView } from 'react-native-webview';
 import { router } from 'expo-router';
 import { SampleJob } from '../data/sampleJobs';
-import { hasMapKey, maptilerVectorStyle } from '../services/maptiler';
+import { jobsMapHtml } from './webLeaflet';
 
 interface JobMapProps {
   jobs: SampleJob[];
 }
 
-// Free OpenStreetMap raster tiles — fallback when no MapTiler key is set.
-const OSM_STYLE = {
-  version: 8,
-  sources: {
-    osm: {
-      type: 'raster' as const,
-      tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-      tileSize: 256,
-      attribution: '© OpenStreetMap contributors',
-    },
-  },
-  layers: [
-    {
-      id: 'osm',
-      type: 'raster' as const,
-      source: 'osm',
-    },
-  ],
-};
-
-const ArrayColorStyle = 'mapbox://styles/mapbox/streets-v12';
-
 export function NativeJobMap({ jobs }: JobMapProps) {
-  // Native-only file: maplibre is never resolved on web.
-  const MapLibre = require('@maplibre/maplibre-react-native');
+  const center = useMemo<[number, number]>(() => {
+    if (!jobs.length) return [80.211, 12.99];
+    return [
+      jobs.reduce((s, j) => s + j.longitude, 0) / jobs.length,
+      jobs.reduce((s, j) => s + j.latitude, 0) / jobs.length,
+    ];
+  }, [jobs]);
 
-  const { MapView, Camera, PointAnnotation, UserLocation } = MapLibre;
+  const html = useMemo(
+    () =>
+      jobsMapHtml(
+        jobs.map((j) => ({
+          id: j.id,
+          title: j.title,
+          latitude: j.latitude,
+          longitude: j.longitude,
+        })),
+        center,
+        12
+      ),
+    [jobs, center]
+  );
 
-  const center = jobs.length
-    ? [
-        jobs.reduce((s, j) => s + j.longitude, 0) / jobs.length,
-        jobs.reduce((s, j) => s + j.latitude, 0) / jobs.length,
-      ]
-    : [80.211, 12.99];
+  const handleMessage = useCallback((event: any) => {
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+      if (data?.type === 'job' && data.id) {
+        router.push({
+          pathname: '/(worker)/job-detail',
+          params: { jobId: data.id },
+        });
+      }
+    } catch {
+      // ignore malformed messages
+    }
+  }, []);
 
   return (
     <View style={styles.card}>
-      <MapView
+      <WebView
+        originWhitelist={['*']}
+        source={{ html }}
         style={styles.map}
-        mapStyle={hasMapKey ? maptilerVectorStyle('positron') : OSM_STYLE}
-        logoEnabled={false}
-        attributionEnabled={true}
-      >
-        <Camera
-          defaultSettings={{
-            centerCoordinate: center,
-            zoomLevel: 12,
-            animationDuration: 0,
-          }}
-        />
-        <UserLocation
-          visible={true}
-          showsUserHeadingIndicator={true}
-          androidRenderMode="normal"
-        />
-        {jobs.map((job) => (
-          <PointAnnotation
-            key={job.id}
-            id={job.id}
-            coordinate={[job.longitude, job.latitude]}
-            anchor={{ x: 0.5, y: 1 }}
-            onSelected={() =>
-              router.push({
-                pathname: '/(worker)/job-detail',
-                params: { jobId: job.id },
-              })
-            }
-          >
-            <View style={styles.marker}>
-              <View style={styles.markerDot} />
-              <RNText style={styles.markerLabel} numberOfLines={1}>
-                {job.title}
-              </RNText>
-            </View>
-          </PointAnnotation>
-        ))}
-      </MapView>
+        javaScriptEnabled
+        domStorageEnabled
+        onMessage={handleMessage}
+        setSupportMultipleWindows={false}
+        overScrollMode="never"
+      />
       <View style={styles.scrim} pointerEvents="none">
         <RNText style={styles.scrimText}>Tap a marker to open the job</RNText>
       </View>
@@ -102,33 +76,7 @@ const styles = StyleSheet.create({
   },
   map: {
     flex: 1,
-  },
-  marker: {
-    alignItems: 'center',
-    maxWidth: 96,
-  },
-  markerDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: '#0F172A',
-    borderWidth: 2.5,
-    borderColor: '#FFFFFF',
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
-    elevation: 3,
-  },
-  markerLabel: {
-    marginTop: 2,
-    fontSize: 11,
-    fontFamily: 'Poppins_600SemiBold',
-    color: '#0F172A',
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    borderRadius: 4,
-    paddingHorizontal: 4,
-    paddingVertical: 1,
+    backgroundColor: '#F1F5F9',
   },
   scrim: {
     position: 'absolute',
