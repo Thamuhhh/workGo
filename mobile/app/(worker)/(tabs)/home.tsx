@@ -6,8 +6,6 @@ import {
   TouchableOpacity,
   Platform,
   Animated,
-  Easing,
-  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image as ExpoImage } from 'expo-image';
@@ -164,29 +162,14 @@ export default function WorkerHomeScreen() {
   );
 
   const scrollY = useRef(new Animated.Value(0)).current;
-  const prog = useRef(new Animated.Value(0)).current;
-  const contentH = useRef(1);
-  const viewportH = useRef(1);
 
   const headerPadTop = scrollY.interpolate({ inputRange: [0, 64], outputRange: [16, 9], extrapolate: 'clamp' });
   const headerPadBottom = scrollY.interpolate({ inputRange: [0, 64], outputRange: [20, 10], extrapolate: 'clamp' });
   const brandScale = scrollY.interpolate({ inputRange: [0, 64], outputRange: [1, 0.93], extrapolate: 'clamp' });
   const taglineOpacity = scrollY.interpolate({ inputRange: [0, 48], outputRange: [1, 0], extrapolate: 'clamp' });
   const taglineHeight = scrollY.interpolate({ inputRange: [0, 48], outputRange: [16, 0], extrapolate: 'clamp' });
-  const comboMargin = scrollY.interpolate({ inputRange: [0, 64], outputRange: [Spacing.md, 6], extrapolate: 'clamp' });
+  const comboMargin = scrollY.interpolate({ inputRange: [0, 64], outputRange: [Spacing.md, 4], extrapolate: 'clamp' });
   const comboScale = scrollY.interpolate({ inputRange: [0, 64], outputRange: [1, 0.97], extrapolate: 'clamp' });
-  const locationFade = scrollY.interpolate({ inputRange: [28, 88], outputRange: [1, 0], extrapolate: 'clamp' });
-  const locationShift = scrollY.interpolate({ inputRange: [28, 88], outputRange: [0, 10], extrapolate: 'clamp' });
-  const dividerFade = scrollY.interpolate({ inputRange: [28, 88], outputRange: [1, 0], extrapolate: 'clamp' });
-  const searchPadL = scrollY.interpolate({ inputRange: [28, 88], outputRange: [Spacing.sm, 0], extrapolate: 'clamp' });
-  const readWidth = prog.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
-
-  const handleScroll = (e: any) => {
-    const y = e.nativeEvent.contentOffset.y;
-    scrollY.setValue(y);
-    const max = Math.max(1, contentH.current - viewportH.current);
-    prog.setValue(Math.max(0, Math.min(1, y / max)));
-  };
 
   const handleCategoryPress = (cat: ServiceCategory) => {
     router.push({
@@ -264,71 +247,54 @@ export default function WorkerHomeScreen() {
                   { marginTop: comboMargin, transform: [{ scale: comboScale }] },
                 ]}
               >
-                <Animated.View
+                <TouchableOpacity
+                  activeOpacity={0.7}
                   style={[
-                    styles.comboLeft,
-                    { transform: [{ translateX: locationShift }], opacity: locationFade },
+                    styles.comboLocationZone,
+                    Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null,
                   ]}
+                  onPress={() => router.push('/(worker)/location-picker')}
                 >
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    style={[
-                      styles.comboLocationZone,
-                      Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null,
-                    ]}
-                    onPress={() => router.push('/(worker)/location-picker')}
-                  >
-                    <View style={styles.locationIconChip}>
-                      <Ionicons name="location-outline" size={16} color="#0F172A" />
-                    </View>
-                    <View style={{ flex: 1, minWidth: 0 }}>
-                      <Text variant="body" weight="bold" color="#0F172A" numberOfLines={1} style={styles.comboLocationLabel}>
-                        {locationLabel}
-                      </Text>
-                      {locationAddress && locationLabel !== locationAddress && (
-                        <Text variant="caption" color="#64748B" numberOfLines={1}>
-                          {locationAddress}
-                        </Text>
-                      )}
-                    </View>
-                    <Ionicons name="chevron-down" size={14} color="#94A3B8" />
-                  </TouchableOpacity>
-
-                  <Animated.View style={[styles.comboDivider, { opacity: dividerFade }]} />
-                </Animated.View>
-
-                <Animated.View style={[styles.comboSearchZone, { paddingLeft: searchPadL }]}>
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    style={styles.comboSearchTouch}
-                    onPress={() => router.push('/search')}
-                  >
-                    <Ionicons name="search-outline" size={16} color="#0F172A" />
-                    <Text variant="body" color={Colors.textMuted} numberOfLines={1} style={styles.comboSearchText}>
-                      Search for jobs...
+                  <View style={styles.locationIconChip}>
+                    <Ionicons name="location-outline" size={16} color="#0F172A" />
+                  </View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text variant="body" weight="bold" color="#0F172A" numberOfLines={1} style={styles.comboLocationLabel}>
+                      {locationLabel}
                     </Text>
-                  </TouchableOpacity>
-                </Animated.View>
-              </Animated.View>
+                    {locationAddress && locationLabel !== locationAddress && (
+                      <Text variant="caption" color="#64748B" numberOfLines={1}>
+                        {locationAddress}
+                      </Text>
+                    )}
+                  </View>
+                  <Ionicons name="chevron-down" size={14} color="#94A3B8" />
+                </TouchableOpacity>
 
-              {/* Reading progress bar under the header */}
-              <View style={styles.readTrack}>
-                <Animated.View style={[styles.readFill, { width: readWidth }]} />
-              </View>
+                <View style={styles.comboDivider} />
+
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  style={styles.comboSearchZone}
+                  onPress={() => router.push('/search')}
+                >
+                  <Ionicons name="search-outline" size={16} color="#0F172A" />
+                  <Text variant="body" color={Colors.textMuted} numberOfLines={1} style={styles.comboSearchText}>
+                    Search for jobs...
+                  </Text>
+                </TouchableOpacity>
+              </Animated.View>
             </LinearGradient>
           </Animated.View>
 
           <ScrollView
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.scrollContent}
-            onScroll={handleScroll}
+            onScroll={Animated.event(
+              [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+              { useNativeDriver: false }
+            )}
             scrollEventThrottle={16}
-            onContentSizeChange={(w, h) => {
-              contentH.current = h;
-            }}
-            onLayout={(e) => {
-              viewportH.current = e.nativeEvent.layout.height;
-            }}
           >
 
           {/* Promo Banner Carousel */}
@@ -585,11 +551,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
-  comboLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'stretch',
-  },
   comboLocationZone: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -610,31 +571,16 @@ const styles = StyleSheet.create({
     marginRight: Spacing.sm,
   },
   comboSearchZone: {
-    flex: 1,
-    minWidth: 0,
-  },
-  comboSearchTouch: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flex: 1,
     paddingRight: Spacing.sm,
-    justifyContent: 'center',
   },
   comboSearchText: {
+    flex: 1,
     flexShrink: 1,
     minWidth: 0,
-  },
-  readTrack: {
-    height: 2,
-    marginTop: 10,
-    borderRadius: 1,
-    backgroundColor: '#EDF2F7',
-    overflow: 'hidden',
-  },
-  readFill: {
-    height: 2,
-    borderRadius: 1,
-    backgroundColor: '#0F172A',
   },
   locationIconChip: {
     width: 34,
