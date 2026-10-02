@@ -137,6 +137,8 @@ export default function PostJobScreen() {
   const [fullDay, setFullDay] = useState(parsed.timeText === 'Full Day');
   const [shiftStart, setShiftStart] = useState(parsedTime?.[0]?.trim() || '6 AM');
   const [shiftEnd, setShiftEnd] = useState(parsedTime?.[1]?.trim() || '4 PM');
+  const [foodProvided, setFoodProvided] = useState<boolean>(editingJob?.foodProvided ?? true);
+  const [transportProvided, setTransportProvided] = useState<boolean>(editingJob?.transportProvided ?? true);
 
   const [loading, setLoading] = useState(false);
   const [activeStep, setActiveStep] = useState(1);
@@ -189,8 +191,8 @@ export default function PostJobScreen() {
       category: category.trim(),
       salaryPerDay: Number(salary),
       workersRequired: Number(workersRequired),
-      foodProvided: true,
-      transportProvided: true,
+      foodProvided: foodProvided,
+      transportProvided: transportProvided,
       date: fullDate,
       location: effectiveLocation.trim(),
     };
@@ -201,8 +203,8 @@ export default function PostJobScreen() {
         category: category.trim(),
         salaryPerDay: Number(salary),
         workersRequired: Number(workersRequired),
-        foodProvided: true,
-        transportProvided: true,
+        foodProvided: foodProvided,
+        transportProvided: transportProvided,
         date: fullDate,
         location: effectiveLocation.trim(),
       });

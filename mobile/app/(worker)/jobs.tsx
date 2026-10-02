@@ -6,6 +6,7 @@ import { Icon as Ionicons } from '../../src/components/Icon';
 import { Text, Card, SkeletonJobCard } from '../../src/components/ui';
 import { FadeSlide } from '../../src/components/AppHeader';
 import { useJobsStore, WorkerJob } from '../../src/store/jobsStore';
+import { useLocationStore } from '../../src/store/locationStore';
 import { NativeJobMap } from '../../src/components/JobMap';
 import { Colors, Spacing, BorderRadius } from '../../src/constants/theme';
 
@@ -95,11 +96,13 @@ export default function WorkerJobsScreen() {
   const serverJobs = useJobsStore((s) => s.jobs);
   const loadJobs = useJobsStore((s) => s.loadJobs);
 
+  const { lat, lng } = useLocationStore((s: any) => ({ lat: s.lat, lng: s.lng }));
   useEffect(() => {
-    loadJobs();
+    setLoading(true);
+    loadJobs(true);
     const t = setTimeout(() => setLoading(false), 700);
     return () => clearTimeout(t);
-  }, [loadJobs]);
+  }, [loadJobs, lat, lng]);
 
   const onRefresh = () => {
     setRefreshing(true);
