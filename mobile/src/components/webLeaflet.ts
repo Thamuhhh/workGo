@@ -103,7 +103,13 @@ export function pickerMapHtml(initial: [number, number], zoom = 14.5): string {
   function emit(c) { var now = Date.now(); if (now - lastEmit < 150) return; lastEmit = now;
     post({ type: 'pick', lng: c.lng, lat: c.lat }); }
   map.on('move', function () { mark.setLatLng(map.getCenter()); emit(map.getCenter()); });
-  map.on('moveend', function () { mark.setLatLng(map.getCenter()); post({ type: 'pick', lng: map.getCenter().lng, lat: map.getCenter().lat }); });
+  map.on('moveend', function () { mark.setLatLng(map.getCenter()); emit(map.getCenter()); });
+  map.on('click', function (e) {
+    var c = e.latlng;
+    mark.setLatLng(c);
+    emit(c);
+    map.panTo(c, { animate: true, duration: 0.25 });
+  });
   post({ type: 'pick', lng: ${initial[0]}, lat: ${initial[1]} });`;
 
   return SHELL.replace('{TILE_URL}', tileUrl).replace('{TILE_ATTR}', tileAttribution).replace('{MAP_INIT}', mapInit);
