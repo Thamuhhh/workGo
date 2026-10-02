@@ -86,13 +86,10 @@ export default function EmployerHomeScreen() {
   const maxWeekly = Math.max(...weeklyCounts, 1);
 
   const scrollY = useRef(new Animated.Value(0)).current;
-  const headerPadTop = scrollY.interpolate({ inputRange: [0, 64], outputRange: [16, 9], extrapolate: 'clamp' });
-  const headerPadBottom = scrollY.interpolate({ inputRange: [0, 64], outputRange: [16, 8], extrapolate: 'clamp' });
   const brandScale = scrollY.interpolate({ inputRange: [0, 64], outputRange: [1, 0.93], extrapolate: 'clamp' });
-  const comboMargin = scrollY.interpolate({ inputRange: [0, 64], outputRange: [Spacing.md, 4], extrapolate: 'clamp' });
   const comboScale = scrollY.interpolate({ inputRange: [0, 64], outputRange: [1, 0.97], extrapolate: 'clamp' });
+  const comboTranslate = scrollY.interpolate({ inputRange: [0, 64], outputRange: [0, -10], extrapolate: 'clamp' });
   const taglineOpacity = scrollY.interpolate({ inputRange: [0, 44], outputRange: [1, 0], extrapolate: 'clamp' });
-  const taglineHeight = scrollY.interpolate({ inputRange: [0, 44], outputRange: [16, 0], extrapolate: 'clamp' });
   const actionsOpacity = scrollY.interpolate({ inputRange: [0, 44], outputRange: [1, 0], extrapolate: 'clamp' });
 
   if (usePageLoading()) return <ScreenSkeleton variant="home" />;
@@ -108,12 +105,7 @@ export default function EmployerHomeScreen() {
       >
       <View style={styles.mainContainer}>
           {/* Sticky header */}
-          <Animated.View
-            style={[
-              styles.headerShell,
-              { paddingTop: headerPadTop, paddingBottom: headerPadBottom },
-            ]}
-          >
+          <Animated.View style={styles.headerShell}>
             <LinearGradient
               colors={['#FFFFFF', '#FFFFFF', '#F8FAFC']}
               start={{ x: 0, y: 0 }}
@@ -125,7 +117,7 @@ export default function EmployerHomeScreen() {
                   <Text variant="h2" weight="heavy" color="#0F172A" style={styles.brandTitle}>
                     Gig<Text variant="h2" weight="heavy" color="#0F172A">ro</Text>
                   </Text>
-                  <Animated.View style={{ height: taglineHeight, opacity: taglineOpacity }}>
+                  <Animated.View style={{ opacity: taglineOpacity }}>
                     <Text variant="caption" weight="medium" color="#64748B" style={styles.brandTagline}>
                       {GREETING_MSG}, <Text variant="caption" weight="bold" color="#0F172A">{businessFirstName}</Text>!
                     </Text>
@@ -156,7 +148,7 @@ export default function EmployerHomeScreen() {
               <Animated.View
                 style={[
                   styles.comboCard,
-                  { marginTop: comboMargin, transform: [{ scale: comboScale }] },
+                  { transform: [{ translateY: comboTranslate }, { scale: comboScale }] },
                 ]}
               >
                 <TouchableOpacity
@@ -197,7 +189,7 @@ export default function EmployerHomeScreen() {
             contentContainerStyle={styles.scrollContent}
             onScroll={Animated.event(
               [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-              { useNativeDriver: false }
+              { useNativeDriver: true }
             )}
             scrollEventThrottle={16}
           >
@@ -517,6 +509,8 @@ const styles = StyleSheet.create({
   headerShell: {
     backgroundColor: '#FFFFFF',
     zIndex: 10,
+    paddingTop: 12,
+    paddingBottom: Spacing.md,
   },
   headerGradient: {
     paddingHorizontal: Spacing.xl,

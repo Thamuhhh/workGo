@@ -46,7 +46,7 @@ export default function EmployerTabsLayout() {
       screenOptions={({ route }) => {
         const icons = ICONS[route.name as keyof typeof ICONS] ?? ICONS.home;
         return {
-          lazy: false,
+          lazy: true,
           headerShown: true,
           headerStyle: { backgroundColor: Colors.surface },
           headerTintColor: '#0F172A',

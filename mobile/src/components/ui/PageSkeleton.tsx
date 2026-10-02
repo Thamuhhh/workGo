@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { View, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Skeleton, SkeletonJobCard } from './Skeleton';
@@ -6,12 +6,8 @@ import { Spacing } from '../../constants/theme';
 
 export type SkeletonVariant = 'list' | 'form' | 'profile' | 'wallet' | 'chat' | 'refer' | 'home';
 
-export function usePageLoading(ms = 800) {
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    const t = setTimeout(() => setLoading(false), ms);
-    return () => clearTimeout(t);
-  }, [ms]);
+export function usePageLoading(_ms = 800) {
+  const [loading] = useState(false);
   return loading;
 }
 
