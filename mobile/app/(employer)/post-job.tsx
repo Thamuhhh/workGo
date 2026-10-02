@@ -515,6 +515,10 @@ export default function PostJobScreen() {
             }}
             error={errors.location}
             leftIcon={<Ionicons name="location-outline" size={18} color={Colors.textMuted} />}
+            onFocus={() => router.push('/(worker)/location-picker')}
+            showSoftInputOnFocus={false}
+            editable={false}
+            pointerEvents="box-none"
           />
 
           {/* Summary */}
