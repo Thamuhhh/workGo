@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { validateRequest } from '../middleware/validate';
 import { requireAuth } from '../middleware/auth';
-import { sendOtp, verifyOtp, firebaseLogin, getMe, updateMe } from '../controllers/authController';
+import { register, login, getMe, updateMe } from '../controllers/authController';
 
 const router = Router();
 
@@ -10,44 +10,35 @@ const phoneSchema = z
   .string()
   .regex(/^[6-9]\d{9}$/, 'Enter a valid 10-digit Indian mobile number');
 
+const passwordSchema = z
+  .string()
+  .min(6, 'Password must be at least 6 characters')
+  .max(60, 'Password too long');
+
 router.post(
-  '/otp/send',
+  '/register',
   validateRequest({
     body: z.object({
       phone: phoneSchema,
-      purpose: z.enum(['login', 'register']).optional(),
-    }),
-  }),
-  sendOtp
-);
-
-router.post(
-  '/otp/verify',
-  validateRequest({
-    body: z.object({
-      phone: phoneSchema,
-      otp: z.string().regex(/^\d{4}$/, 'OTP must be 4 digits'),
-      role: z.enum(['worker', 'employer']).optional(),
-      name: z.string().min(2, 'Name must be at least 2 characters').max(60).optional(),
-      email: z.string().email().optional(),
-      city: z.string().min(2).max(60).optional(),
-    }),
-  }),
-  verifyOtp
-);
-
-router.post(
-  '/firebase',
-  validateRequest({
-    body: z.object({
-      idToken: z.string().min(10),
+      password: passwordSchema,
       role: z.enum(['worker', 'employer']).optional(),
       name: z.string().min(2).max(60).optional(),
       email: z.string().email().optional(),
       city: z.string().min(2).max(60).optional(),
     }),
   }),
-  firebaseLogin
+  register
+);
+
+router.post(
+  '/login',
+  validateRequest({
+    body: z.object({
+      phone: phoneSchema,
+      password: passwordSchema,
+    }),
+  }),
+  login
 );
 
 router.get('/me', requireAuth, getMe);

@@ -5,8 +5,7 @@ import { Text, Input, Button } from '../../src/components/ui';
 import { Icon } from '../../src/components/Icon';
 import { BottomSheet } from '../../src/components/BottomSheet';
 import { Colors, Spacing, BorderRadius } from '../../src/constants/theme';
-import { sendPhoneOtp } from '../../src/services/phoneAuth';
-import { updateMe } from '../../src/services/auth';
+import { registerUser, updateMe } from '../../src/services/auth';
 import { useAuthStore } from '../../src/store/authStore';
 import { useUserModeStore } from '../../src/store/userModeStore';
 
@@ -37,9 +36,12 @@ export default function RegisterScreen() {
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState(verifiedPhone ?? '');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [city, setCity] = useState('');
   const [nameError, setNameError] = useState('');
   const [phoneError, setPhoneError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const [cityError, setCityError] = useState('');
   const [cityModalVisible, setCityModalVisible] = useState(false);
   const [cityFocused, setCityFocused] = useState(false);
@@ -96,6 +98,10 @@ export default function RegisterScreen() {
       setPhoneError('Please enter a valid 10-digit mobile number');
       hasError = true;
     }
+    if (password.length < 6) {
+      setPasswordError('Password must be at least 6 characters');
+      hasError = true;
+    }
     if (!city) {
       setCityError('Please select your city');
       hasError = true;
@@ -103,22 +109,24 @@ export default function RegisterScreen() {
     if (hasError) return;
 
     setLoading(true);
+    setError('');
     try {
-      const res = await sendPhoneOtp(phone, 'register');
+      const res = await registerUser({
+        phone,
+        password,
+        name: name.trim(),
+        city,
+      });
+      await useAuthStore.getState().login(res.user, res.token);
+      await setMode(res.user.role);
       setLoading(false);
-      router.push({
-        pathname: '/(auth)/otp',
-        params: {
-          phone,
-          name: name.trim(),
-          city,
-          mode: 'worker',
-          devOtp: res.devOtp ?? '',
-        },
+      router.replace({
+        pathname: '/(auth)/role-selection',
+        params: { initialRole: res.user.role },
       });
     } catch (e: any) {
       setLoading(false);
-      setError(e?.message || 'Could not send OTP. Check the server is running.');
+      setError(e?.message || 'Could not create your account. Please try again.');
     }
   };
 
@@ -186,6 +194,27 @@ export default function RegisterScreen() {
               />
             )}
 
+            {!isCompleteOnly && (
+              <Input
+                placeholder="Create password"
+                secureTextEntry={!showPassword}
+                value={password}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  if (passwordError) setPasswordError('');
+                }}
+                error={passwordError}
+                rightIcon={
+                  <Icon
+                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                    size={20}
+                    color="#64748B"
+                  />
+                }
+                onRightIconPress={() => setShowPassword((prev) => !prev)}
+              />
+            )}
+
             {isCompleteOnly && verifiedPhone ? (
               <View style={styles.verifiedPhone}>
                 <Icon name="checkmark-circle" size={18} color="#059669" />
@@ -234,7 +263,7 @@ export default function RegisterScreen() {
             ) : null}
 
             <Button
-              title={isCompleteOnly ? 'Create Profile' : 'Create Account & Send OTP'}
+              title={isCompleteOnly ? 'Create Profile' : 'Create Account'}
               size="lg"
               fullWidth
               loading={loading}

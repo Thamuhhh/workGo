@@ -1,40 +1,29 @@
 import apiClient from './api';
 import { UserProfile, UserRole } from '../types';
 
-export interface SendOtpResponse {
-  message: string;
-  expiresIn: number;
-  devOtp?: string;
-}
-
-export interface VerifyOtpPayload {
+export interface RegisterPayload {
   phone: string;
-  otp: string;
+  password: string;
   role?: UserRole;
   name?: string;
   email?: string;
   city?: string;
 }
 
-export interface VerifyOtpResponse {
+export interface AuthResponse {
   token: string;
   user: UserProfile;
   isNewUser: boolean;
 }
 
-export const sendOtp = async (
-  phone: string,
-  purpose?: 'login' | 'register'
-): Promise<SendOtpResponse> => {
-  const res = await apiClient.post('/auth/otp/send', { phone, purpose });
-  return res.data as SendOtpResponse;
+export const registerUser = async (payload: RegisterPayload): Promise<AuthResponse> => {
+  const res = await apiClient.post('/auth/register', payload);
+  return res.data as AuthResponse;
 };
 
-export const verifyOtp = async (
-  payload: VerifyOtpPayload
-): Promise<VerifyOtpResponse> => {
-  const res = await apiClient.post('/auth/otp/verify', payload);
-  return res.data as VerifyOtpResponse;
+export const loginUser = async (phone: string, password: string): Promise<AuthResponse> => {
+  const res = await apiClient.post('/auth/login', { phone, password });
+  return res.data as AuthResponse;
 };
 
 export const getMe = async (): Promise<UserProfile> => {

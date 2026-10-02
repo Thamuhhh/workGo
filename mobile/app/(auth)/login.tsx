@@ -1,38 +1,48 @@
 ﻿import React, { useState } from 'react';
 import { View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
 import { Text, Input, Button } from '../../src/components/ui';
+import { Icon } from '../../src/components/Icon';
 import { Colors, Spacing } from '../../src/constants/theme';
-import { sendPhoneOtp } from '../../src/services/phoneAuth';
+import { loginUser } from '../../src/services/auth';
+import { useAuthStore } from '../../src/store/authStore';
+import { useUserModeStore } from '../../src/store/userModeStore';
 
 export default function LoginScreen() {
-  const { mode } = useLocalSearchParams<{ mode?: string }>();
   const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSendOtp = async () => {
+  const login = useAuthStore((state) => state.login);
+  const setMode = useUserModeStore((state) => state.setMode);
+
+  const handleLogin = async () => {
     if (!phone || phone.length < 10) {
       setError('Please enter a valid 10-digit mobile number');
+      return;
+    }
+    if (password.length < 6) {
+      setError('Please enter your password');
       return;
     }
     setError('');
     setLoading(true);
 
     try {
-      const res = await sendPhoneOtp(phone, 'login');
+      const res = await loginUser(phone, password);
+      await login(res.user, res.token);
+      await setMode(res.user.role);
       setLoading(false);
-      router.push({
-        pathname: '/(auth)/otp',
-        params: {
-          phone,
-          mode: mode ?? 'worker',
-          devOtp: res.devOtp ?? '',
-        },
-      });
+      router.replace(
+        res.user.role === 'employer'
+          ? '/(employer)/(tabs)/home'
+          : '/(worker)/(tabs)/home'
+      );
     } catch (e: any) {
       setLoading(false);
-      setError(e?.message || 'Could not send OTP. Check the server is running.');
+      setError(e?.message || 'Could not login. Please try again.');
     }
   };
 
@@ -58,7 +68,7 @@ export default function LoginScreen() {
             Login
           </Text>
           <Text variant="body" color={Colors.textSecondary} align="center" style={styles.subtitle}>
-            Enter your mobile number to continue
+            Enter your mobile number and password
           </Text>
 
           <View style={styles.form}>
@@ -72,15 +82,34 @@ export default function LoginScreen() {
                 if (error) setError('');
               }}
               error={error}
-              style={styles.phoneInput}
+              style={styles.input}
+            />
+
+            <Input
+              placeholder="Password"
+              secureTextEntry={!showPassword}
+              value={password}
+              onChangeText={(text) => {
+                setPassword(text);
+                if (error) setError('');
+              }}
+              rightIcon={
+                <Icon
+                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color="#64748B"
+                />
+              }
+              onRightIconPress={() => setShowPassword((prev) => !prev)}
+              style={styles.input}
             />
 
             <Button
-              title="Get OTP"
+              title="Login"
               size="lg"
               fullWidth
               loading={loading}
-              onPress={handleSendOtp}
+              onPress={handleLogin}
               style={styles.button}
             />
           </View>
@@ -133,10 +162,9 @@ const styles = StyleSheet.create({
   form: {
     marginTop: Spacing.xl,
   },
-  phoneInput: {
-    fontSize: 18,
+  input: {
+    fontSize: 16,
     fontWeight: '600',
-    paddingVertical: Spacing.md,
   },
   button: {
     marginTop: Spacing.md,
