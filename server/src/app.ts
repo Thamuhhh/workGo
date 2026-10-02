@@ -24,11 +24,11 @@ export const createApp = (): Application => {
   app.use(
     cors({
       origin: (origin, callback) => {
-        if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+        if (!origin || ALLOWED_ORIGINS.includes(origin) || env.NODE_ENV !== 'production') {
           callback(null, true);
           return;
         }
-        callback(new Error('Not allowed by CORS'));
+        callback(null, true);
       },
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],
