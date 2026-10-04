@@ -1,16 +1,16 @@
 import { createApp } from './app';
 import { connectDB, disconnectDB } from './config/db';
 import { seedDatabase } from './config/seed';
-import { env } from './config/env';
+import { env, publicUrl } from './config/env';
 
 const startServer = async () => {
   const app = createApp();
 
   const server = app.listen(env.PORT, () => {
     const address = server.address();
-    const boundPort = typeof address === 'object' && address ? address.port : env.PORT;
-    const publicUrl =
-      env.PUBLIC_URL ?? `http://localhost:${boundPort}`;
+    if (typeof address === 'object' && address) {
+      console.log(`Bound to port ${address.port}`);
+    }
     console.log(`
 ===================================================
    WorkGo Backend Server Running

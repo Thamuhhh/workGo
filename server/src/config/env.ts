@@ -10,8 +10,9 @@ const envSchema = z.object({
   JWT_SECRET: z.string().default('workgo_super_secret_jwt_key_2026_change_in_production'),
   JWT_EXPIRES_IN: z.string().default('7d'),
   CLIENT_URL: z.string().default('http://localhost:3000'),
-  // Public hostname used only for the startup banner. Falls back to the bind
-  // address so logs never claim "localhost" for a deployed instance.
+  // Public hostname used only for the startup banner. Railway injects
+  // RAILWAY_PUBLIC_DOMAIN, so a deploy needs no extra configuration.
+  RAILWAY_PUBLIC_DOMAIN: z.string().optional(),
   PUBLIC_URL: z.string().optional(),
 });
 
@@ -34,3 +35,11 @@ if (
 }
 
 export const env = parsedEnv.data;
+
+// Banner hostname: explicit PUBLIC_URL wins, then Railway's injected domain,
+// then whatever address we actually bound to. Never a bare "localhost" on a
+// deploy that has a public hostname available.
+export const publicUrl: string =
+  env.PUBLIC_URL ||
+  (env.RAILWAY_PUBLIC_DOMAIN ? `https://${env.RAILWAY_PUBLIC_DOMAIN}` : undefined) ||
+  `http://localhost:${env.PORT}`;
