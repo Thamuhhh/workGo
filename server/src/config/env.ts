@@ -10,6 +10,9 @@ const envSchema = z.object({
   JWT_SECRET: z.string().default('workgo_super_secret_jwt_key_2026_change_in_production'),
   JWT_EXPIRES_IN: z.string().default('7d'),
   CLIENT_URL: z.string().default('http://localhost:3000'),
+  // Public hostname used only for the startup banner. Falls back to the bind
+  // address so logs never claim "localhost" for a deployed instance.
+  PUBLIC_URL: z.string().optional(),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

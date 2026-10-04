@@ -7,14 +7,18 @@ const startServer = async () => {
   const app = createApp();
 
   const server = app.listen(env.PORT, () => {
+    const address = server.address();
+    const boundPort = typeof address === 'object' && address ? address.port : env.PORT;
+    const publicUrl =
+      env.PUBLIC_URL ?? `http://localhost:${boundPort}`;
     console.log(`
 ===================================================
    WorkGo Backend Server Running
    Environment: ${env.NODE_ENV}
    Port:        ${env.PORT}
-   URL:         http://localhost:${env.PORT}
-   Health:      http://localhost:${env.PORT}/api/health
-   API:         http://localhost:${env.PORT}/api/v1
+   URL:         ${publicUrl}
+   Health:      ${publicUrl}/api/health
+   API:         ${publicUrl}/api/v1
    Tagline:     "Work nearby. Earn today."
 ===================================================
     `);
