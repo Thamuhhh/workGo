@@ -103,11 +103,16 @@ const buildPayload = (input: EmployerJobInput): CreateJobPayload => {
   const [dateText, timeText = 'Full Day'] = input.date.split(' · ') as [string, string?];
   const times = timeText === 'Full Day' ? null : timeText.split(' - ');
   const loc = useLocationStore.getState();
-  const derivedCity = (loc.label || loc.address || input.location || '')
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .pop() || '';
+  // Address first: the label is often "Home"/"Work", which is not a city.
+  const derivedCity = [loc.address, loc.label, input.location]
+    .map((s) =>
+      String(s ?? '')
+        .split(',')
+        .map((p) => p.trim())
+        .filter(Boolean)
+        .pop() ?? ''
+    )
+    .find(Boolean) || '';
   return {
     title: input.title,
     category: input.category,

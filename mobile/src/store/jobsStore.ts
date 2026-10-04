@@ -37,6 +37,11 @@ export const toWorkerJob = (j: ServerJob): WorkerJob => ({
   status: j.status,
 });
 
+// The widest gap between two areas the location picker offers (Madurantakam to
+// Anna Nagar) is ~73km, so anything below that hides most of the service area
+// from workers outside the employer's own pin.
+const DISCOVERY_RADIUS_KM = 75;
+
 interface JobsState {
   jobs: WorkerJob[];
   loading: boolean;
@@ -59,7 +64,7 @@ export const useJobsStore = create<JobsState>((set, get) => ({
       const serverJobs = await getJobs({
         lat,
         lng,
-        radius: 10,
+        radius: DISCOVERY_RADIUS_KM,
       });
       set({ jobs: serverJobs.map(toWorkerJob), loading: false });
     } catch (e: any) {
