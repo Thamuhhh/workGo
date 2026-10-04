@@ -12,6 +12,12 @@ jobs:
     defaults:
       run:
         working-directory: mobile
+    env:
+      # .env is gitignored, so CI has no env file of its own. Without these the
+      # bundle inlines the localhost fallback from src/services/api.ts and every
+      # request fails on a real device (localhost resolves to the phone itself).
+      EXPO_PUBLIC_API_URL: ${{ vars.EXPO_PUBLIC_API_URL || 'https://workgo-production.up.railway.app/api/v1' }}
+      EXPO_PUBLIC_MAPTILER_KEY: ${{ secrets.EXPO_PUBLIC_MAPTILER_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,6 +41,15 @@ jobs:
         # fails. The peer is optional, so bypass auto-peer resolution safely.
         run: npm ci --legacy-peer-deps
 
+      - name: Write .env
+        # Gradle's bundleReleaseJsAndAssets task may run on a cached daemon that
+        # does not inherit this job's env, so also materialise .env on disk.
+        # @expo/env loads it during the bundle step, which makes this authoritative.
+        run: |
+          printf 'EXPO_PUBLIC_API_URL=%s\n' "$EXPO_PUBLIC_API_URL" > .env
+          printf 'EXPO_PUBLIC_MAPTILER_KEY=%s\n' "$EXPO_PUBLIC_MAPTILER_KEY" >> .env
+          sed -e 's/^EXPO_PUBLIC_MAPTILER_KEY=.*/EXPO_PUBLIC_MAPTILER_KEY=<set>/' .env
+
       - name: Generate native project
         run: npx expo prebuild --platform android --clean --no-install
         env:
@@ -50,6 +65,23 @@ jobs:
       - name: Build Release APK
         working-directory: mobile/android
         run: ./gradlew assembleRelease
+
+      - name: Verify bundled API URL
+        # Regression guard: EXPO_PUBLIC_* values are inlined at bundle time, so a
+        # missing env var silently ships an APK that can never reach the server.
+        run: |
+          BUNDLE=$(find android/app/build -name 'index.android.bundle' -print -quit)
+          if [ -z "$BUNDLE" ]; then
+            echo "::warning::bundle not found, skipping API URL verification"
+            exit 0
+          fi
+          echo "bundle: $BUNDLE"
+          if grep -q 'localhost:5000' "$BUNDLE"; then
+            echo "::error::localhost fallback was bundled - EXPO_PUBLIC_API_URL was not injected"
+            exit 1
+          fi
+          echo "bundled hosts:"
+          grep -oE 'https://[a-zA-Z0-9.-]+' "$BUNDLE" | sort -u | head -5 || true
 
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
