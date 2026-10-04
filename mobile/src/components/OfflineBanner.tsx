@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
 import { Text } from './ui';
 import { Colors, Spacing } from '../constants/theme';
 
@@ -7,13 +8,15 @@ export default function OfflineBanner() {
   const [online, setOnline] = useState(true);
 
   useEffect(() => {
-    const update = () => setOnline(navigator.onLine);
-    window.addEventListener('online', update);
-    window.addEventListener('offline', update);
-    return () => {
-      window.removeEventListener('online', update);
-      window.removeEventListener('offline', update);
-    };
+    // NetInfo rather than navigator.onLine/window.addEventListener: those are
+    // DOM-only and this component sits above the ErrorBoundary, so a throw here
+    // takes the whole app down with no recovery screen.
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      // isInternetReachable is null while probing; only call the device offline
+      // when it has explicitly reported that it cannot reach the internet.
+      setOnline(state.isInternetReachable !== false);
+    });
+    return () => unsubscribe();
   }, []);
 
   if (online) return null;
@@ -21,7 +24,7 @@ export default function OfflineBanner() {
   return (
     <View style={styles.banner}>
       <Text variant="caption" weight="bold" color="#FFFFFF" align="center">
-        You're offline — changes will sync when you reconnect.
+        You&apos;re offline — changes will sync when you reconnect.
       </Text>
     </View>
   );
